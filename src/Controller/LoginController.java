@@ -45,7 +45,7 @@ public class LoginController implements Initializable {
 	// LETS NAME ALL COMPONENTS WE HAVE ON ADMIN PAGE
 	@FXML
 	private ImageView logo;
-	Image logoView = new Image(getClass().getResourceAsStream(null));
+
 	@FXML
 	private AnchorPane main_form;
 
