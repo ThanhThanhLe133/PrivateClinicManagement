@@ -465,14 +465,193 @@
 </AnchorPane>
 
 
-
+<!--   REVENUE ===============================================================-->
 								
+								
+								<AnchorPane fx:id="revenue_form" layoutX="5.0" layoutY="5.0" prefHeight="560.0" prefWidth="886.0"
+            xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1"
+            AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+    <children>
+        <AnchorPane layoutX="9.0" layoutY="12.0" prefHeight="260.0" prefWidth="868.0" stylesheets="@../design/MainFormDesign.css"
+                    AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="12.0">
+            <styleClass>
+                <String fx:value="white-bg" />
+                <String fx:value="shadow" />
+                <String fx:value="radius" />
+            </styleClass>
+            <children>
+                <Label layoutX="14.0" layoutY="14.0" styleClass="header-1" stylesheets="@../design/MainFormDesign.css" text="Doanh thu">
+                    <font>
+                        <Font size="18.0" />
+                    </font>
+                </Label>
+                
+                <!-- Bộ lọc thời gian -->
+                <AnchorPane layoutX="14.0" layoutY="50.0" prefHeight="50.0" prefWidth="840.0">
+                    <children>
+                        <Label layoutX="14.0" layoutY="15.0" text="Từ ngày:">
+                            <font>
+                                <Font size="14.0" />
+                            </font>
+                        </Label>
+                        <DatePicker fx:id="revenue_startDate" layoutX="75.0" layoutY="12.0" prefHeight="25.0" prefWidth="150.0" />
+                        
+                        <Label layoutX="245.0" layoutY="15.0" text="Đến ngày:">
+                            <font>
+                                <Font size="14.0" />
+                            </font>
+                        </Label>
+                        <DatePicker fx:id="revenue_endDate" layoutX="315.0" layoutY="12.0" prefHeight="25.0" prefWidth="150.0" />
+                        
+                        <Button fx:id="revenue_filterBtn" layoutX="490.0" layoutY="12.0" mnemonicParsing="false" 
+                                onAction="#filterRevenueData" prefHeight="30.0" prefWidth="100.0" 
+                                styleClass="btn-1" stylesheets="@../design/PageDesign.css" text="Lọc" />
+                                
+                        <Button fx:id="revenue_resetBtn" layoutX="610.0" layoutY="12.0" mnemonicParsing="false" 
+                                onAction="#resetRevenueFilter" prefHeight="30.0" prefWidth="100.0" 
+                                styleClass="btn-2" stylesheets="@../design/PageDesign.css" text="Đặt lại" />
+                                
+                        <Button fx:id="revenue_exportBtn" layoutX="730.0" layoutY="12.0" mnemonicParsing="false" 
+                                onAction="#exportRevenueReport" prefHeight="30.0" prefWidth="100.0" 
+                                styleClass="btn-3" stylesheets="@../design/PageDesign.css" text="Xuất báo cáo" />
+                    </children>
+                </AnchorPane>
+                
+                <!-- Thẻ tổng quan -->
+                <AnchorPane layoutX="14.0" layoutY="110.0" prefHeight="130.0" prefWidth="840.0">
+                    <children>
+                        <AnchorPane layoutX="10.0" layoutY="10.0" prefHeight="110.0" prefWidth="200.0" styleClass="bg-color-1" stylesheets="@../design/MainFormDesign.css">
+                            <children>
+                                <FontAwesomeIcon fill="WHITE" glyphName="MONEY" layoutX="20.0" layoutY="60.0" size="3em" />
+                                <Label alignment="CENTER_RIGHT" layoutX="10.0" layoutY="30.0" prefHeight="30.0" prefWidth="180.0" text="Tổng doanh thu" textFill="WHITE">
+                                    <font>
+                                        <Font size="16.0" />
+                                    </font>
+                                </Label>
+                                <Label fx:id="revenue_totalRevenue" alignment="CENTER_RIGHT" layoutX="10.0" layoutY="65.0" prefHeight="30.0" prefWidth="180.0" text="0 VNĐ" textFill="WHITE">
+                                    <font>
+                                        <Font name="System Bold" size="18.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </AnchorPane>
+                        
+                        <AnchorPane layoutX="225.0" layoutY="10.0" prefHeight="110.0" prefWidth="200.0" styleClass="bg-color-1" stylesheets="@../design/MainFormDesign.css">
+                            <children>
+                                <FontAwesomeIcon fill="WHITE" glyphName="USER_MD" layoutX="20.0" layoutY="60.0" size="3em" />
+                                <Label alignment="CENTER_RIGHT" layoutX="10.0" layoutY="30.0" prefHeight="30.0" prefWidth="180.0" text="Khám bệnh" textFill="WHITE">
+                                    <font>
+                                        <Font size="16.0" />
+                                    </font>
+                                </Label>
+                                <Label fx:id="revenue_consultationFees" alignment="CENTER_RIGHT" layoutX="10.0" layoutY="65.0" prefHeight="30.0" prefWidth="180.0" text="0 VNĐ" textFill="WHITE">
+                                    <font>
+                                        <Font name="System Bold" size="18.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </AnchorPane>
+                        
+                        <AnchorPane layoutX="440.0" layoutY="10.0" prefHeight="110.0" prefWidth="200.0" styleClass="bg-color-1" stylesheets="@../design/MainFormDesign.css">
+                            <children>
+                                <FontAwesomeIcon fill="WHITE" glyphName="MEDKIT" layoutX="20.0" layoutY="60.0" size="3em" />
+                                <Label alignment="CENTER_RIGHT" layoutX="10.0" layoutY="30.0" prefHeight="30.0" prefWidth="180.0" text="Thuốc" textFill="WHITE">
+                                    <font>
+                                        <Font size="16.0" />
+                                    </font>
+                                </Label>
+                                <Label fx:id="revenue_medicationFees" alignment="CENTER_RIGHT" layoutX="10.0" layoutY="65.0" prefHeight="30.0" prefWidth="180.0" text="0 VNĐ" textFill="WHITE">
+                                    <font>
+                                        <Font name="System Bold" size="18.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </AnchorPane>
+                        
+                        <AnchorPane layoutX="655.0" layoutY="10.0" prefHeight="110.0" prefWidth="200.0" styleClass="bg-color-1" stylesheets="@../design/MainFormDesign.css">
+                            <children>
+                                <FontAwesomeIcon fill="WHITE" glyphName="STETHOSCOPE" layoutX="20.0" layoutY="60.0" size="3em" />
+                                <Label alignment="CENTER_RIGHT" layoutX="10.0" layoutY="30.0" prefHeight="30.0" prefWidth="180.0" text="Xét nghiệm" textFill="WHITE">
+                                    <font>
+                                        <Font size="16.0" />
+                                    </font>
+                                </Label>
+                                <Label fx:id="revenue_labTestFees" alignment="CENTER_RIGHT" layoutX="10.0" layoutY="65.0" prefHeight="30.0" prefWidth="180.0" text="0 VNĐ" textFill="WHITE">
+                                    <font>
+                                        <Font name="System Bold" size="18.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </AnchorPane>
+                    </children>
+                </AnchorPane>
+            </children>
+        </AnchorPane>
+        
+        <!-- Biểu đồ và Bảng dữ liệu -->
+        <AnchorPane layoutX="9.0" layoutY="285.0" prefHeight="260.0" prefWidth="420.0" stylesheets="@../design/MainFormDesign.css"
+                    AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="9.0" AnchorPane.topAnchor="285.0">
+            <styleClass>
+                <String fx:value="white-bg" />
+                <String fx:value="shadow" />
+                <String fx:value="radius" />
+            </styleClass>
+            <children>
+                <Label layoutX="14.0" layoutY="14.0" styleClass="header-1" stylesheets="@../design/MainFormDesign.css" text="Biểu đồ doanh thu">
+                    <font>
+                        <Font size="16.0" />
+                    </font>
+                </Label>
+                
+                <BarChart fx:id="revenue_barChart" layoutX="10.0" layoutY="40.0" prefHeight="200.0" prefWidth="400.0"
+                          AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="40.0">
+                    <xAxis>
+                        <CategoryAxis side="BOTTOM" />
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis side="LEFT" />
+                    </yAxis>
+                </BarChart>
+            </children>
+        </AnchorPane>
+        
+        <AnchorPane layoutX="440.0" layoutY="285.0" prefHeight="260.0" prefWidth="437.0" stylesheets="@../design/MainFormDesign.css"
+                    AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="285.0">
+            <styleClass>
+                <String fx:value="white-bg" />
+                <String fx:value="shadow" />
+                <String fx:value="radius" />
+            </styleClass>
+            <children>
+                <Label layoutX="14.0" layoutY="14.0" styleClass="header-1" stylesheets="@../design/MainFormDesign.css" text="Chi tiết giao dịch">
+                    <font>
+                        <Font size="16.0" />
+                    </font>
+                </Label>
+                
+                <TableView fx:id="revenue_tableView" layoutX="10.0" layoutY="40.0" prefHeight="200.0" prefWidth="417.0"
+                           AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="40.0">
+                    <columns>
+                        <TableColumn fx:id="revenue_col_id" prefWidth="60.0" text="ID" />
+                        <TableColumn fx:id="revenue_col_date" prefWidth="90.0" text="Ngày" />
+                        <TableColumn fx:id="revenue_col_patientID" prefWidth="80.0" text="ID BN" />
+                        <TableColumn fx:id="revenue_col_type" prefWidth="100.0" text="Loại" />
+                        <TableColumn fx:id="revenue_col_amount" prefWidth="100.0" text="Số tiền" />
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
+                </TableView>
+            </children>
+        </AnchorPane>
+    </children>
+</AnchorPane>
 								
 							
 								
 		
 					
-					
+					<!--   REVENUE ===============================================================-->
 					
 					
 					
