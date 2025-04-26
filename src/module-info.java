@@ -9,6 +9,7 @@ module myModule {
 	requires javafx.fxml;
 	requires java.sql;
 	requires javafx.graphics;
+	requires javafx.base;
 
 	opens application to javafx.fxml, javafx.graphics;
 
