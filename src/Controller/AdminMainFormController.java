@@ -99,14 +99,7 @@ public class AdminMainFormController {
     @FXML
     private void switchForm(ActionEvent event) {
     	
-    	 if (event.getSource() == revenue_btn) {
-    	        try {
-    	            AnchorPane revenuePane = FXMLLoader.load(getClass().getResource("/View/RevenueForm.fxml"));
-    	            main_form.getChildren().setAll(revenuePane);
-    	        } catch (IOException e) {
-    	            e.printStackTrace();
-    	        }
-    	    }
+    	
         if (event.getSource() == dashboard_btn) {
             showForm("dashboard");
         } else if (event.getSource() == doctors_btn) {
@@ -118,6 +111,10 @@ public class AdminMainFormController {
         } else if (event.getSource() == profile_btn) {
             showForm("profile");
         }
+        else if (event.getSource() == revenue_btn) {
+            showForm("revenue");
+        }
+       
        
     }
 
@@ -127,6 +124,7 @@ public class AdminMainFormController {
         receptionist_form.setVisible(false);
         salary_form.setVisible(false);
         profile_form.setVisible(false);
+        revenue_form.setVisible(false);
 
         switch (formName) {
             case "dashboard":
@@ -231,6 +229,22 @@ public class AdminMainFormController {
 
         System.out.println("Revenue calculated for " + type + ": " + filterDatePicker.getValue());
     }
+    
+    
+    @FXML
+    private void filterRevenueData(ActionEvent event) {
+        // TODO: Viết code xử lý khi nhấn nút lọc revenue ở đây
+    }
+    
+    @FXML
+    private void resetRevenueFilter(ActionEvent event) {
+        // TODO: Xử lý reset bộ lọc dữ liệu doanh thu ở đây
+    }
+    @FXML
+    private void exportRevenueReport(ActionEvent event) {
+        // TODO: Viết code xuất báo cáo doanh thu ở đây
+    }
+
 
 
 
