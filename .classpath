@@ -11,26 +11,61 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="D:/Java/Fx Library/openjfx-24.0.1_windows-x64_bin-sdk/javafx-sdk-24.0.1/lib/javafx.controls.jar" sourcepath="D:/Java/Fx Library/openjfx-24.0.1_windows-x64_bin-sdk/javafx-sdk-24.0.1/lib/src.zip">
+	<classpathentry kind="lib" path="D:/openjfx-24.0.1_windows-x64_bin-sdk/lib/javafx.base.jar">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
-		<accessrules>
-			<accessrule kind="accessible" pattern="javafx/*"/>
-			<accessrule kind="discouraged" pattern="com/sun/*"/>
-			<accessrule kind="discouraged" pattern="netscape/javascript/*"/>
-		</accessrules>
 	</classpathentry>
-	<classpathentry kind="lib" path="D:/Java/Fx Library/openjfx-24.0.1_windows-x64_bin-sdk/javafx-sdk-24.0.1/lib/javafx.fxml.jar" sourcepath="D:/Java/Fx Library/openjfx-24.0.1_windows-x64_bin-sdk/javafx-sdk-24.0.1/lib/src.zip">
+	<classpathentry kind="lib" path="D:/openjfx-24.0.1_windows-x64_bin-sdk/lib/javafx.controls.jar">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
-		<accessrules>
-			<accessrule kind="accessible" pattern="javafx/*"/>
-			<accessrule kind="discouraged" pattern="com/sun/*"/>
-			<accessrule kind="discouraged" pattern="netscape/javascript/*"/>
-		</accessrules>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/MSI/Downloads/docx4j-JAXB-ReferenceImpl-11.5.2/dependencies/fontawesomefx-8.2.jar"/>
+	<classpathentry kind="lib" path="D:/openjfx-24.0.1_windows-x64_bin-sdk/lib/javafx.fxml.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="D:/openjfx-24.0.1_windows-x64_bin-sdk/lib/javafx.graphics.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="D:/openjfx-24.0.1_windows-x64_bin-sdk/lib/javafx.media.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="D:/openjfx-24.0.1_windows-x64_bin-sdk/lib/javafx.swing.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="D:/openjfx-24.0.1_windows-x64_bin-sdk/lib/javafx.web.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="D:/openjfx-24.0.1_windows-x64_bin-sdk/lib/javafx-swt.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="D:/openjfx-24.0.1_windows-x64_bin-sdk/lib/jdk.jsobject.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="D:/openjfx-24.0.1_windows-x64_bin-sdk/lib/jfx.incubator.input.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="D:/openjfx-24.0.1_windows-x64_bin-sdk/lib/jfx.incubator.richtext.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="D:/fontawesomefx-8.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
