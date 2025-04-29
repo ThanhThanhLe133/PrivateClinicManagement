@@ -1,102 +1,98 @@
-/*
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
-*/
-/* 
-    Created on : 05 28, 23, 11:20:34 AM
-    Author     : WINDOWS 10
-*/
-
-.white-bg{
-    -fx-background-color: #fff;
+.white-bg {
+    -fx-background-color: #f5f5f5;
 }
 
-.border-top{
-    -fx-border-color: #000;
-    -fx-border-width: .5px 0 .4px 0;
+.border-top {
+    -fx-border-color: #333;
+    -fx-border-width: 1px 0 1px 0;
 }
 
-.radius{
-    -fx-background-radius: 5px;
+.radius {
+    -fx-background-radius: 10px;
 }
 
-.shadow{
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 5,0,0,0);
+.shadow {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0, 0, 0);
 }
 
-.header-2{
-    -fx-border-color: linear-gradient(to bottom right, #a413a1, #64308e);
-    -fx-border-width: 0 0 0 2px;
-    -fx-padding: 0 0 0 5px;
+.header-2 {
+    -fx-border-color: linear-gradient(to right, #a413a1, #64308e);
+    -fx-border-width: 0 0 2px 0;
+    -fx-padding: 10px;
+    -fx-font-size: 16px;
+    -fx-text-fill: #fff;
 }
 
-.bg-color-2{
-    -fx-background-color: linear-gradient(to bottom right, #a413a1, #64308e);
+.bg-color-2 {
+    -fx-background-color: linear-gradient(to right, #a413a1, #64308e);
 }
 
-.nav-btn-2{
+.nav-btn-2 {
     -fx-background-color: transparent;
     -fx-border-color: #fff;
-    -fx-border-width: .5px;
+    -fx-border-width: 1px;
     -fx-text-fill: #fff;
     -fx-font-family: Arial;
     -fx-cursor: hand;
-    -fx-font-size: 13px;
-    -fx-alignment: CENTER_LEFT;
+    -fx-font-size: 14px;
+    -fx-padding: 8px;
 }
-.nav-btn-2:hover{
+
+.nav-btn-2:hover {
     -fx-background-color: #fff;
     -fx-text-fill: #000;
 }
 
-.table-view{
-    -fx-padding: 0;
-    -fx-border-radius: 8px;
-    -fx-border-color: linear-gradient(to bottom right, #a413a1, #64308e);
-}
-.table-view .column-header-background{
-    -fx-background-color: linear-gradient(to bottom right, #a413a1, #64308e);
-    -fx-background-insets: 0 0 0 0;
-    -fx-background-radius: 8px 8px 0 0 ;
-}
-.table-view .column-header, .filter{
-    -fx-size: 40px;
-    -fx-background-color: transparent;
-}
-.table-view .column-header .label{
-    -fx-font-family: Arial;
-    -fx-text-fill: #fff;
+.table-view {
+    -fx-padding: 5px;
+    -fx-border-radius: 10px;
+    -fx-border-color: linear-gradient(to right, #a413a1, #64308e);
 }
 
-.btn-2{
-    -fx-background-color: linear-gradient(to bottom right, #a413a1, #64308e);
-    -fx-cursor: hand;
+.table-view .column-header-background {
+    -fx-background-color: linear-gradient(to right, #a413a1, #64308e);
+    -fx-background-radius: 10px 10px 0 0;
+}
+
+.table-view .column-header .label {
+    -fx-font-family: Arial;
     -fx-text-fill: #fff;
     -fx-font-size: 14px;
-    -fx-font-family: Arial;
-}
-.btn-2:hover{
-    -fx-background-color: linear-gradient(to bottom right, #c512c5, #67289d);
 }
 
-.textfield-2{
-    -fx-border-color: #000;
-    -fx-border-width: .3px;
-    -fx-font-family: Tahoma;
-}
-.textfield-2:focused{
-    -fx-border-color: linear-gradient(to bottom right, #a413a1, #64308e);
-    -fx-border-width: 1px;
+.btn-2 {
+    -fx-background-color: linear-gradient(to right, #a413a1, #64308e);
+    -fx-cursor: hand;
+    -fx-text-fill: #fff;
+    -fx-font-size: 15px;
+    -fx-padding: 10px;
+    -fx-background-radius: 10px;
 }
 
-.search{
-    -fx-border-color: #000;
-    -fx-border-width: .3px;
-    -fx-font-family: Tahoma;
-    -fx-padding: 0 0 0 25px;
+.btn-2:hover {
+    -fx-background-color: linear-gradient(to right, #c512c5, #67289d);
 }
-.search:focused{
-    -fx-border-color: linear-gradient(to bottom right, #a413a1, #64308e);
+
+.textfield-2 {
+    -fx-border-color: #333;
     -fx-border-width: 1px;
+    -fx-font-family: Tahoma;
+    -fx-padding: 5px;
+}
+
+.textfield-2:focused {
+    -fx-border-color: linear-gradient(to right, #a413a1, #64308e);
+    -fx-border-width: 2px;
+}
+
+.search {
+    -fx-border-color: #333;
+    -fx-border-width: 1px;
+    -fx-padding: 5px 10px;
+    -fx-font-family: Tahoma;
+}
+
+.search:focused {
+    -fx-border-color: linear-gradient(to right, #a413a1, #64308e);
+    -fx-border-width: 2px;
 }

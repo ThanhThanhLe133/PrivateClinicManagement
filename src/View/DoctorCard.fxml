@@ -1,109 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.String?>
-<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="250.0" prefWidth="300.0" stylesheets="@../design/MainFormDesign.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="hospitalmanagementsystem.DoctorCardController">
+<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" 
+           prefHeight="250.0" prefWidth="300.0" stylesheets="@../design/MainFormDesign.css" 
+           xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" 
+           fx:controller="Controller.DoctorCardController">
    <children>
-      <VBox prefHeight="200.0" prefWidth="100.0">
+      <VBox prefHeight="250.0" prefWidth="300.0" spacing="20" alignment="CENTER" styleClass="doctor-card">
          <children>
-            <Circle fx:id="doctor_circle" fill="#374451" radius="52.0" stroke="BLACK" strokeType="INSIDE">
-               <VBox.margin>
-                  <Insets left="95.0" top="20.0" />
-               </VBox.margin>
-            </Circle>
-            <HBox prefHeight="25.0" prefWidth="300.0">
-               <children>
-                  <Label alignment="CENTER_RIGHT" prefHeight="21.0" prefWidth="152.0" text="Doctor ID:">
-                     <HBox.margin>
-                        <Insets left="10.0" right="10.0" />
-                     </HBox.margin>
-                     <font>
-                        <Font size="15.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="doctor_id" prefHeight="21.0" prefWidth="206.0" text="Label">
-                     <font>
-                        <Font size="15.0" />
-                     </font>
-                  </Label>
-               </children>
-               <VBox.margin>
-                  <Insets left="10.0" right="10.0" top="10.0" />
-               </VBox.margin>
+            <!-- Khu vực hiển thị hình ảnh bác sĩ -->
+            <StackPane alignment="CENTER">
+               <Circle fx:id="doctor_circle" fill="WHITE" radius="60.0" stroke="#374451" strokeType="INSIDE"/>
+               <ImageView fx:id="doctor_avatar" fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true">
+                  <image>
+                     <Image url="@../images/default-avatar.png"/>
+                  </image>
+               </ImageView>
+            </StackPane>
+
+            <!-- Hiển thị thông tin bác sĩ -->
+            <Label fx:id="doctor_fullName" text="Dr. Nguyễn Văn A" styleClass="doctor-name"/>
+            <Label fx:id="doctor_specialization" text="Cardiology" styleClass="doctor-specialization"/>
+
+            <!-- Thông tin chi tiết -->
+            <HBox spacing="15" alignment="CENTER">
+               <Label text="Email:" styleClass="label-title"/>
+               <Label fx:id="doctor_email" text="doctor@example.com" styleClass="label-content"/>
             </HBox>
-            <HBox layoutX="20.0" layoutY="144.0" prefHeight="25.0" prefWidth="300.0">
-               <children>
-                  <Label alignment="CENTER_RIGHT" prefHeight="21.0" prefWidth="151.0" text="Full Name:">
-                     <HBox.margin>
-                        <Insets left="10.0" right="10.0" />
-                     </HBox.margin>
-                     <font>
-                        <Font size="15.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="doctor_fullName" prefHeight="21.0" prefWidth="205.0" text="Label">
-                     <font>
-                        <Font size="15.0" />
-                     </font>
-                  </Label>
-               </children>
-               <VBox.margin>
-                  <Insets left="10.0" right="10.0" />
-               </VBox.margin>
-            </HBox>
-            <HBox layoutX="20.0" layoutY="144.0" prefHeight="25.0" prefWidth="300.0">
-               <children>
-                  <Label alignment="CENTER_RIGHT" prefHeight="21.0" prefWidth="152.0" text="Specialization">
-                     <HBox.margin>
-                        <Insets left="10.0" right="10.0" />
-                     </HBox.margin>
-                     <font>
-                        <Font size="15.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="doctor_specialization" prefHeight="21.0" prefWidth="208.0" text="Label">
-                     <font>
-                        <Font size="15.0" />
-                     </font>
-                  </Label>
-               </children>
-               <VBox.margin>
-                  <Insets left="10.0" right="10.0" />
-               </VBox.margin>
-            </HBox>
-            <HBox layoutX="20.0" layoutY="169.0" prefHeight="25.0" prefWidth="300.0">
-               <children>
-                  <Label alignment="CENTER_RIGHT" prefHeight="21.0" prefWidth="164.0" text="Email Address:">
-                     <HBox.margin>
-                        <Insets left="10.0" right="10.0" />
-                     </HBox.margin>
-                     <font>
-                        <Font size="15.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="doctor_email" prefHeight="17.0" prefWidth="222.0" text="Label">
-                     <font>
-                        <Font size="15.0" />
-                     </font>
-                  </Label>
-               </children>
-               <VBox.margin>
-                  <Insets left="10.0" right="10.0" />
-               </VBox.margin>
-            </HBox>
+
+            <!-- Nút xem chi tiết -->
+            <Button fx:id="view_details_btn" text="View Details" onAction="#openDoctorPage" styleClass="view-details-btn"/>
          </children>
       </VBox>
    </children>
-   <styleClass>
-      <String fx:value="white-bg" />
-      <String fx:value="radius" />
-      <String fx:value="shadow" />
-   </styleClass>
 </StackPane>
