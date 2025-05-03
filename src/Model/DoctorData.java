@@ -13,42 +13,28 @@ import java.sql.Date;
  * @author WINDOWS 10
  */
 public class DoctorData {
+    private String doctorId, username, name, gender, phone, email, specialized, address, password;
 
-	private String doctorId; // CHAR(36) PRIMARY KEY
-	private String phone; // VARCHAR(50)
-	private String specialized; // TEXT
-	private String address; // TEXT
-	public DoctorData(String doctorId, String phone, String specialized, String address) {
-		super();
-		this.doctorId = doctorId;
-		this.phone = phone;
-		this.specialized = specialized;
-		this.address = address;
-	}
-	public String getDoctorId() {
-		return doctorId;
-	}
-	public String getPhone() {
-		return phone;
-	}
-	public String getSpecialized() {
-		return specialized;
-	}
-	public String getAddress() {
-		return address;
-	}
+    public DoctorData(String doctorId, String username, String name, String gender, String phone, String email,
+                      String specialized, String address, String password) {
+        this.doctorId = doctorId;
+        this.username = username;
+        this.name = name;
+        this.gender = gender;
+        this.phone = phone;
+        this.email = email;
+        this.specialized = specialized;
+        this.address = address;
+        this.password = password;
+    }
 
-	
-
-//	public DoctorData(Integer id, String doctorID, String fullName, String specialized, String email, String image) {
-//		this.id = id;
-//		this.doctorID = doctorID;
-//		this.fullName = fullName;
-//		this.specialized = specialized;
-//		this.email = email;
-//		this.image = image;
-//	}
-
-
-
+    public String getDoctorId() { return doctorId; }
+    public String getName() { return name; }
+    public String getGender() { return gender; }
+    public String getPhone() { return phone; }
+    public String getEmail() { return email; }
+    public String getSpecialized() { return specialized; }
+    public String getAddress() { return address; }
+    public String getPassword() { return password; }
+    public String getUsername() { return username; }
 }
