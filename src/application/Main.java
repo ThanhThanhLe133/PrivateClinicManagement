@@ -11,7 +11,7 @@ import javafx.scene.layout.BorderPane;
 public class Main extends Application {
 	 @Override
 	    public void start(Stage stage) throws Exception {
-	        Parent root = FXMLLoader.load(getClass().getResource("/View/AdminMainForm.fxml"));
+	        Parent root = FXMLLoader.load(getClass().getResource("/View/Login.fxml"));
 	        
 	        Scene scene = new Scene(root);
 	        

@@ -10,15 +10,19 @@ module myModule {
 	requires java.sql;
 	requires javafx.graphics;
 	requires javafx.base;
+	requires mysql.connector.j;
+	requires jakarta.mail;
 
 	opens application to javafx.fxml, javafx.graphics;
-
+	opens Alert to javafx.fxml;
+	opens Controller to javafx.fxml;
+	opens DAO to javafx.fxml;
+	opens Model to javafx.fxml;
 	
 
-	opens Alert to javafx.fxml, javafx.graphics;
-	opens Controller to javafx.fxml, javafx.graphics;
-	opens DAO to javafx.fxml, javafx.graphics;
-	opens Model to javafx.fxml, javafx.graphics;
-	
-	exports application; // <-- Dòng này để JavaFX truy cập được class Main
+	exports application;
+	exports Controller;
+	exports DAO;
+	exports Model;
+	exports Alert; // <-- Dòng này để JavaFX truy cập được class Main
 }

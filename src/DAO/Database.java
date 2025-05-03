@@ -17,12 +17,13 @@ public class Database {
     public static Connection connectDB() {
 
         try {
-
-            Class.forName("com.mysql.jdbc.Driver");
-
-            Connection connect
-                    = DriverManager.getConnection("jdbc:mysql://localhost/clinic", "root", ""); // root IS OUR DEFAULT USERNAME AND EMPTY OR NULL OR BLANK TO OUR PASSWORD
+        	Class.forName("com.mysql.cj.jdbc.Driver");
+        	String url = "jdbc:mysql://localhost:3306/clinic?useSSL=false&serverTimezone=UTC";
+            String user = "root";
+            String password = ""; 
+            Connection connect = DriverManager.getConnection(url, user, password);
             return connect;
+            
         } catch (Exception e) {
             e.printStackTrace();
         }

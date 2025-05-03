@@ -18,7 +18,7 @@
    <children>
       <AnchorPane fx:id="main_form" prefHeight="200.0" prefWidth="200.0">
          <children>
-            <AnchorPane fx:id="login_form" layoutX="48.0" layoutY="75.0" prefHeight="550.0" prefWidth="330.0" styleClass="white-bg" stylesheets="@../design/PageDesign.css" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <AnchorPane fx:id="login_form" layoutX="48.0" layoutY="75.0" prefHeight="550.0" prefWidth="330.0" styleClass="white-bg" stylesheets="@../design/PageDesign.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                <children>
                   <Label alignment="CENTER" layoutX="97.0" layoutY="119.0" prefHeight="46.0" prefWidth="135.0" styleClass="labelLogin" stylesheets="@../design/PageDesign.css" text="Login" textFill="#00b4d8">
                      <font>
@@ -37,7 +37,7 @@
                         <String fx:value="white-bg" />
                      </styleClass>
                   </PasswordField>
-                  <TextField fx:id="login_showPassword" layoutX="39.0" layoutY="213.0" prefHeight="30.0" prefWidth="250.0" promptText="Password" stylesheets="@../design/PageDesign.css" visible="false">
+                  <TextField fx:id="login_showPassword" layoutX="37.0" layoutY="278.0" prefHeight="40.0" prefWidth="250.0" stylesheets="@../design/PageDesign.css" visible="false">
                      <styleClass>
                         <String fx:value="textfield-1" />
                         <String fx:value="white-bg" />
@@ -50,24 +50,25 @@
                         <String fx:value="radius" />
                      </styleClass>
                   </Button>
-                  <ComboBox fx:id="login_user" layoutX="90.0" layoutY="465.0" prefHeight="30.0" prefWidth="150.0" promptText="Select User" stylesheets="@../design/PageDesign.css">
+                  <ComboBox fx:id="login_user" layoutX="90.0" layoutY="431.0" prefHeight="30.0" prefWidth="150.0" promptText="Select User" stylesheets="@../design/PageDesign.css">
                      <styleClass>
                         <String fx:value="textfield-1" />
                         <String fx:value="white-bg" />
                      </styleClass>
                   </ComboBox>
-                  <Label layoutX="68.0" layoutY="516.0" text="Have no account yet?" />
-                  <Hyperlink fx:id="login_registerHere" layoutX="206.0" layoutY="513.0" onAction="#switchForm" text="Register here" />
+                  <Label layoutX="56.0" layoutY="482.0" text="Have no account yet?" />
+                  <Hyperlink fx:id="login_registerHere" layoutX="194.0" layoutY="479.0" onAction="#switchForm" text="Register here" />
                   <ImageView fx:id="logo" fitHeight="105.0" fitWidth="105.0" layoutX="206.0" layoutY="8.0" pickOnBounds="true" preserveRatio="true">
                      <image>
                         <Image url="@../application/logo.png" />
                      </image>
                   </ImageView>
+                  <Hyperlink fx:id="forgot_pass" layoutX="113.0" layoutY="512.0" onAction="#switchForgotPass" text="Forgot password?" />
                </children>
             </AnchorPane>
-            <AnchorPane fx:id="register_form" layoutX="10.0" layoutY="10.0" prefHeight="550.0" prefWidth="330.0" styleClass="white-bg" stylesheets="@../design/PageDesign.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <AnchorPane fx:id="register_form" layoutX="10.0" layoutY="10.0" prefHeight="550.0" prefWidth="330.0" styleClass="white-bg" stylesheets="@../design/PageDesign.css" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                <children>
-                  <Label layoutX="80.0" layoutY="119.0" styleClass="labelLogin" stylesheets="@../design/PageDesign.css" text="Register" textFill="#00b4d8">
+                  <Label layoutX="87.0" layoutY="119.0" styleClass="labelLogin" stylesheets="@../design/PageDesign.css" text="Sign Up" textFill="#00b4d8">
                      <font>
                         <Font name="Calibri Bold" size="50.0" />
                      </font>
@@ -90,7 +91,7 @@
                         <String fx:value="white-bg" />
                      </styleClass>
                   </PasswordField>
-                  <TextField fx:id="register_showPassword" layoutX="40.0" layoutY="263.0" prefHeight="30.0" prefWidth="250.0" promptText="Password" stylesheets="@../design/PageDesign.css" visible="false">
+                   <TextField fx:id="register_showPassword" layoutX="40.0" layoutY="318.0" prefHeight="40.0" prefWidth="250.0" stylesheets="@../design/PageDesign.css" visible="false">
                      <styleClass>
                         <String fx:value="textfield-1" />
                         <String fx:value="white-bg" />
@@ -116,6 +117,7 @@
                         <String fx:value="white-bg" />
                      </styleClass>
                   </ComboBox>
+                 
                </children>
             </AnchorPane>
          </children>

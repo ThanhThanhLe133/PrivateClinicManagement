@@ -5,6 +5,7 @@
  */
 package Controller;
 
+import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -96,9 +97,11 @@ public class LoginController implements Initializable {
 
 	@FXML
 	private Button register_signupBtn;
-
 	@FXML
 	private Hyperlink register_loginHere;
+
+	@FXML
+	private Hyperlink forgot_pass;
 
 //    DATABASE TOOLS
 	private Connection connect;
@@ -106,8 +109,8 @@ public class LoginController implements Initializable {
 	private ResultSet result;
 
 	private AlertMessage alert = new AlertMessage();
-	
-    @FXML
+
+	@FXML
 	public void loginAccount() {
 		String username = login_username.getText();
 		String password = login_password.getText();
@@ -145,54 +148,54 @@ public class LoginController implements Initializable {
 			prepare.setString(3, selectedRole.toUpperCase());
 
 			result = prepare.executeQuery();
-	
+
 			if (result.next()) {
 				// Kiểm tra nếu là role DOCTOR hoặc RECEPTIONIST
-                if (selectedRole.equalsIgnoreCase("DOCTOR") || selectedRole.equalsIgnoreCase("RECEPTIONIST")) {
-                	 String checkConfirmSQL = "";
-                     if (selectedRole.equalsIgnoreCase("DOCTOR")) {
-                         checkConfirmSQL = "SELECT is_confirmed FROM doctor WHERE doctor_id = ?";
-                     } else if (selectedRole.equalsIgnoreCase("RECEPTIONIST")) {
-                         checkConfirmSQL = "SELECT is_confirmed FROM receptionist WHERE receptionist_id = ?";
-                     }
-                     
-                     PreparedStatement confirmStmt = connect.prepareStatement(checkConfirmSQL);
-                     confirmStmt.setString(1, result.getString("id")); 
-                     ResultSet confirmResult = confirmStmt.executeQuery();
-                     
-                     if (confirmResult.next()) {
-                         boolean isConfirmed = confirmResult.getBoolean("is_confirmed");
-                         if (!isConfirmed) {
-                             alert.errorMessage("Your account has not been confirmed by the admin.");
-                             return;
-                         }
-                     }
-                }
+				if (selectedRole.equalsIgnoreCase("DOCTOR") || selectedRole.equalsIgnoreCase("RECEPTIONIST")) {
+					String checkConfirmSQL = "";
+					if (selectedRole.equalsIgnoreCase("DOCTOR")) {
+						checkConfirmSQL = "SELECT is_confirmed FROM doctor WHERE doctor_id = ?";
+					} else if (selectedRole.equalsIgnoreCase("RECEPTIONIST")) {
+						checkConfirmSQL = "SELECT is_confirmed FROM receptionist WHERE receptionist_id = ?";
+					}
+
+					PreparedStatement confirmStmt = connect.prepareStatement(checkConfirmSQL);
+					confirmStmt.setString(1, result.getString("id"));
+					ResultSet confirmResult = confirmStmt.executeQuery();
+
+					if (confirmResult.next()) {
+						boolean isConfirmed = confirmResult.getBoolean("is_confirmed");
+						if (!isConfirmed) {
+							alert.errorMessage("Your account has not been confirmed by the admin.");
+							return;
+						}
+					}
+				}
 				// Lưu thông tin người dùng
 				Data.user_username = username;
-				Data.user_id = result.getString("id"); 
+				Data.user_id = result.getString("id");
 
 				alert.successMessage("Login Successfully!");
-				
-				 // Cập nhật trạng thái is_active thành true sau khi đăng nhập thành công
-                String updateStatusSQL = "UPDATE user_account SET is_active = ? WHERE id = ?";
-                PreparedStatement updateStmt = connect.prepareStatement(updateStatusSQL);
-                updateStmt.setBoolean(1, true); 
-                updateStmt.setString(2, result.getString("id"));
-                int rowsAffected = updateStmt.executeUpdate();
 
-                if (rowsAffected > 0) {
-                    System.out.println("User status updated to active.");
-                } else {
-                    alert.errorMessage("Failed to update user status.");
-                    return;
-                }
+				// Cập nhật trạng thái is_active thành true sau khi đăng nhập thành công
+				String updateStatusSQL = "UPDATE user_account SET is_active = ? WHERE id = ?";
+				PreparedStatement updateStmt = connect.prepareStatement(updateStatusSQL);
+				updateStmt.setBoolean(1, true);
+				updateStmt.setString(2, result.getString("id"));
+				int rowsAffected = updateStmt.executeUpdate();
+
+				if (rowsAffected > 0) {
+					System.out.println("User status updated to active.");
+				} else {
+					alert.errorMessage("Failed to update user status.");
+					return;
+				}
 
 				// Load Main Form tuỳ theo Role
 				String fxmlFile = switch (selectedRole.toUpperCase()) {
-				case "ADMIN" -> "AdminMainForm.fxml";
-				case "DOCTOR" -> "DoctorMainForm.fxml";
-				case "RECEPTIONIST" -> "ReceptionistMainForm.fxml";
+				case "ADMIN" -> "/View/AdminMainForm.fxml";
+				case "DOCTOR" -> "/View/DoctorMainForm.fxml";
+				case "RECEPTIONIST" -> "/View/ReceptionistMainForm.fxml";
 				default -> null;
 				};
 
@@ -213,11 +216,11 @@ public class LoginController implements Initializable {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			alert.errorMessage("Something went wrong during login.");
+			alert.errorMessage(e.toString());
 		}
 	}
 
-    @FXML
+	@FXML
 	public void registerAccount() {
 
 		String email = register_email.getText();
@@ -234,6 +237,11 @@ public class LoginController implements Initializable {
 			alert.errorMessage("Please select a role.");
 			return;
 		}
+		// Kiểm tra định dạng email bằng regex
+		if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+			alert.errorMessage("Invalid email format.");
+			return;
+		}
 
 		// Đồng bộ password và showPassword
 		if (!register_showPassword.isVisible()) {
@@ -247,9 +255,9 @@ public class LoginController implements Initializable {
 			}
 		}
 
-		// Kiểm tra độ dài mật khẩu
-		if (password.length() < 8) {
-			alert.errorMessage("Password must be at least 8 characters.");
+		// Kiểm tra độ dài và độ mạnh của mật khẩu
+		if (password.length() < 8 || !password.matches(".*[A-Z].*") || !password.matches(".*[0-9].*")) {
+			alert.errorMessage("Password must be at least 8 characters and include a number and an uppercase letter.");
 			return;
 		}
 
@@ -302,19 +310,20 @@ public class LoginController implements Initializable {
 
 		} catch (Exception e) {
 			e.printStackTrace();
+			alert.errorMessage(e.toString());
 		}
 
 	}
 
-    @FXML
+	@FXML
 	public void registerClear() {
 		register_email.clear();
 		register_username.clear();
 		register_password.clear();
 		register_showPassword.clear();
 	}
-    
-    @FXML
+
+	@FXML
 	public void loginShowPassword() {
 
 		if (login_checkBox.isSelected()) {
@@ -328,8 +337,8 @@ public class LoginController implements Initializable {
 		}
 
 	}
-    
-    @FXML
+
+	@FXML
 	public void registerShowPassword() {
 
 		if (register_checkBox.isSelected()) {
@@ -344,7 +353,7 @@ public class LoginController implements Initializable {
 
 	}
 
-    @FXML
+	@FXML
 	public void userList() {
 		// Đổ dữ liệu cho login_user ComboBox
 		List<String> listU = new ArrayList<>();
@@ -374,10 +383,21 @@ public class LoginController implements Initializable {
 
 	}
 
-	// NOW, LETS CREATE OUR DATABASE FOR OUR USERS
+	public void switchForgotPass(ActionEvent event) throws IOException {
+		Parent root = FXMLLoader.load(getClass().getResource("/View/ForgotPass.fxml"));
+		Stage stage = new Stage();
+		stage.setMinWidth(340);
+		stage.setMinHeight(580);
+		stage.setTitle("Forgot Password");
+		stage.setScene(new Scene(root));
+		stage.show();
+
+		Stage currentStage = (Stage) login_loginBtn.getScene().getWindow(); // Get the current window (login screen)
+		currentStage.hide();
+	}
+
 	@Override
 	public void initialize(URL url, ResourceBundle rb) {
 		userList();
 	}
-
 }
