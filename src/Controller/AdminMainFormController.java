@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import Alert.AlertMessage;
+import DAO.Database;
 import Model.Data;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -42,7 +44,7 @@ public class AdminMainFormController {
 
 	// Left panel
 	@FXML
-	private Label nav_adminID, nav_username;
+	private Label name_adminDB, username_adminDB;
 
 	@FXML
 	private Button dashboard_btn, doctors_btn, receptionist_btn, salary_btn, revenue_btn, profile_btn;
@@ -54,6 +56,8 @@ public class AdminMainFormController {
 	private AnchorPane revenue_form;
 	@FXML
 	private Circle profile_circle;
+	@FXML
+	private TextField txt_name_admin, txt_username_admin, txt_email_admin;
 
 	// Salary Form
 	@FXML
@@ -72,7 +76,7 @@ public class AdminMainFormController {
 	@FXML
 	private Button salary_paySalaryBtn;
 	@FXML
-    private Button profile_importBtn;
+	private Button profile_importBtn;
 
 	@FXML
 	private ComboBox<String> filterTypeComboBox;
@@ -81,6 +85,11 @@ public class AdminMainFormController {
 	@FXML
 	private Label totalRevenueLabel, totalCostLabel, netProfitLabel;
 
+	@FXML
+	private Label name_admin, username_admin, email_admin, gender_admin, createdDate_admin;
+
+	@FXML
+	private ComboBox<String> gender_cb;
 //  DATABASE TOOLS
 	private Connection connect;
 	private PreparedStatement prepare;
@@ -91,11 +100,60 @@ public class AdminMainFormController {
 
 	private Image image;
 
+	// load data admin
+	private String username;
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	private void loadAdminProfile() {
+		String checkUserSQL = "SELECT name, username, email, gender, created_at FROM user_account WHERE username = ?";
+		Connection connect = Database.connectDB();
+
+		try {
+			PreparedStatement prepare = connect.prepareStatement(checkUserSQL);
+			prepare.setString(1, username);
+
+			ResultSet result = prepare.executeQuery();
+
+			if (!result.next() || result.getInt(1) <= 0) {
+				alert.errorMessage("Email does not exist.");
+				return;
+			}
+			String name = result.getString("name");
+			String username = result.getString("username");
+			String email = result.getString("email");
+			String gender = result.getString("gender");
+			String createdAt = result.getString("created_at");
+
+			// Gán cho các Label
+			name_adminDB.setText(name != null ? name : "UNKNOWN");
+			username_admin.setText(username != null ? username : "");
+			name_admin.setText(name != null ? name : "UNKNOWN");
+			username_adminDB.setText(username != null ? username : "");
+			email_admin.setText(email != null ? email : "");
+			gender_admin.setText(gender != null ? gender : "");
+			createdDate_admin.setText(createdAt != null ? createdAt : "");
+
+			// Gán cho các TextField (nếu có)
+			txt_name_admin.setText(name != null ? name : "");
+			txt_username_admin.setText(username != null ? username : "");
+			txt_email_admin.setText(email != null ? email : "");
+			gender_cb.setValue(gender != null ? gender : "");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
 	@FXML
 	public void initialize() {
+		loadAdminProfile();
 		showForm("dashboard");
-
-		// Nếu salary_tableView tồn tại thì load dữ liệu mẫu
+		
+		ObservableList<String> genderOptions = FXCollections.observableArrayList("Male", "Female");
+		gender_cb.setItems(genderOptions); // Nếu salary_tableView tồn tại thì load dữ liệu mẫu
+		
 		if (salary_tableView != null) {
 			loadSampleSalaryData();
 		}
@@ -173,6 +231,59 @@ public class AdminMainFormController {
 		}
 	}
 
+	//update thông tin admin
+	@FXML
+	private void profileUpdateBtn(ActionEvent event) {
+		String name = txt_name_admin.getText();
+		String username = txt_username_admin.getText();
+		String gender = (String) gender_cb.getSelectionModel().getSelectedItem();
+		
+		if (username.isEmpty() || name.isEmpty()) {
+			alert.errorMessage("Please fill in all the fields.");
+			return;
+		}
+		if (gender == null || gender.isEmpty()) {
+	        alert.errorMessage("Please select a gender.");
+	        return;
+	    }
+		String checkUsernameSQL = "SELECT * FROM user_account WHERE username = ?";
+		String updateUser = "UPDATE user_account SET name = ?, username = ?, gender = ? WHERE email = ?";
+	    
+	    connect = Database.connectDB();
+
+	    try {
+	    	//kt username đã tồn tại chưa
+	    	prepare = connect.prepareStatement(checkUsernameSQL);
+			prepare.setString(1, username);
+			result = prepare.executeQuery();
+
+			if (result.next()) {
+				alert.errorMessage(username + " already exists!");
+				return;
+			}
+			
+			//nếu username chưa tồn tại
+	        prepare = connect.prepareStatement(updateUser);
+	        prepare.setString(1, name);
+	        prepare.setString(2, username);
+	        prepare.setString(3, gender);
+	        prepare.setString(4, email_admin.getText());
+
+	        int rowsUpdated = prepare.executeUpdate();
+
+	        if (rowsUpdated > 0) {
+	            alert.successMessage("Profile updated successfully.");
+	            loadAdminProfile();
+	        } else {
+	            alert.errorMessage("No user found.");
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        alert.errorMessage("Error updating profile: " + e.getMessage());
+	    }
+	}
+
 	@FXML
 	private void paySalaryAction() {
 		TableRow selectedRow = salary_tableView.getSelectionModel().getSelectedItem();
@@ -245,11 +356,6 @@ public class AdminMainFormController {
 			image = new Image(file.toURI().toString(), 137, 95, false, true);
 			profile_circle.setFill(new ImagePattern(image));
 		}
-	}
-
-	@FXML
-	private void profileUpdateBtn(ActionEvent event) {
-		System.out.println("Cập nhật thông tin hồ sơ nhân viên...");
 	}
 
 	@FXML
