@@ -1,19 +1,17 @@
 package Controller;
-
 import Model.DoctorData;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import DAO.Database;
 
-public class EditDoctorFormController {
-    @FXML private TextField doctorIdField;
+public class AddDoctorFormController {
     @FXML private TextField nameField;
     @FXML private TextField usernameField;
     @FXML private ComboBox<String> genderComboBox;
@@ -23,9 +21,6 @@ public class EditDoctorFormController {
     @FXML private TextField addressField;
     @FXML private PasswordField passwordField;
     @FXML private PasswordField confirmPasswordField;
-    @FXML private CheckBox changePasswordCheckbox;
-    @FXML private VBox passwordContainer;
-    @FXML private VBox confirmPasswordContainer;
     
     // Error labels
     @FXML private Label nameError;
@@ -42,9 +37,6 @@ public class EditDoctorFormController {
     private final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
     private final Pattern PHONE_PATTERN = Pattern.compile("^\\d{10,15}$");
     private final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{3,20}$");
-    
-    // Original username to check if it was changed
-    private String originalUsername;
     
     @FXML
     private void initialize() {
@@ -78,40 +70,8 @@ public class EditDoctorFormController {
             "Family Medicine"
         );
         
-        // Toggle password fields visibility based on checkbox
-        changePasswordCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            passwordContainer.setVisible(newValue);
-            passwordContainer.setManaged(newValue);
-            confirmPasswordContainer.setVisible(newValue);
-            confirmPasswordContainer.setManaged(newValue);
-            
-            // Clear password fields when unchecked
-            if (!newValue) {
-                passwordField.clear();
-                confirmPasswordField.clear();
-                passwordError.setVisible(false);
-                confirmPasswordError.setVisible(false);
-            }
-        });
-        
         // Add focus listeners for real-time validation
         setupValidationListeners();
-    }
-    
-    // Method to set doctor data in the form
-    public void setDoctorData(DoctorData doctor) {
-        doctorIdField.setText(doctor.getDoctorId());
-        nameField.setText(doctor.getName());
-        usernameField.setText(doctor.getUsername());
-        originalUsername = doctor.getUsername();
-        genderComboBox.setValue(doctor.getGender());
-        phoneField.setText(doctor.getPhone());
-        emailField.setText(doctor.getEmail());
-        specializedComboBox.setValue(doctor.getSpecialized());
-        addressField.setText(doctor.getAddress());
-        
-        // Password is not displayed for security reasons
-        changePasswordCheckbox.setSelected(false);
     }
     
     private void setupValidationListeners() {
@@ -158,7 +118,7 @@ public class EditDoctorFormController {
     }
     
     @FXML
-    private void handleSaveDoctor() {
+    private void handleAddDoctor() {
         // Reset all error messages
         hideAllErrors();
         
@@ -168,51 +128,38 @@ public class EditDoctorFormController {
         }
         
         try {
+            String id = UUID.randomUUID().toString();
             Connection conn = Database.connectDB();
-            PreparedStatement ps;
             
-            if (changePasswordCheckbox.isSelected()) {
-                // Update with new password
-                String sql = "UPDATE DOCTOR SET Username = ?, Password = ?, Name = ?, Email = ?, Gender = ?, Phone = ?, Specialized = ?, Address = ? WHERE Id = ?";
-                ps = conn.prepareStatement(sql);
-                ps.setString(1, usernameField.getText().trim());
-                ps.setString(2, passwordField.getText());
-                ps.setString(3, nameField.getText().trim());
-                ps.setString(4, emailField.getText().trim());
-                ps.setString(5, genderComboBox.getValue());
-                ps.setString(6, phoneField.getText().trim());
-                ps.setString(7, specializedComboBox.getValue());
-                ps.setString(8, addressField.getText().trim());
-                ps.setString(9, doctorIdField.getText());
-            } else {
-                // Update without changing password
-                String sql = "UPDATE DOCTOR SET Username = ?, Name = ?, Email = ?, Gender = ?, Phone = ?, Specialized = ?, Address = ? WHERE Id = ?";
-                ps = conn.prepareStatement(sql);
-                ps.setString(1, usernameField.getText().trim());
-                ps.setString(2, nameField.getText().trim());
-                ps.setString(3, emailField.getText().trim());
-                ps.setString(4, genderComboBox.getValue());
-                ps.setString(5, phoneField.getText().trim());
-                ps.setString(6, specializedComboBox.getValue());
-                ps.setString(7, addressField.getText().trim());
-                ps.setString(8, doctorIdField.getText());
+            String sql = "INSERT INTO DOCTOR (Id, Username, Password, Name, Email, Gender, Phone, Specialized, Address, Is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, id);
+                ps.setString(2, usernameField.getText().trim());
+                ps.setString(3, passwordField.getText());
+                ps.setString(4, nameField.getText().trim());
+                ps.setString(5, emailField.getText().trim());
+                ps.setString(6, genderComboBox.getValue());
+                ps.setString(7, phoneField.getText().trim());
+                ps.setString(8, specializedComboBox.getValue());
+                ps.setString(9, addressField.getText().trim());
+                ps.setBoolean(10, true);
+                
+                ps.executeUpdate();
+                
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Success");
+                alert.setHeaderText(null);
+                alert.setContentText("Doctor added successfully!");
+                alert.showAndWait();
+                
+                closeForm();
             }
             
-            ps.executeUpdate();
-            ps.close();
             conn.close();
-            
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Success");
-            alert.setHeaderText(null);
-            alert.setContentText("Doctor information updated successfully!");
-            alert.showAndWait();
-            
-            closeForm();
-            
         } catch (SQLException e) {
             e.printStackTrace();
-            String errorMessage = e.getMessage().toLowerCase();
+            String errorMessage = e.getMessage();
             
             // Check for specific database errors
             if (errorMessage.contains("unique") || errorMessage.contains("duplicate")) {
@@ -244,11 +191,8 @@ public class EditDoctorFormController {
         emailError.setVisible(false);
         specializedError.setVisible(false);
         addressError.setVisible(false);
-        
-        if (changePasswordCheckbox.isSelected()) {
-            passwordError.setVisible(false);
-            confirmPasswordError.setVisible(false);
-        }
+        passwordError.setVisible(false);
+        confirmPasswordError.setVisible(false);
     }
     
     private boolean validateAllFields() {
@@ -315,30 +259,28 @@ public class EditDoctorFormController {
             isValid = false;
         }
         
-        // Password validation only if change password is checked
-        if (changePasswordCheckbox.isSelected()) {
-            String password = passwordField.getText();
-            if (password.isEmpty()) {
-                passwordError.setText("Please enter a password");
-                passwordError.setVisible(true);
-                isValid = false;
-            } else if (password.length() < 6) {
-                passwordError.setText("Password must be at least 6 characters");
-                passwordError.setVisible(true);
-                isValid = false;
-            }
-            
-            // Confirm password validation
-            String confirmPassword = confirmPasswordField.getText();
-            if (confirmPassword.isEmpty()) {
-                confirmPasswordError.setText("Please confirm your password");
-                confirmPasswordError.setVisible(true);
-                isValid = false;
-            } else if (!confirmPassword.equals(password)) {
-                confirmPasswordError.setText("Passwords do not match");
-                confirmPasswordError.setVisible(true);
-                isValid = false;
-            }
+        // Password validation
+        String password = passwordField.getText();
+        if (password.isEmpty()) {
+            passwordError.setText("Please enter a password");
+            passwordError.setVisible(true);
+            isValid = false;
+        } else if (password.length() < 6) {
+            passwordError.setText("Password must be at least 6 characters");
+            passwordError.setVisible(true);
+            isValid = false;
+        }
+        
+        // Confirm password validation
+        String confirmPassword = confirmPasswordField.getText();
+        if (confirmPassword.isEmpty()) {
+            confirmPasswordError.setText("Please confirm your password");
+            confirmPasswordError.setVisible(true);
+            isValid = false;
+        } else if (!confirmPassword.equals(password)) {
+            confirmPasswordError.setText("Passwords do not match");
+            confirmPasswordError.setVisible(true);
+            isValid = false;
         }
         
         return isValid;
@@ -350,7 +292,7 @@ public class EditDoctorFormController {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Confirm");
         alert.setHeaderText(null);
-        alert.setContentText("Are you sure you want to cancel? Any unsaved changes will be lost.");
+        alert.setContentText("Are you sure you want to cancel? Any unsaved information will be lost.");
         
         if (alert.showAndWait().get() == ButtonType.OK) {
             closeForm();
