@@ -6,7 +6,7 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<AnchorPane fx:controller="Controller.EditDoctorFormController"
+<AnchorPane fx:controller="Controller.AddDoctorFormController"
             xmlns:fx="http://javafx.com/fxml" 
             prefWidth="600" prefHeight="500"
             style="-fx-background-color: white;">
@@ -15,7 +15,7 @@
     <VBox AnchorPane.topAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
           style="-fx-background-color: #1E88A8;">
         <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 15;">
-            <Text fill="WHITE" text="Edit Doctor" style="-fx-font-weight: bold;">
+            <Text fill="WHITE" text="Add New Doctor" style="-fx-font-weight: bold;">
                 <font>
                     <Font size="18.0" />
                 </font>
@@ -28,9 +28,6 @@
                 AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
                 style="-fx-background-color: transparent; -fx-border-color: transparent;" fitToWidth="true">
         <VBox spacing="15" style="-fx-padding: 20 30 20 30;">
-            
-            <!-- Doctor ID (Hidden) -->
-            <TextField fx:id="doctorIdField" visible="false" />
             
             <!-- Name Field -->
             <VBox spacing="5">
@@ -95,27 +92,19 @@
                        text="Please enter an address"/>
             </VBox>
             
-            <!-- Password Section -->
+            <!-- Password Field -->
             <VBox spacing="5">
-                <HBox spacing="5" alignment="CENTER_LEFT">
-                    <Label text="Change Password" style="-fx-text-fill: #555555;"/>
-                    <CheckBox fx:id="changePasswordCheckbox" />
-                </HBox>
-            </VBox>
-            
-            <!-- Password Field (only shown if change password is checked) -->
-            <VBox spacing="5" fx:id="passwordContainer" visible="false" managed="false">
-                <Label text="New Password *" style="-fx-text-fill: #555555;"/>
-                <PasswordField fx:id="passwordField" promptText="Enter new password" 
+                <Label text="Password *" style="-fx-text-fill: #555555;"/>
+                <PasswordField fx:id="passwordField" promptText="Enter password" 
                            style="-fx-background-radius: 4; -fx-border-radius: 4;"/>
                 <Label fx:id="passwordError" style="-fx-text-fill: red; -fx-font-size: 11;" visible="false" 
                        text="Password must be at least 6 characters"/>
             </VBox>
             
-            <!-- Confirm Password Field (only shown if change password is checked) -->
-            <VBox spacing="5" fx:id="confirmPasswordContainer" visible="false" managed="false">
-                <Label text="Confirm New Password *" style="-fx-text-fill: #555555;"/>
-                <PasswordField fx:id="confirmPasswordField" promptText="Confirm new password" 
+            <!-- Confirm Password Field -->
+            <VBox spacing="5">
+                <Label text="Confirm Password *" style="-fx-text-fill: #555555;"/>
+                <PasswordField fx:id="confirmPasswordField" promptText="Confirm password" 
                            style="-fx-background-radius: 4; -fx-border-radius: 4;"/>
                 <Label fx:id="confirmPasswordError" style="-fx-text-fill: red; -fx-font-size: 11;" visible="false" 
                        text="Passwords do not match"/>
@@ -129,8 +118,8 @@
         <Button fx:id="cancelButton" text="Cancel" 
                 style="-fx-background-color: #f2f2f2; -fx-text-fill: #555555; -fx-background-radius: 4;" 
                 prefWidth="100" onAction="#handleCancel"/>
-        <Button fx:id="saveButton" text="Save Changes" 
+        <Button fx:id="addButton" text="Add Doctor" 
                 style="-fx-background-color: #1E88A8; -fx-text-fill: white; -fx-background-radius: 4;" 
-                prefWidth="120" onAction="#handleSaveDoctor"/>
+                prefWidth="120" onAction="#handleAddDoctor"/>
     </HBox>
 </AnchorPane>
