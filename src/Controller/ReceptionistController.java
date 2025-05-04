@@ -6,6 +6,8 @@
 package Controller;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +16,7 @@ import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -61,200 +64,255 @@ import javafx.stage.Stage;
  *
  * @author WINDOWS 10
  */
-public class PatientMainFormController implements Initializable {
+public class ReceptionistController implements Initializable {
 
-    @FXML
-    private AnchorPane main_form;
+	@FXML
+	private AnchorPane main_form;
 
-    @FXML
-    private Circle top_profile;
+	@FXML
+	private Circle top_profile;
 
-    @FXML
-    private Label top_username;
+	@FXML
+	private Label top_username;
 
-    @FXML
-    private Label date_time;
+	@FXML
+	private Label date_time;
 
-    @FXML
-    private Label current_form;
+	@FXML
+	private Label current_form;
 
-    @FXML
-    private Button logout_btn;
+	@FXML
+	private Button logout_btn;
 
-    @FXML
-    private Label nav_adminID;
+	@FXML
+	private Button dashboard_btn;
 
-    @FXML
-    private Button dashboard_btn;
+	@FXML
+	private Button doctors_btn;
 
-    @FXML
-    private Button doctors_btn;
+	@FXML
+	private Button appointments_btn;
 
-    @FXML
-    private Button appointments_btn;
+	@FXML
+	private Button profile_btn;
 
-    @FXML
-    private Button profile_btn;
+	@FXML
+	private AnchorPane home_form;
 
-    @FXML
-    private AnchorPane home_form;
+	@FXML
+	private TableView<PatientData> home_patient_tableView;
 
-    @FXML
-    private TableView<PatientData> home_patient_tableView;
+	@FXML
+	private TableColumn<PatientData, String> home_patient_col_description;
 
-    @FXML
-    private TableColumn<PatientData, String> home_patient_col_description;
+	@FXML
+	private TableColumn<PatientData, String> home_patient_col_diagnosis;
 
-    @FXML
-    private TableColumn<PatientData, String> home_patient_col_diagnosis;
+	@FXML
+	private TableColumn<PatientData, String> home_patient_col_treatment;
 
-    @FXML
-    private TableColumn<PatientData, String> home_patient_col_treatment;
+	@FXML
+	private TableColumn<PatientData, String> home_patient_col_dateIn;
 
-    @FXML
-    private TableColumn<PatientData, String> home_patient_col_dateIn;
+	@FXML
+	private TableColumn<PatientData, String> home_patient_col_dateDischarge;
 
-    @FXML
-    private TableColumn<PatientData, String> home_patient_col_dateDischarge;
+	@FXML
+	private Circle home_doctor_circle;
 
-    @FXML
-    private Circle home_doctor_circle;
+	@FXML
+	private Label home_doctor_name;
 
-    @FXML
-    private Label home_doctor_name;
+	@FXML
+	private Label home_doctor_specialization;
 
-    @FXML
-    private Label home_doctor_specialization;
+	@FXML
+	private Label home_doctor_email;
 
-    @FXML
-    private Label home_doctor_email;
+	@FXML
+	private Label home_doctor_mobileNumber;
 
-    @FXML
-    private Label home_doctor_mobileNumber;
+	@FXML
+	private TableView<AppointmentData> home_appointment_tableView;
 
-    @FXML
-    private TableView<AppointmentData> home_appointment_tableView;
+	@FXML
+	private TableColumn<AppointmentData, String> home_appointment_col_appointmenID;
 
-    @FXML
-    private TableColumn<AppointmentData, String> home_appointment_col_appointmenID;
+	@FXML
+	private TableColumn<AppointmentData, String> home_appointment_col_description;
 
-    @FXML
-    private TableColumn<AppointmentData, String> home_appointment_col_description;
+	@FXML
+	private TableColumn<AppointmentData, String> home_appointment_col_diagnosis;
 
-    @FXML
-    private TableColumn<AppointmentData, String> home_appointment_col_diagnosis;
+	@FXML
+	private TableColumn<AppointmentData, String> home_appointment_col_treatment;
 
-    @FXML
-    private TableColumn<AppointmentData, String> home_appointment_col_treatment;
+	@FXML
+	private TableColumn<AppointmentData, String> home_appointment_col_doctor;
 
-    @FXML
-    private TableColumn<AppointmentData, String> home_appointment_col_doctor;
+	@FXML
+	private TableColumn<AppointmentData, String> home_appointment_col_schedule;
 
-    @FXML
-    private TableColumn<AppointmentData, String> home_appointment_col_schedule;
+	@FXML
+	private AnchorPane doctors_form;
 
-    @FXML
-    private AnchorPane doctors_form;
+	@FXML
+	private ScrollPane doctors_scrollPane;
 
-    @FXML
-    private ScrollPane doctors_scrollPane;
+	@FXML
+	private GridPane doctors_gridPane;
 
-    @FXML
-    private GridPane doctors_gridPane;
+	@FXML
+	private AnchorPane appointments_form;
 
-    @FXML
-    private AnchorPane appointments_form;
+	@FXML
+	private Label appointment_ad_name;
 
-    @FXML
-    private Label appointment_ad_name;
+	@FXML
+	private Label appointment_ad_mobileNumber;
 
-    @FXML
-    private Label appointment_ad_mobileNumber;
+	@FXML
+	private Label appointment_ad_gender;
 
-    @FXML
-    private Label appointment_ad_gender;
+	@FXML
+	private Label appointment_ad_address;
 
-    @FXML
-    private Label appointment_ad_address;
+	@FXML
+	private Label appointment_ad_description;
 
-    @FXML
-    private Label appointment_ad_description;
+	@FXML
+	private Label appointment_ad_doctorName;
 
-    @FXML
-    private Label appointment_ad_doctorName;
+	@FXML
+	private Label appointment_ad_specialization;
 
-    @FXML
-    private Label appointment_ad_specialization;
+	@FXML
+	private Label appointment_ad_schedule;
 
-    @FXML
-    private Label appointment_ad_schedule;
+	@FXML
+	private Button appointment_d_confirmBtn;
 
-    @FXML
-    private Button appointment_d_confirmBtn;
+	@FXML
+	private TextArea appointment_d_description;
 
-    @FXML
-    private TextArea appointment_d_description;
+	@FXML
+	private ComboBox<String> appointment_d_doctor;
 
-    @FXML
-    private ComboBox<String> appointment_d_doctor;
+	@FXML
+	private DatePicker appointment_d_schedule;
 
-    @FXML
-    private DatePicker appointment_d_schedule;
+	@FXML
+	private Button appointment_d_clearBtn;
 
-    @FXML
-    private Button appointment_d_clearBtn;
+	@FXML
+	private AnchorPane profile_form;
 
-    @FXML
-    private AnchorPane profile_form;
+	@FXML
+	private Circle profile_circle;
 
-    @FXML
-    private Circle profile_circle;
+	@FXML
+	private Button profile_importBtn;
 
-    @FXML
-    private Button profile_importBtn;
+	// Left panel
+	@FXML
+	private Label name_receptDB, username_receptDB;
 
-    @FXML
-    private Label profile_label_patientID;
+	@FXML
+	private Label name_recept, username_recept, email_recept, phone_recept, gender_recept, createdDate_recept;
 
-    @FXML
-    private Label profile_label_name;
+	@FXML
+	private TextField txt_name_recept, txt_username_recept, txt_email_recept, txt_phone_recept;
 
-    @FXML
-    private Label profile_label_mobileNumber;
+	@FXML
+	private ComboBox<String> gender_cb;
 
-    @FXML
-    private Label profile_label_dateCreated;
+	@FXML
+	private Button profile_updateBtn;
 
-    @FXML
-    private TextField profile_patientID;
+	@FXML
+	private TextArea txt_address_recept;
 
-    @FXML
-    private TextField profile_name;
+	private AlertMessage alert = new AlertMessage();
 
-    @FXML
-    private TextField profile_mobileNumber;
+	private Image image;
 
-    @FXML
-    private ComboBox<String> profile_status;
+	private Connection connect;
+	private PreparedStatement prepare;
+	private ResultSet result;
+	private Statement statement;
 
-    @FXML
-    private Button profile_updateBtn;
+	// load data recreptionist
+	private String username;
 
-    @FXML
-    private TextField profile_password;
+	public void setUsername(String username) {
+		this.username = username;
+	}
 
-    @FXML
-    private TextArea profile_address;
+	@Override
+	public void initialize(URL location, ResourceBundle resources) {
+		runTime();
+		ObservableList<String> genderOptions = FXCollections.observableArrayList("Male", "Female");
+		gender_cb.setItems(genderOptions);
+		loadReceptionistProfile();
 
-    private AlertMessage alert = new AlertMessage();
+//        homePatientDisplayData();
+		homeAppointmentDisplayData();
+		homeDoctorInfoDisplay();
 
-    private Image image;
+//        doctorShowCard();
 
-    private Connection connect;
-    private PreparedStatement prepare;
-    private ResultSet result;
-    private Statement statement;
+		appointmentAppointmentInfoDisplay();
+		appointmentDoctor();
 
+	}
+
+	private void loadReceptionistProfile() {
+		String checkUserSQL = "SELECT ua.name, ua.username, ua.email, ua.gender, ua.created_at, r.phone, r.address "
+				+ "FROM user_account ua " + "JOIN receptionist r ON ua.id = r.receptionist_id "
+				+ "WHERE ua.username = ?";
+
+		Connection connect = Database.connectDB();
+
+		try {
+			PreparedStatement prepare = connect.prepareStatement(checkUserSQL);
+			prepare.setString(1, username);
+
+			ResultSet result = prepare.executeQuery();
+
+			if (!result.next() || result.getInt(1) <= 0) {
+				alert.errorMessage("Username does not match data.");
+				return;
+			}
+			String name = result.getString("name");
+			String username = result.getString("username");
+			String email = result.getString("email");
+			String phone = result.getString("phone");
+			String address = result.getString("address");
+			String gender = result.getString("gender");
+			String createdAt = result.getString("created_at");
+
+			// Gán cho các Label
+			name_recept.setText(name != null ? name : "UNKNOWN");
+			username_recept.setText(username != null ? username : "");
+			gender_recept.setText(gender != null ? gender : "");
+			phone_recept.setText(phone != null ? phone : "");
+			email_recept.setText(email != null ? email : "");
+			createdDate_recept.setText(createdAt != null ? createdAt : "");
+
+			top_username.setText(name != null ? name : "UNKNOWN");
+
+			txt_name_recept.setText(name != null ? name : "");
+			txt_username_recept.setText(username != null ? username : "");
+			txt_email_recept.setText(email != null ? email : "");
+			txt_phone_recept.setText(phone != null ? phone : "");
+			gender_cb.setValue(gender != null ? gender : "");
+			txt_address_recept.setText(address != null ? address : "");
+
+			profileDisplayImages();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 //    public ObservableList<PatientData> homePatientGetData() {
 //
 //        ObservableList<PatientData> listData = FXCollections.observableArrayList();
@@ -284,7 +342,7 @@ public class PatientMainFormController implements Initializable {
 //        return listData;
 //    }
 
-    public ObservableList<PatientData> homePatientListData;
+	public ObservableList<PatientData> homePatientListData;
 
 //    public void homePatientDisplayData() {
 //        homePatientListData = homePatientGetData();
@@ -297,97 +355,94 @@ public class PatientMainFormController implements Initializable {
 //        home_patient_tableView.setItems(homePatientListData);
 //    }
 
-    public ObservableList<AppointmentData> homeAppointmentGetData() {
+	public ObservableList<AppointmentData> homeAppointmentGetData() {
 
-        ObservableList<AppointmentData> listData = FXCollections.observableArrayList();
+		ObservableList<AppointmentData> listData = FXCollections.observableArrayList();
 
-        String sql = "SELECT * FROM appointment WHERE date_delete IS NULL AND patient_id = "
-                + Data.patient_id;
+		String sql = "SELECT * FROM appointment WHERE date_delete IS NULL AND patient_id = " + Data.patient_id;
 
-        connect = Database.connectDB();
+		connect = Database.connectDB();
 
-        try {
-            prepare = connect.prepareStatement(sql);
-            result = prepare.executeQuery();
+		try {
+			prepare = connect.prepareStatement(sql);
+			result = prepare.executeQuery();
 
-            AppointmentData aData;
-            while (result.next()) {
+			AppointmentData aData;
+			while (result.next()) {
 //                AppointmentData(Integer appointmentID, String description,
 //            String diagnosis, String treatment, String doctorID, Date schedule)
-                aData = new AppointmentData(result.getInt("appointment_id"),
-                        result.getString("description"),
-                        result.getString("diagnosis"), result.getString("treatment"),
-                        result.getString("doctor"), result.getDate("schedule"));
+				aData = new AppointmentData(result.getInt("appointment_id"), result.getString("description"),
+						result.getString("diagnosis"), result.getString("treatment"), result.getString("doctor"),
+						result.getDate("schedule"));
 
-                listData.add(aData);
-            }
+				listData.add(aData);
+			}
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return listData;
-    }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return listData;
+	}
 
-    public ObservableList<AppointmentData> homeAppointmentListData;
+	public ObservableList<AppointmentData> homeAppointmentListData;
 
-    public void homeAppointmentDisplayData() {
-        homeAppointmentListData = homeAppointmentGetData();
+	public void homeAppointmentDisplayData() {
+		homeAppointmentListData = homeAppointmentGetData();
 
-        home_appointment_col_appointmenID.setCellValueFactory(new PropertyValueFactory<>("appointmentID"));
-        home_appointment_col_description.setCellValueFactory(new PropertyValueFactory<>("description"));
-        home_appointment_col_diagnosis.setCellValueFactory(new PropertyValueFactory<>("diagnosis"));
-        home_appointment_col_treatment.setCellValueFactory(new PropertyValueFactory<>("treatment"));
-        home_appointment_col_doctor.setCellValueFactory(new PropertyValueFactory<>("doctor"));
-        home_appointment_col_schedule.setCellValueFactory(new PropertyValueFactory<>("schedule"));
+		home_appointment_col_appointmenID.setCellValueFactory(new PropertyValueFactory<>("appointmentID"));
+		home_appointment_col_description.setCellValueFactory(new PropertyValueFactory<>("description"));
+		home_appointment_col_diagnosis.setCellValueFactory(new PropertyValueFactory<>("diagnosis"));
+		home_appointment_col_treatment.setCellValueFactory(new PropertyValueFactory<>("treatment"));
+		home_appointment_col_doctor.setCellValueFactory(new PropertyValueFactory<>("doctor"));
+		home_appointment_col_schedule.setCellValueFactory(new PropertyValueFactory<>("schedule"));
 
-        home_appointment_tableView.setItems(homeAppointmentListData);
-    }
+		home_appointment_tableView.setItems(homeAppointmentListData);
+	}
 
-    public void homeDoctorInfoDisplay() {
+	public void homeDoctorInfoDisplay() {
 
-        String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
+		String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
 
-        connect = Database.connectDB();
+		connect = Database.connectDB();
 
-        String tempDoctorID = "";
-        try {
-            prepare = connect.prepareStatement(sql);
-            result = prepare.executeQuery();
+		String tempDoctorID = "";
+		try {
+			prepare = connect.prepareStatement(sql);
+			result = prepare.executeQuery();
 
-            if (result.next()) {
-                tempDoctorID = result.getString("doctor");
-            }
+			if (result.next()) {
+				tempDoctorID = result.getString("doctor");
+			}
 
-            String checkDoctor = "SELECT * FROM doctor WHERE doctor_id = '"
-                    + tempDoctorID + "'";
+			String checkDoctor = "SELECT * FROM doctor WHERE doctor_id = '" + tempDoctorID + "'";
 
-            statement = connect.createStatement();
-            result = statement.executeQuery(checkDoctor);
+			statement = connect.createStatement();
+			result = statement.executeQuery(checkDoctor);
 
-            if (result.next()) {
-                home_doctor_name.setText(result.getString("full_name"));
-                home_doctor_specialization.setText(result.getString("specialized"));
-                home_doctor_email.setText(result.getString("email"));
-                home_doctor_mobileNumber.setText(result.getString("mobile_number"));
+			if (result.next()) {
+				home_doctor_name.setText(result.getString("full_name"));
+				home_doctor_specialization.setText(result.getString("specialized"));
+				home_doctor_email.setText(result.getString("email"));
+				home_doctor_mobileNumber.setText(result.getString("mobile_number"));
 
-                String path = result.getString("image");
+				String path = result.getString("image");
 
-                if (path != null) {
-                    path = path.replace("\\", "\\\\");
+				if (path != null) {
+					path = path.replace("\\", "\\\\");
 
-                    image = new Image("File:" + path, 138, 82, false, true);
-                    home_doctor_circle.setFill(new ImagePattern(image));
-                }
+					image = new Image("File:" + path, 138, 82, false, true);
+					home_doctor_circle.setFill(new ImagePattern(image));
+				}
 
-            }
+			}
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-    }
+	}
 
-    private ObservableList<DoctorData> doctorList = FXCollections.observableArrayList();
+	private ObservableList<DoctorData> doctorList = FXCollections.observableArrayList();
 
 //    public ObservableList<DoctorData> doctorGetData() {
 //
@@ -456,437 +511,345 @@ public class PatientMainFormController implements Initializable {
 //
 //    }
 
-    public void appointmentAppointmentInfoDisplay() {
-
-        String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
-
-        connect = Database.connectDB();
-
-        try {
-            prepare = connect.prepareStatement(sql);
-            result = prepare.executeQuery();
-
-            if (result.next()) {
-                appointment_ad_name.setText(result.getString("full_name"));
-                appointment_ad_mobileNumber.setText(result.getString("mobile_number"));
-                appointment_ad_gender.setText(result.getString("gender"));
-                appointment_ad_address.setText(result.getString("address"));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    public void appointmentConfirmBtn() {
-
-        if (appointment_d_description.getText().isEmpty()
-                || appointment_d_schedule.getValue() == null
-                || appointment_d_doctor.getSelectionModel().isEmpty()) {
-            alert.errorMessage("Please fill all blank fields");
-        } else {
-
-            appointment_ad_description.setText(appointment_d_description.getText());
-            appointment_ad_doctorName.setText(appointment_d_doctor.getSelectionModel().getSelectedItem());
-
-            String sql = "SELECT * FROM doctor WHERE doctor_id = '"
-                    + appointment_d_doctor.getSelectionModel().getSelectedItem() + "'";
-
-            connect = Database.connectDB();
-            String tempSpecialized = "";
-            try {
-                prepare = connect.prepareStatement(sql);
-                result = prepare.executeQuery();
-
-                if (result.next()) {
-                    tempSpecialized = result.getString("specialized");
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            appointment_ad_specialization.setText(tempSpecialized);
-            appointment_ad_schedule.setText(String.valueOf(appointment_d_schedule.getValue()));
-        }
-
-    }
-
-    public void appointmentDoctor() {
-        String sql = "SELECT * FROM doctor WHERE delete_date IS NULL";
-        connect = Database.connectDB();
-
-        try {
-            prepare = connect.prepareStatement(sql);
-            result = prepare.executeQuery();
-
-            ObservableList listData = FXCollections.observableArrayList();
-            while (result.next()) {
-                listData.add(result.getString("doctor_id"));
-            }
-
-            appointment_d_doctor.setItems(listData);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void appointmentClearBtn() {
-        appointment_d_doctor.getSelectionModel().clearSelection();
-        appointment_d_description.clear();
-        appointment_d_schedule.setValue(null);
-
-        appointment_ad_description.setText("");
-        appointment_ad_doctorName.setText("");
-        appointment_ad_specialization.setText("");
-        appointment_ad_schedule.setText("");
-    }
-
-    public void appointmentBookBtn() {
-        connect = Database.connectDB();
-
-        if (appointment_ad_description.getText().isEmpty()
-                || appointment_d_doctor.getSelectionModel().isEmpty()
-                || appointment_ad_specialization.getText().isEmpty()
-                || appointment_ad_schedule.getText().isEmpty()) {
-            alert.errorMessage("Invalid");
-        } else {
-            String selectData = "SELECT MAX(appointment_id) FROM appointment";
-
-            int tempAppID = 0;
-
-            try {
-                statement = connect.createStatement();
-                result = statement.executeQuery(selectData);
-
-                if (result.next()) {
-                    tempAppID = result.getInt("MAX(appointment_id)") + 1;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            String insertData = "INSERT INTO appointment (appointment_id, patient_id, name, gender"
-                    + ", description, mobile_number, address, date"
-                    + ", doctor, specialized, schedule, status) "
-                    + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
-            Date date = new Date();
-            java.sql.Date sqlDate = new java.sql.Date(date.getTime());
-            try {
-                if (alert.confirmationMessage("Are you sure you want to book?")) {
-                    prepare = connect.prepareStatement(insertData);
-                    prepare.setString(1, String.valueOf(tempAppID));
-                    prepare.setString(2, String.valueOf(Data.patient_id));
-                    prepare.setString(3, appointment_ad_name.getText());
-                    prepare.setString(4, appointment_ad_gender.getText());
-                    prepare.setString(5, appointment_ad_description.getText());
-                    prepare.setString(6, appointment_ad_mobileNumber.getText());
-                    prepare.setString(7, appointment_ad_address.getText());
-                    prepare.setString(8, String.valueOf(appointment_d_schedule.getValue()));
-                    prepare.setString(9, appointment_d_doctor.getSelectionModel().getSelectedItem());
-                    prepare.setString(10, appointment_ad_specialization.getText());
-                    prepare.setString(11, appointment_ad_schedule.getText());
-                    prepare.setString(12, "Active");
-
-                    prepare.executeUpdate();
-
-                    alert.successMessage("Successful !");
-
-                    appointmentClearBtn();
-                } else {
-                    alert.errorMessage("Cancelled.");
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void profileDisplayFields() {
-
-        String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
-        connect = Database.connectDB();
-
-        try {
-            prepare = connect.prepareStatement(sql);
-            result = prepare.executeQuery();
-
-            if (result.next()) {
-                profile_patientID.setText(result.getString("patient_id"));
-                profile_name.setText(result.getString("full_name"));
-                profile_mobileNumber.setText(result.getString("mobile_number"));
-                profile_status.getSelectionModel().select(result.getString("gender"));
-                profile_password.setText(result.getString("password"));
-                profile_address.setText(result.getString("address"));
-
-                if (result.getString("image") != null) {
-                    String imagePath = "File:" + result.getString("image");
-                    image = new Image(imagePath, 137, 95, false, true);
-                    profile_circle.setFill(new ImagePattern(image));
-                }
-                profileDisplayLabels();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void profileDisplayLabels() {
-        String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
-        connect = Database.connectDB();
-
-        try {
-            prepare = connect.prepareStatement(sql);
-            result = prepare.executeQuery();
-
-            if (result.next()) {
-                profile_label_patientID.setText(result.getString("patient_id"));
-                profile_label_name.setText(result.getString("full_name"));
-                profile_label_mobileNumber.setText(result.getString("mobile_number"));
-                profile_label_dateCreated.setText(result.getString("date"));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void profileDisplayImages() {
-
-        String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
-        connect = Database.connectDB();
-
-        String tempPath1 = "";
-        String tempPath2 = "";
-
-        try {
-            prepare = connect.prepareStatement(sql);
-            result = prepare.executeQuery();
-
-            if (result.next()) {
-                tempPath1 = "File:" + result.getString("image");
-                tempPath2 = "File:" + result.getString("image");
-
-                if (result.getString("image") != null || "".equals(result.getString("image"))) {
-                    image = new Image(tempPath1, 137, 95, false, true);
-                    profile_circle.setFill(new ImagePattern(image));
-                    image = new Image(tempPath2, 1012, 22, false, true);
-                    top_profile.setFill(new ImagePattern(image));
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void profileUpdateBtn() {
-        connect = Database.connectDB();
-
-        if (profile_patientID.getText().isEmpty()
-                || profile_name.getText().isEmpty()
-                || profile_mobileNumber.getText().isEmpty()
-                || profile_status.getSelectionModel().isEmpty()
-                || profile_password.getText().isEmpty()
-                || profile_address.getText().isEmpty()) {
-            alert.errorMessage("Please fill all blank fields");
-        } else {
-            if (alert.confirmationMessage("Are you sure you want to Update your Profile?")) {
-                if (Data.path == null || "".equals(Data.path)) {
-                    String updateData = "UPDATE patient SET "
-                            + "full_name = '" + profile_name.getText() + "', mobile_number = '"
-                            + profile_mobileNumber.getText() + "', gender = '"
-                            + profile_status.getSelectionModel().getSelectedItem() + "', password = '"
-                            + profile_password.getText() + "', address = '"
-                            + profile_address.getText() + "' WHERE patient_id = " + Data.patient_id;
-
-                    try {
-                        prepare = connect.prepareStatement(updateData);
-                        prepare.executeUpdate();
-
-                        alert.successMessage("Updated Successfully");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    String path = Data.path;
-                    path = path.replace("\\", "\\\\");
-
-                    Path transfer = Paths.get(path);
-
-                    Path copy = Paths.get("C:\\Users\\WINDOWS 10\\Documents\\NetBeansProjects\\HospitalManagementSystem\\src\\Directory\\"
-                            + Data.patient_id + ".jpg");
-
-                    String copyPath = copy.toAbsolutePath().toString();
-                    copyPath = copyPath.replace("\\", "\\\\");
-
-                    String updateData = "UPDATE patient SET "
-                            + "full_name = '" + profile_name.getText() + "', mobile_number = '"
-                            + profile_mobileNumber.getText() + "', gender = '"
-                            + profile_status.getSelectionModel().getSelectedItem() + "', password = '"
-                            + profile_password.getText() + "', address = '"
-                            + profile_address.getText() + "', image = '"
-                            + copyPath + "' WHERE patient_id = " + Data.patient_id;
-
-                    try {
-                        prepare = connect.prepareStatement(updateData);
-                        prepare.executeUpdate();
-
-                        Files.copy(transfer, copy, StandardCopyOption.REPLACE_EXISTING);
-
-                        alert.successMessage("Updated successfully!");
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            } else {
-                alert.errorMessage("Cancelled.");
-            }
-
-        }
-        profileDisplayImages();
-    }
-
-    public void profileImportBtn() {
-
-        FileChooser open = new FileChooser();
-        open.getExtensionFilters().add(new ExtensionFilter("Open Image", "*jpg", "*jpeg", "*png"));
-
-        File file = open.showOpenDialog(profile_importBtn.getScene().getWindow());
-
-        if (file != null) {
-            Data.path = file.getAbsolutePath();
-
-            image = new Image(file.toURI().toString(), 137, 95, false, true);
-            profile_circle.setFill(new ImagePattern(image));
-        }
-
-    }
-
-    public void profileGenderList() {
-
-        List<String> listG = new ArrayList<>();
-
-        for (String data : Data.gender) {
-            listG.add(data);
-        }
-
-        ObservableList listData = FXCollections.observableArrayList(listG);
-        profile_status.setItems(listData);
-
-    }
-
-    @FXML
-    void logoutBtn(ActionEvent event) {
-
-        try {
-            if (alert.confirmationMessage("Are you sure you want to logout?")) {
-                Parent root = FXMLLoader.load(getClass().getResource("PatientPage.fxml"));
-                Stage stage = new Stage();
-
-                stage.setScene(new Scene(root));
-                stage.show();
-
-                logout_btn.getScene().getWindow().hide();
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    @FXML
-    void profileInsertImage(ActionEvent event) {
-
-    }
-
-    @FXML
-    void switchForm(ActionEvent event) {
-
-        if (event.getSource() == dashboard_btn) {
-            home_form.setVisible(true);
-            doctors_form.setVisible(false);
-            appointments_form.setVisible(false);
-            profile_form.setVisible(false);
-        } else if (event.getSource() == doctors_btn) {
-            home_form.setVisible(false);
-            doctors_form.setVisible(true);
-            appointments_form.setVisible(false);
-            profile_form.setVisible(false);
-        } else if (event.getSource() == appointments_btn) {
-            home_form.setVisible(false);
-            doctors_form.setVisible(false);
-            appointments_form.setVisible(true);
-            profile_form.setVisible(false);
-        } else if (event.getSource() == profile_btn) {
-            home_form.setVisible(false);
-            doctors_form.setVisible(false);
-            appointments_form.setVisible(false);
-            profile_form.setVisible(true);
-        }
-
-    }
-
-    public void displayPatientID(){
-        nav_adminID.setText(String.valueOf(Data.patient_id));
-    }
-    
-    public void displayPatient(){
-        String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
-        connect = Database.connectDB();
-        
-        try{
-            prepare = connect.prepareStatement(sql);
-            result = prepare.executeQuery();
-            
-            if(result.next()){
-                top_username.setText(result.getString("full_name"));
-            }
-        }catch(Exception e){e.printStackTrace();}
-    }
-    
-    public void runTime() {
-
-        new Thread() {
-
-            public void run() {
-                SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
-                while (true) {
-                    try {
-
-                        Thread.sleep(1000); // 1000 ms = 1s
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    Platform.runLater(() -> {
-                        date_time.setText(format.format(new Date()));
-                    });
-                }
-            }
-        }.start();
-
-    }
-
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        runTime();
-        displayPatientID();
-        displayPatient();
-
-//        homePatientDisplayData();
-        homeAppointmentDisplayData();
-        homeDoctorInfoDisplay();
-
-//        doctorShowCard();
-
-        appointmentAppointmentInfoDisplay();
-        appointmentDoctor();
-
-        profileDisplayFields();
-        profileGenderList();
-        profileDisplayImages();
-    }
+	public void appointmentAppointmentInfoDisplay() {
+
+		String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
+
+		connect = Database.connectDB();
+
+		try {
+			prepare = connect.prepareStatement(sql);
+			result = prepare.executeQuery();
+
+			if (result.next()) {
+				appointment_ad_name.setText(result.getString("full_name"));
+				appointment_ad_mobileNumber.setText(result.getString("mobile_number"));
+				appointment_ad_gender.setText(result.getString("gender"));
+				appointment_ad_address.setText(result.getString("address"));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	public void appointmentConfirmBtn() {
+
+		if (appointment_d_description.getText().isEmpty() || appointment_d_schedule.getValue() == null
+				|| appointment_d_doctor.getSelectionModel().isEmpty()) {
+			alert.errorMessage("Please fill all blank fields");
+		} else {
+
+			appointment_ad_description.setText(appointment_d_description.getText());
+			appointment_ad_doctorName.setText(appointment_d_doctor.getSelectionModel().getSelectedItem());
+
+			String sql = "SELECT * FROM doctor WHERE doctor_id = '"
+					+ appointment_d_doctor.getSelectionModel().getSelectedItem() + "'";
+
+			connect = Database.connectDB();
+			String tempSpecialized = "";
+			try {
+				prepare = connect.prepareStatement(sql);
+				result = prepare.executeQuery();
+
+				if (result.next()) {
+					tempSpecialized = result.getString("specialized");
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			appointment_ad_specialization.setText(tempSpecialized);
+			appointment_ad_schedule.setText(String.valueOf(appointment_d_schedule.getValue()));
+		}
+
+	}
+
+	public void appointmentDoctor() {
+		String sql = "SELECT * FROM doctor WHERE delete_date IS NULL";
+		connect = Database.connectDB();
+
+		try {
+			prepare = connect.prepareStatement(sql);
+			result = prepare.executeQuery();
+
+			ObservableList listData = FXCollections.observableArrayList();
+			while (result.next()) {
+				listData.add(result.getString("doctor_id"));
+			}
+
+			appointment_d_doctor.setItems(listData);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void appointmentClearBtn() {
+		appointment_d_doctor.getSelectionModel().clearSelection();
+		appointment_d_description.clear();
+		appointment_d_schedule.setValue(null);
+
+		appointment_ad_description.setText("");
+		appointment_ad_doctorName.setText("");
+		appointment_ad_specialization.setText("");
+		appointment_ad_schedule.setText("");
+	}
+
+	public void appointmentBookBtn() {
+		connect = Database.connectDB();
+
+		if (appointment_ad_description.getText().isEmpty() || appointment_d_doctor.getSelectionModel().isEmpty()
+				|| appointment_ad_specialization.getText().isEmpty() || appointment_ad_schedule.getText().isEmpty()) {
+			alert.errorMessage("Invalid");
+		} else {
+			String selectData = "SELECT MAX(appointment_id) FROM appointment";
+
+			int tempAppID = 0;
+
+			try {
+				statement = connect.createStatement();
+				result = statement.executeQuery(selectData);
+
+				if (result.next()) {
+					tempAppID = result.getInt("MAX(appointment_id)") + 1;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			String insertData = "INSERT INTO appointment (appointment_id, patient_id, name, gender"
+					+ ", description, mobile_number, address, date" + ", doctor, specialized, schedule, status) "
+					+ "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
+			Date date = new Date();
+			java.sql.Date sqlDate = new java.sql.Date(date.getTime());
+			try {
+				if (alert.confirmationMessage("Are you sure you want to book?")) {
+					prepare = connect.prepareStatement(insertData);
+					prepare.setString(1, String.valueOf(tempAppID));
+					prepare.setString(2, String.valueOf(Data.patient_id));
+					prepare.setString(3, appointment_ad_name.getText());
+					prepare.setString(4, appointment_ad_gender.getText());
+					prepare.setString(5, appointment_ad_description.getText());
+					prepare.setString(6, appointment_ad_mobileNumber.getText());
+					prepare.setString(7, appointment_ad_address.getText());
+					prepare.setString(8, String.valueOf(appointment_d_schedule.getValue()));
+					prepare.setString(9, appointment_d_doctor.getSelectionModel().getSelectedItem());
+					prepare.setString(10, appointment_ad_specialization.getText());
+					prepare.setString(11, appointment_ad_schedule.getText());
+					prepare.setString(12, "Active");
+
+					prepare.executeUpdate();
+
+					alert.successMessage("Successful !");
+
+					appointmentClearBtn();
+				} else {
+					alert.errorMessage("Cancelled.");
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+
+
+	public void profileUpdateBtn() {
+		String name = txt_name_recept.getText();
+		String phone = txt_phone_recept.getText();
+		String username = txt_username_recept.getText();
+		String address = txt_address_recept.getText();
+		String email=email_recept.getText();
+		String gender = (String) gender_cb.getSelectionModel().getSelectedItem();
+
+		if (username.isEmpty() || name.isEmpty() || phone.isEmpty() || address.isEmpty()) {
+			alert.errorMessage("Please fill in all the fields.");
+			return;
+		}
+		if (gender == null || gender.isEmpty()) {
+			alert.errorMessage("Please select a gender.");
+			return;
+		}
+		String checkUsernameSQL = "SELECT * FROM user_account WHERE username = ?";
+		String updateUserSQL = "UPDATE user_account SET name = ?, username = ?, gender = ? WHERE email = ?";
+		String updateReceptionistSQL = "UPDATE receptionist SET phone = ?, address = ? WHERE receptionist_id = (SELECT id FROM user_account WHERE email = ?)";
+
+		connect = Database.connectDB();
+
+		try {
+			// Kiểm tra username đã tồn tại (trừ chính mình)
+			prepare = connect.prepareStatement(checkUsernameSQL);
+			prepare.setString(1, username);
+			result = prepare.executeQuery();
+
+			if (result.next()) {
+				alert.errorMessage("Username \"" + username + "\" already exists!");
+				return;
+			}
+
+			// Cập nhật user_account
+			prepare = connect.prepareStatement(updateUserSQL);
+			prepare.setString(1, name);
+			prepare.setString(2, username);
+			prepare.setString(3, gender);
+			prepare.setString(4, email);
+			int rowsUserUpdated = prepare.executeUpdate();
+
+			// Cập nhật receptionist
+			prepare = connect.prepareStatement(updateReceptionistSQL);
+			prepare.setString(1, phone);
+			prepare.setString(2, address);
+			prepare.setString(3, email);
+			int rowsReceptionistUpdated = prepare.executeUpdate();
+
+			if (rowsUserUpdated > 0 || rowsReceptionistUpdated > 0) {
+				alert.successMessage("Profile updated successfully.");
+				loadReceptionistProfile();
+			} else {
+				alert.errorMessage("No user found.");
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			alert.errorMessage("Error updating profile: " + e.getMessage());
+		}
+		profileDisplayImages();
+	}
+	public void profileDisplayImages() {
+
+		  String sql = "SELECT * FROM user_acount WHERE username = " + username;
+		    connect = Database.connectDB();
+
+		    try {
+		        prepare = connect.prepareStatement(sql);
+		        result = prepare.executeQuery();
+
+		        if (result.next()) {
+		            // Lấy ảnh nhị phân từ DB
+		            InputStream inputStream = result.getBinaryStream("image");
+
+		            if (inputStream != null) {
+		                // Chuyển InputStream thành Image
+		                Image img = new Image(inputStream, 137, 95, false, true);
+		                profile_circle.setFill(new ImagePattern(img));
+
+		                // Thêm logic nếu cần thêm hình ảnh khác
+		                img = new Image(inputStream, 1012, 22, false, true);
+		                top_profile.setFill(new ImagePattern(img));
+		            }
+		        }
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		    }
+	}
+	@FXML
+	private void profileImportBtn(ActionEvent event) {
+		FileChooser open = new FileChooser();
+		open.getExtensionFilters().add(new ExtensionFilter("Open Image", "*jpg", "*jpeg", "*png"));
+
+		File file = open.showOpenDialog(profile_importBtn.getScene().getWindow());
+
+		 if (file != null) {
+		        Data.path = file.getAbsolutePath();
+
+		        // Hiển thị ảnh lên UI
+		        image = new Image(file.toURI().toString(), 137, 95, false, true);
+		        profile_circle.setFill(new ImagePattern(image));
+
+		        // Lưu ảnh vào DB
+		        try {
+		            connect = Database.connectDB();
+		            String updateAvatarSQL = "UPDATE user_account SET avatar = ? WHERE email = ?";
+
+		            FileInputStream input = new FileInputStream(file);
+		            prepare = connect.prepareStatement(updateAvatarSQL);
+		            prepare.setBinaryStream(1, input, (int) file.length());
+		            prepare.setString(2, email_recept.getText());
+
+		            int rows = prepare.executeUpdate();
+		            if (rows > 0) {
+		                alert.successMessage("Avatar updated successfully.");
+		            } else {
+		                alert.errorMessage("Failed to update avatar.");
+		            }
+		            profileDisplayImages();
+		        } catch (Exception e) {
+		            e.printStackTrace();
+		            alert.errorMessage("Error uploading avatar: " + e.getMessage());
+		        }
+		    }
+	}
+
+	@FXML
+	void logoutBtn(ActionEvent event) {
+
+		try {
+			if (alert.confirmationMessage("Are you sure you want to logout?")) {
+				Parent root = FXMLLoader.load(getClass().getResource("PatientPage.fxml"));
+				Stage stage = new Stage();
+
+				stage.setScene(new Scene(root));
+				stage.show();
+
+				logout_btn.getScene().getWindow().hide();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	@FXML
+	void switchForm(ActionEvent event) {
+
+		if (event.getSource() == dashboard_btn) {
+			home_form.setVisible(true);
+			doctors_form.setVisible(false);
+			appointments_form.setVisible(false);
+			profile_form.setVisible(false);
+		} else if (event.getSource() == doctors_btn) {
+			home_form.setVisible(false);
+			doctors_form.setVisible(true);
+			appointments_form.setVisible(false);
+			profile_form.setVisible(false);
+		} else if (event.getSource() == appointments_btn) {
+			home_form.setVisible(false);
+			doctors_form.setVisible(false);
+			appointments_form.setVisible(true);
+			profile_form.setVisible(false);
+		} else if (event.getSource() == profile_btn) {
+			home_form.setVisible(false);
+			doctors_form.setVisible(false);
+			appointments_form.setVisible(false);
+			profile_form.setVisible(true);
+		}
+
+	}
+
+	public void runTime() {
+
+		new Thread() {
+
+			public void run() {
+				SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
+				while (true) {
+					try {
+
+						Thread.sleep(1000); // 1000 ms = 1s
+
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+					Platform.runLater(() -> {
+						date_time.setText(format.format(new Date()));
+					});
+				}
+			}
+		}.start();
+
+	}
 
 }

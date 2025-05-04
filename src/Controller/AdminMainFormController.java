@@ -1,16 +1,21 @@
 package Controller;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import Alert.AlertMessage;
 import DAO.Database;
 import Model.Data;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -118,7 +123,7 @@ public class AdminMainFormController {
 			ResultSet result = prepare.executeQuery();
 
 			if (!result.next() || result.getInt(1) <= 0) {
-				alert.errorMessage("Email does not exist.");
+				alert.errorMessage("Username does not match data.");
 				return;
 			}
 			String name = result.getString("name");
@@ -141,19 +146,57 @@ public class AdminMainFormController {
 			txt_username_admin.setText(username != null ? username : "");
 			txt_email_admin.setText(email != null ? email : "");
 			gender_cb.setValue(gender != null ? gender : "");
+
+			top_username.setText(name != null ? name : "UNKNOWN");
+
+			// show avatar
+			InputStream inputStream = result.getBinaryStream("avatar");
+			if (inputStream != null) {
+				// Chuyển InputStream thành Image để hiển thị trên giao diện
+				Image img = new Image(inputStream, 137, 95, false, true);
+				profile_circle.setFill(new ImagePattern(img));
+
+				// Nếu cần hiển thị ảnh cho phần khác
+				img = new Image(inputStream, 1012, 22, false, true);
+				top_profile.setFill(new ImagePattern(img));
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
+	public void runTime() {
 
+		new Thread() {
+
+			public void run() {
+				SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
+				while (true) {
+					try {
+
+						Thread.sleep(1000); // 1000 ms = 1s
+
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+					Platform.runLater(() -> {
+						date_time.setText(format.format(new Date()));
+					});
+				}
+			}
+		}.start();
+
+	}
 	@FXML
 	public void initialize() {
+		runTime();
+		ObservableList<String> genderOptions = FXCollections.observableArrayList("Male", "Female");
+		gender_cb.setItems(genderOptions);
 		loadAdminProfile();
 		showForm("dashboard");
-		
-		ObservableList<String> genderOptions = FXCollections.observableArrayList("Male", "Female");
-		gender_cb.setItems(genderOptions); // Nếu salary_tableView tồn tại thì load dữ liệu mẫu
-		
+
+		// Nếu salary_tableView tồn tại thì load dữ liệu mẫu
+
 		if (salary_tableView != null) {
 			loadSampleSalaryData();
 		}
@@ -231,29 +274,29 @@ public class AdminMainFormController {
 		}
 	}
 
-	//update thông tin admin
+	// update thông tin admin
 	@FXML
 	private void profileUpdateBtn(ActionEvent event) {
 		String name = txt_name_admin.getText();
 		String username = txt_username_admin.getText();
 		String gender = (String) gender_cb.getSelectionModel().getSelectedItem();
-		
+
 		if (username.isEmpty() || name.isEmpty()) {
 			alert.errorMessage("Please fill in all the fields.");
 			return;
 		}
 		if (gender == null || gender.isEmpty()) {
-	        alert.errorMessage("Please select a gender.");
-	        return;
-	    }
+			alert.errorMessage("Please select a gender.");
+			return;
+		}
 		String checkUsernameSQL = "SELECT * FROM user_account WHERE username = ?";
 		String updateUser = "UPDATE user_account SET name = ?, username = ?, gender = ? WHERE email = ?";
-	    
-	    connect = Database.connectDB();
 
-	    try {
-	    	//kt username đã tồn tại chưa
-	    	prepare = connect.prepareStatement(checkUsernameSQL);
+		connect = Database.connectDB();
+
+		try {
+			// kt username đã tồn tại chưa
+			prepare = connect.prepareStatement(checkUsernameSQL);
 			prepare.setString(1, username);
 			result = prepare.executeQuery();
 
@@ -261,27 +304,27 @@ public class AdminMainFormController {
 				alert.errorMessage(username + " already exists!");
 				return;
 			}
-			
-			//nếu username chưa tồn tại
-	        prepare = connect.prepareStatement(updateUser);
-	        prepare.setString(1, name);
-	        prepare.setString(2, username);
-	        prepare.setString(3, gender);
-	        prepare.setString(4, email_admin.getText());
 
-	        int rowsUpdated = prepare.executeUpdate();
+			// nếu username chưa tồn tại
+			prepare = connect.prepareStatement(updateUser);
+			prepare.setString(1, name);
+			prepare.setString(2, username);
+			prepare.setString(3, gender);
+			prepare.setString(4, email_admin.getText());
 
-	        if (rowsUpdated > 0) {
-	            alert.successMessage("Profile updated successfully.");
-	            loadAdminProfile();
-	        } else {
-	            alert.errorMessage("No user found.");
-	        }
+			int rowsUpdated = prepare.executeUpdate();
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        alert.errorMessage("Error updating profile: " + e.getMessage());
-	    }
+			if (rowsUpdated > 0) {
+				alert.successMessage("Profile updated successfully.");
+				loadAdminProfile();
+			} else {
+				alert.errorMessage("No user found.");
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			alert.errorMessage("Error updating profile: " + e.getMessage());
+		}
 	}
 
 	@FXML
@@ -343,8 +386,36 @@ public class AdminMainFormController {
 		System.out.println("Đã trả lương cho nhân viên được chọn!");
 	}
 
+	public void profileDisplayImages() {
+
+		String sql = "SELECT * FROM user_acount WHERE username = " + username;
+		connect = Database.connectDB();
+
+		try {
+			prepare = connect.prepareStatement(sql);
+			result = prepare.executeQuery();
+
+			if (result.next()) {
+				// Lấy ảnh nhị phân từ DB
+				InputStream inputStream = result.getBinaryStream("avatar");
+
+				if (inputStream != null) {
+					// Chuyển InputStream thành Image
+					Image img = new Image(inputStream, 137, 95, false, true);
+					profile_circle.setFill(new ImagePattern(img));
+
+					// Thêm logic nếu cần thêm hình ảnh khác
+					img = new Image(inputStream, 1012, 22, false, true);
+					top_profile.setFill(new ImagePattern(img));
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	@FXML
-	private void profileInsertImage(ActionEvent event) {
+	private void profileImportBtn(ActionEvent event) {
 		FileChooser open = new FileChooser();
 		open.getExtensionFilters().add(new ExtensionFilter("Open Image", "*jpg", "*jpeg", "*png"));
 
@@ -353,8 +424,31 @@ public class AdminMainFormController {
 		if (file != null) {
 			Data.path = file.getAbsolutePath();
 
+			// Hiển thị ảnh lên UI
 			image = new Image(file.toURI().toString(), 137, 95, false, true);
 			profile_circle.setFill(new ImagePattern(image));
+
+			// Lưu ảnh vào DB
+			try {
+				connect = Database.connectDB();
+				String updateAvatarSQL = "UPDATE user_account SET avatar = ? WHERE email = ?";
+
+				FileInputStream input = new FileInputStream(file);
+				prepare = connect.prepareStatement(updateAvatarSQL);
+				prepare.setBinaryStream(1, input, (int) file.length());
+				prepare.setString(2, email_admin.getText()); // email người đăng nhập
+
+				int rows = prepare.executeUpdate();
+				if (rows > 0) {
+					alert.successMessage("Avatar updated successfully.");
+				} else {
+					alert.errorMessage("Failed to update avatar.");
+				}
+				profileDisplayImages();
+			} catch (Exception e) {
+				e.printStackTrace();
+				alert.errorMessage("Error uploading avatar: " + e.getMessage());
+			}
 		}
 	}
 

@@ -31,7 +31,7 @@
                      <children>
                         <AnchorPane layoutX="-58.0" layoutY="-86.0" prefHeight="40.0" prefWidth="214.0" styleClass="bg-color-1" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
-                              <Label layoutX="21.0" layoutY="11.0" text="Hospital Management System" textFill="WHITE">
+                              <Label layoutX="21.0" layoutY="11.0" text="Private Clinic Management" textFill="WHITE">
                                  <font>
                                     <Font size="13.0" />
                                  </font>

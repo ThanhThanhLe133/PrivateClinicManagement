@@ -205,7 +205,15 @@ public class LoginController implements Initializable {
 					Parent root = loader.load();
 					if (selectedRole.equalsIgnoreCase("ADMIN")) {
 					    AdminMainFormController adminController = loader.getController();
-					    adminController.setUsername(login_username.getText()); // truyền email đã nhập
+					    adminController.setUsername(login_username.getText()); 
+					}
+					else if (selectedRole.equalsIgnoreCase("DOCTOR")) {
+					    DoctorMainFormController doctorController = loader.getController();
+					    doctorController.setUsername(login_username.getText()); 
+					}
+					else if(selectedRole.equalsIgnoreCase("RECEPTIONIST")) {
+					    ReceptionistController receptController = loader.getController();
+					    receptController.setUsername(login_username.getText()); 
 					}
 					Stage stage = new Stage();
 					stage.setTitle("Private Clinic | " + selectedRole);

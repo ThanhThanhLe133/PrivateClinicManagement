@@ -37,7 +37,7 @@
                      <children>
                         <AnchorPane layoutX="-58.0" layoutY="-86.0" prefHeight="40.0" prefWidth="214.0" styleClass="bg-color-2" stylesheets="@../design/ReceptionistMainFormDesign.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
-                              <Label layoutX="21.0" layoutY="11.0" text="Hospital Management System" textFill="WHITE">
+                              <Label layoutX="21.0" layoutY="11.0" text="Private Clinic Management" textFill="WHITE">
                                  <font>
                                     <Font size="13.0" />
                                  </font>
@@ -75,8 +75,8 @@
                   <AnchorPane prefHeight="560.0" prefWidth="214.0" styleClass="bg-color-2" stylesheets="@../design/ReceptionistMainFormDesign.css" BorderPane.alignment="CENTER">
                      <children>
                         <FontAwesomeIcon fill="WHITE" glyphName="USER" layoutX="83.0" layoutY="65.0" size="5em" />
-                        <Label layoutX="6.0" layoutY="85.0" text="Receptionist ID:" textFill="WHITE" />
-                        <Label fx:id="nav_adminID" layoutX="95.0" layoutY="84.0" prefHeight="19.0" prefWidth="99.0" text="1" textFill="WHITE">
+                        <Label layoutX="37.0" layoutY="85.0" text="Name" textFill="WHITE" />
+                        <Label fx:id="name_receptDB" layoutX="95.0" layoutY="84.0" prefHeight="19.0" prefWidth="99.0" textFill="WHITE">
                            <font>
                               <Font name="System Bold" size="13.0" />
                            </font>
@@ -85,8 +85,8 @@
                         <FontAwesomeIcon fill="#c76565" glyphName="HOSPITAL_ALT" layoutX="72.0" layoutY="534.0" size="7em" wrappingWidth="69.78571319580078" AnchorPane.bottomAnchor="14.0" AnchorPane.leftAnchor="72.0" />
                         <Label layoutX="13.0" layoutY="162.0" text="Feature" textFill="WHITE" />
                         <Label layoutX="13.0" layoutY="390.0" text="Profile" textFill="WHITE" />
-                        <Label layoutX="34.0" layoutY="111.0" text="Full name:" textFill="WHITE" />
-                        <Label fx:id="nav_adminID1" layoutX="95.0" layoutY="110.0" prefHeight="19.0" prefWidth="99.0" text="MacroMan" textFill="WHITE">
+                        <Label layoutX="34.0" layoutY="111.0" text="Username" textFill="WHITE" />
+                        <Label fx:id="username_receptDB" layoutX="95.0" layoutY="110.0" prefHeight="19.0" prefWidth="99.0" textFill="WHITE">
                            <font>
                               <Font name="System Bold" size="13.0" />
                            </font>
@@ -432,7 +432,7 @@
                               </AnchorPane>
                            </children>
                         </AnchorPane>
-                        <AnchorPane fx:id="profile_form" layoutX="114.0" layoutY="102.0" prefHeight="560.0" prefWidth="886.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <AnchorPane fx:id="profile_form" layoutX="114.0" layoutY="102.0" prefHeight="560.0" prefWidth="886.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
                               <AnchorPane layoutX="14.0" layoutY="17.0" prefHeight="527.0" prefWidth="274.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="16.0" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="17.0">
                                  <styleClass>
@@ -443,42 +443,22 @@
                                  <children>
                                     <Circle fx:id="profile_circle" fill="#3c434a" layoutX="137.0" layoutY="95.0" radius="81.0" stroke="BLACK" strokeType="INSIDE" />
                                     <Button fx:id="profile_importBtn" layoutX="62.0" layoutY="184.0" mnemonicParsing="false" onAction="#profileImportBtn" prefHeight="30.0" prefWidth="150.0" styleClass="btn-3" stylesheets="@../design/PatientMainFormDesign.css" text="Import" />
-                                    <Label layoutX="62.0" layoutY="254.0" text="Patient ID:">
+                                    <Label layoutX="36.0" layoutY="388.0" text="Date Created:">
                                        <font>
                                           <Font size="13.0" />
                                        </font>
                                     </Label>
-                                    <Label fx:id="profile_label_patientID" layoutX="126.0" layoutY="254.0" prefHeight="19.0" prefWidth="135.0" text="Admin ID:">
+                                    <Label fx:id="createdDate_recept" layoutX="124.0" layoutY="388.0" prefHeight="19.0" prefWidth="135.0">
                                        <font>
                                           <Font size="13.0" />
                                        </font>
                                     </Label>
-                                    <Label layoutX="83.0" layoutY="282.0" text="Name:">
+                                    <Label fx:id="phone_recept" layoutX="124.0" layoutY="361.0" prefHeight="19.0" prefWidth="135.0">
                                        <font>
                                           <Font size="13.0" />
                                        </font>
                                     </Label>
-                                    <Label fx:id="profile_label_name" layoutX="126.0" layoutY="282.0" prefHeight="19.0" prefWidth="135.0" text="Admin ID:">
-                                       <font>
-                                          <Font size="13.0" />
-                                       </font>
-                                    </Label>
-                                    <Label layoutX="23.0" layoutY="312.0" text="Mobile Number:">
-                                       <font>
-                                          <Font size="13.0" />
-                                       </font>
-                                    </Label>
-                                    <Label fx:id="profile_label_mobileNumber" layoutX="126.0" layoutY="312.0" prefHeight="19.0" prefWidth="135.0" text="Admin ID:">
-                                       <font>
-                                          <Font size="13.0" />
-                                       </font>
-                                    </Label>
-                                    <Label layoutX="38.0" layoutY="340.0" text="Date Created:">
-                                       <font>
-                                          <Font size="13.0" />
-                                       </font>
-                                    </Label>
-                                    <Label fx:id="profile_label_dateCreated" layoutX="126.0" layoutY="340.0" prefHeight="19.0" prefWidth="135.0" text="Admin ID:">
+                                    <Label layoutX="35.0" layoutY="362.0" text="Phone">
                                        <font>
                                           <Font size="13.0" />
                                        </font>
@@ -498,46 +478,80 @@
                                        </font>
                                     </Label>
                                     <FontAwesomeIcon glyphName="EDIT" layoutX="124.0" layoutY="37.0" size="2em" />
-                                    <Label layoutX="115.0" layoutY="98.0" text="Patient ID:">
+                                    <Label layoutX="124.0" layoutY="66.0" text="Name:">
                                        <font>
                                           <Font size="15.0" />
                                        </font>
                                     </Label>
-                                    <TextField fx:id="profile_patientID" layoutX="189.0" layoutY="96.0" prefHeight="25.0" prefWidth="183.0" styleClass="textfield-2" stylesheets="@../design/PatientMainFormDesign.css" AnchorPane.leftAnchor="189.0" AnchorPane.rightAnchor="193.0" AnchorPane.topAnchor="96.0" />
-                                    <Label layoutX="136.0" layoutY="138.0" text="Name:">
+                                    <TextField fx:id="txt_name_recept" layoutX="177.0" layoutY="64.0" prefHeight="25.0" prefWidth="306.0" styleClass="textfield-2" stylesheets="@../design/PatientMainFormDesign.css" AnchorPane.leftAnchor="177.0" AnchorPane.rightAnchor="82.20000000000005" AnchorPane.topAnchor="64.0" />
+                                    <Label layoutX="58.0" layoutY="104.0" text="Mobile Number:">
                                        <font>
                                           <Font size="15.0" />
                                        </font>
                                     </Label>
-                                    <TextField fx:id="profile_name" layoutX="189.0" layoutY="136.0" prefHeight="25.0" prefWidth="306.0" styleClass="textfield-2" stylesheets="@../design/PatientMainFormDesign.css" AnchorPane.leftAnchor="189.0" AnchorPane.rightAnchor="70.0" AnchorPane.topAnchor="136.0" />
-                                    <Label layoutX="70.0" layoutY="176.0" text="Mobile Number:">
+                                    <TextField fx:id="txt_phone_recept" layoutX="177.0" layoutY="102.0" prefHeight="25.0" prefWidth="307.0" styleClass="textfield-2" stylesheets="@../design/PatientMainFormDesign.css" AnchorPane.leftAnchor="177.0" AnchorPane.rightAnchor="80.60000000000002" AnchorPane.topAnchor="102.0" />
+                                    <Label layoutX="114.0" layoutY="181.0" text="Gender:">
                                        <font>
                                           <Font size="15.0" />
                                        </font>
                                     </Label>
-                                    <TextField fx:id="profile_mobileNumber" layoutX="189.0" layoutY="174.0" prefHeight="25.0" prefWidth="307.0" styleClass="textfield-2" stylesheets="@../design/PatientMainFormDesign.css" AnchorPane.leftAnchor="189.0" AnchorPane.rightAnchor="69.0" AnchorPane.topAnchor="174.0" />
-                                    <Label layoutX="129.0" layoutY="212.0" text="Gender:">
-                                       <font>
-                                          <Font size="15.0" />
-                                       </font>
-                                    </Label>
-                                    <ComboBox fx:id="profile_status" layoutX="189.0" layoutY="210.0" prefWidth="150.0" promptText="Choose..." styleClass="textfield-1" stylesheets="@../design/PageDesign.css" AnchorPane.leftAnchor="189.0" AnchorPane.rightAnchor="226.0" AnchorPane.topAnchor="210.0" />
+                                    <ComboBox fx:id="gender_cb" layoutX="176.0" layoutY="180.0" prefWidth="150.0" promptText="Choose..." styleClass="textfield-1" stylesheets="@../design/PageDesign.css" AnchorPane.leftAnchor="176.0" AnchorPane.rightAnchor="239.2" AnchorPane.topAnchor="180.0" />
                                     <FontAwesomeIcon glyphName="COGS" layoutX="293.0" layoutY="478.0" opacity="0.23" size="20em" AnchorPane.bottomAnchor="14.714279174804688" AnchorPane.rightAnchor="14.857147216796875" />
                                     <Button fx:id="profile_updateBtn" layoutX="214.0" layoutY="432.0" mnemonicParsing="false" onAction="#profileUpdateBtn" prefHeight="40.0" prefWidth="156.0" styleClass="btn-3" stylesheets="@../design/PatientMainFormDesign.css" text="Update" AnchorPane.leftAnchor="214.0" AnchorPane.rightAnchor="195.0" AnchorPane.topAnchor="432.0" />
-                                    <Label layoutX="115.0" layoutY="249.0" text="Password:">
+                                    <Label layoutX="107.0" layoutY="225.0" text="Address:">
                                        <font>
                                           <Font size="15.0" />
                                        </font>
                                     </Label>
-                                    <TextField fx:id="profile_password" layoutX="189.0" layoutY="247.0" prefHeight="25.0" prefWidth="307.0" styleClass="textfield-2" stylesheets="@../design/PatientMainFormDesign.css" />
-                                    <Label layoutX="117.0" layoutY="288.0" text="Address:">
+                                    <TextArea fx:id="profile_address" layoutX="176.0" layoutY="222.0" prefHeight="101.0" prefWidth="306.0" styleClass="textfield-2" stylesheets="@../design/PatientMainFormDesign.css" />
+                                    <Label layoutX="100.0" layoutY="145.0" text="Username:">
                                        <font>
                                           <Font size="15.0" />
                                        </font>
                                     </Label>
-                                    <TextArea fx:id="profile_address" layoutX="192.0" layoutY="292.0" prefHeight="101.0" prefWidth="306.0" styleClass="textfield-2" stylesheets="@../design/PatientMainFormDesign.css" />
+                                    <TextField fx:id="txt_username_recept" layoutX="176.0" layoutY="143.0" prefHeight="25.0" prefWidth="306.0" styleClass="textfield-1" stylesheets="@../design/PageDesign.css" />
                                  </children>
                               </AnchorPane>
+                              <Label layoutX="50.0" layoutY="292.0" text="Username:">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                              </Label>
+                              <Label fx:id="username_recept" layoutX="136.0" layoutY="292.0" prefHeight="19.0" prefWidth="135.0">
+                                 <font>
+                                    <Font name="System Bold" size="13.0" />
+                                 </font>
+                              </Label>
+                              <Label layoutX="50.0" layoutY="322.0" text="Email:">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                              </Label>
+                              <Label fx:id="email_recept" layoutX="136.0" layoutY="322.0" prefHeight="19.0" prefWidth="135.0">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                              </Label>
+                              <Label fx:id="gender_recept" layoutX="136.0" layoutY="350.0" prefHeight="19.0" prefWidth="135.0">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                              </Label>
+                              <Label layoutX="50.0" layoutY="351.0" text="Gender:">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                              </Label>
+                              <Label layoutX="51.0" layoutY="264.0" text="Name:">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                              </Label>
+                              <Label fx:id="name_recept" layoutX="136.0" layoutY="264.0" prefHeight="19.0" prefWidth="135.0">
+                                 <font>
+                                    <Font name="System Bold" size="13.0" />
+                                 </font>
+                              </Label>
                            </children>
                         </AnchorPane>
                      </children>
