@@ -6,7 +6,7 @@ import java.sql.ResultSet;
 import java.util.Optional;
 
 import DAO.Database;
-import Model.DoctorData;
+import Model.DoctorFullData;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -81,16 +81,16 @@ public class AdminMainFormController {
     
     /*=====================CRUD DOCTOR========================================*/
     
-    @FXML private TableView<DoctorData> doctors_tableView;
-    @FXML private TableColumn<DoctorData, String> doctors_col_doctorID;
-    @FXML private TableColumn<DoctorData, String> doctors_col_name;
-    @FXML private TableColumn<DoctorData, String> doctors_col_gender;
-    @FXML private TableColumn<DoctorData, String> doctors_col_contactNumber;
-    @FXML private TableColumn<DoctorData, String> doctors_col_email;
-    @FXML private TableColumn<DoctorData, String> doctors_col_specialization;
-    @FXML private TableColumn<DoctorData, String> doctors_col_address;
-    @FXML private TableColumn<DoctorData, String> doctors_col_status;
-    @FXML private TableColumn<DoctorData, String> doctors_col_action;
+    @FXML private TableView<DoctorFullData> doctors_tableView;
+    @FXML private TableColumn<DoctorFullData, String> doctors_col_doctorID;
+    @FXML private TableColumn<DoctorFullData, String> doctors_col_name;
+    @FXML private TableColumn<DoctorFullData, String> doctors_col_gender;
+    @FXML private TableColumn<DoctorFullData, String> doctors_col_contactNumber;
+    @FXML private TableColumn<DoctorFullData, String> doctors_col_email;
+    @FXML private TableColumn<DoctorFullData, String> doctors_col_specialization;
+    @FXML private TableColumn<DoctorFullData, String> doctors_col_address;
+    @FXML private TableColumn<DoctorFullData, String> doctors_col_status;
+    @FXML private TableColumn<DoctorFullData, String> doctors_col_action;
 
     /*=====================CRUD DOCTOR========================================*/
  
@@ -300,29 +300,34 @@ public class AdminMainFormController {
     
     
     private void loadDoctorTable() {
-        ObservableList<DoctorData> list = FXCollections.observableArrayList();
+        ObservableList<DoctorFullData> list = FXCollections.observableArrayList();
 
         try {
             Connection conn = Database.connectDB();
-            String sql = "SELECT * FROM DOCTOR";
+            String sql = "SELECT u.Id AS doctorId, u.Username, u.Name, u.Email, u.Gender, u.Password, " +
+                    "d.Phone, d.Specialized, d.Address, d.Is_confirmed " +
+                    "FROM DOCTOR d " +
+                    "JOIN USER_ACCOUNT u ON d.Doctor_id = u.Id";
+
             PreparedStatement ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                list.add(new DoctorData(
-                    rs.getString("Id"),
+                list.add(new DoctorFullData(
+                    rs.getString("doctorId"),
                     rs.getString("Username"),
                     rs.getString("Name"),
-                    rs.getString("Gender"),
-                    rs.getString("Phone"),
                     rs.getString("Email"),
+                    rs.getString("Gender"),
+                    rs.getString("Password"),
+                    rs.getString("Phone"),
                     rs.getString("Specialized"),
                     rs.getString("Address"),
-                    rs.getString("Password")
+                    rs.getBoolean("Is_confirmed")
                 ));
             }
 
-            // Gán dữ liệu vào các cột
+            // Cột dữ liệu
             doctors_col_doctorID.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDoctorId()));
             doctors_col_name.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
             doctors_col_gender.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getGender()));
@@ -331,7 +336,7 @@ public class AdminMainFormController {
             doctors_col_specialization.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getSpecialized()));
             doctors_col_address.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAddress()));
 
-            // Cột hành động: Sửa và Xoá
+            // Cột hành động
             doctors_col_action.setCellFactory(col -> new TableCell<>() {
                 private final Button editBtn = new Button("Sửa");
                 private final Button deleteBtn = new Button("Xoá");
@@ -339,25 +344,20 @@ public class AdminMainFormController {
 
                 {
                     editBtn.setOnAction(e -> {
-                        DoctorData doctor = getTableView().getItems().get(getIndex());
-                        openEditDoctorForm(doctor); // TODO: mở form sửa
+                        DoctorFullData doctor = getTableView().getItems().get(getIndex());
+                        openEditDoctorForm(doctor);
                     });
 
                     deleteBtn.setOnAction(e -> {
-                        DoctorData doctor = getTableView().getItems().get(getIndex());
-                        deleteDoctor(doctor.getDoctorId()); // TODO: viết hàm xoá
-                        loadDoctorTable(); // Refresh lại
+                        DoctorFullData doctor = getTableView().getItems().get(getIndex());
+                        deleteDoctor(doctor.getDoctorId());
                     });
                 }
 
                 @Override
                 protected void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (empty) {
-                        setGraphic(null);
-                    } else {
-                        setGraphic(hbox);
-                    }
+                    setGraphic(empty ? null : hbox);
                 }
             });
 
@@ -369,26 +369,27 @@ public class AdminMainFormController {
     }
 
 
+
     
     private void deleteDoctor(String doctorId) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Xác nhận xóa");
-        alert.setHeaderText("Bạn có chắc muốn xóa bác sĩ này?");
-        alert.setContentText("Thao tác này không thể hoàn tác.");
+        alert.setTitle("Xác nhận xoá");
+        alert.setHeaderText("Bạn có chắc chắn muốn xoá bác sĩ?");
+        alert.setContentText("Hành động này không thể hoàn tác.");
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
                 Connection conn = Database.connectDB();
-                String sql = "DELETE FROM DOCTOR WHERE Id = ?";
+
+                // Xoá bác sĩ sẽ tự động xoá trong bảng DOCTOR nhờ ON DELETE CASCADE
+                String sql = "DELETE FROM USER_ACCOUNT WHERE Id = ?";
                 PreparedStatement ps = conn.prepareStatement(sql);
                 ps.setString(1, doctorId);
                 ps.executeUpdate();
+
                 conn.close();
-
-                // Tải lại bảng sau khi xóa
                 loadDoctorTable();
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -397,33 +398,29 @@ public class AdminMainFormController {
 
   
     
-    private void openEditDoctorForm(DoctorData doctor) {
+    private void openEditDoctorForm(DoctorFullData doctor) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/EditDoctorForm.fxml"));
             Parent root = loader.load();
-            
-            // Get the controller and pass the doctor data
+
             EditDoctorFormController controller = loader.getController();
             controller.setDoctorData(doctor);
-            
-            // Create a new stage for the edit form
+
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initStyle(StageStyle.UNDECORATED);
-            stage.setTitle("Edit Doctor");
+            stage.setTitle("Sửa thông tin bác sĩ");
             stage.setScene(new Scene(root));
-            
-            // Set event to refresh doctor table when the form is closed
+
             stage.setOnHidden(e -> loadDoctorTable());
-            
             stage.showAndWait();
-            
+
         } catch (IOException e) {
             e.printStackTrace();
-            System.err.println("Error loading EditDoctorForm.fxml: " + e.getMessage());
+            System.err.println("Lỗi khi mở form sửa: " + e.getMessage());
         }
     }
-    
+
     
     
 // 
@@ -437,15 +434,17 @@ public class AdminMainFormController {
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setTitle("Thêm bác sĩ");
+            stage.setTitle("Thêm bác sĩ mới");
             stage.setScene(new Scene(root));
+
+            stage.setOnHidden(e -> loadDoctorTable());
             stage.showAndWait();
 
-            loadDoctorTable(); // Load lại sau khi thêm
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 
 
 

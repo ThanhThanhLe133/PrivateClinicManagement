@@ -1,306 +1,323 @@
+//package Controller;
+//
+//import javafx.fxml.FXML;
+//import javafx.scene.control.*;
+//import javafx.stage.Stage;
+//import DAO.Database;
+//
+//import java.sql.Connection;
+//import java.sql.PreparedStatement;
+//import java.util.UUID;
+//
+//public class AddDoctorFormController {
+//    @FXML private TextField txtUsername, txtPassword, txtName, txtEmail, txtPhone, txtSpecialized, txtAddress;
+//    @FXML private ComboBox<String> cmbGender;
+//    @FXML private Button btnSave;
+//
+//    @FXML
+//    private void initialize() {
+//        cmbGender.getItems().addAll("Nam", "Nữ", "Khác");
+//    }
+//
+//    @FXML
+//    private void addDoctor() {
+//        String id = UUID.randomUUID().toString();
+//        try (Connection conn = Database.connectDB()) {
+//            String sqlUser = "INSERT INTO USER_ACCOUNT (Id, Username, Password, Email, Name, Gender, Role, Is_active) VALUES (?, ?, ?, ?, ?, ?, 'DOCTOR', TRUE)";
+//            PreparedStatement psUser = conn.prepareStatement(sqlUser);
+//            psUser.setString(1, id);
+//            psUser.setString(2, txtUsername.getText());
+//            psUser.setString(3, txtPassword.getText());
+//            psUser.setString(4, txtEmail.getText());
+//            psUser.setString(5, txtName.getText());
+//            psUser.setString(6, cmbGender.getValue());
+//            psUser.executeUpdate();
+//
+//            String sqlDoctor = "INSERT INTO DOCTOR (Doctor_id, Phone, Specialized, Address, Is_confirmed) VALUES (?, ?, ?, ?, FALSE)";
+//            PreparedStatement psDoctor = conn.prepareStatement(sqlDoctor);
+//            psDoctor.setString(1, id);
+//            psDoctor.setString(2, txtPhone.getText());
+//            psDoctor.setString(3, txtSpecialized.getText());
+//            psDoctor.setString(4, txtAddress.getText());
+//            psDoctor.executeUpdate();
+//
+//            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+//            alert.setTitle("Thành công");
+//            alert.setHeaderText(null);
+//            alert.setContentText("Đã thêm bác sĩ thành công!");
+//            alert.showAndWait();
+//            ((Stage) btnSave.getScene().getWindow()).close();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
+//}
+
+
+
 package Controller;
-import Model.DoctorData;
-import javafx.event.ActionEvent;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.UUID;
-import java.util.regex.Pattern;
+import javafx.event.ActionEvent;
 import DAO.Database;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
 public class AddDoctorFormController {
-    @FXML private TextField nameField;
-    @FXML private TextField usernameField;
-    @FXML private ComboBox<String> genderComboBox;
-    @FXML private TextField phoneField;
-    @FXML private TextField emailField;
-    @FXML private ComboBox<String> specializedComboBox;
-    @FXML private TextField addressField;
-    @FXML private PasswordField passwordField;
-    @FXML private PasswordField confirmPasswordField;
+    @FXML private TextField txtUsername, txtName, txtEmail, txtPhone, txtAddress;
+    @FXML private PasswordField txtPassword;
+    @FXML private ComboBox<String> cmbGender, cmbSpecialization;
+    @FXML private Button btnSave, btnCancel;
     
-    // Error labels
-    @FXML private Label nameError;
-    @FXML private Label usernameError;
-    @FXML private Label genderError;
-    @FXML private Label phoneError;
-    @FXML private Label emailError;
-    @FXML private Label specializedError;
-    @FXML private Label addressError;
-    @FXML private Label passwordError;
-    @FXML private Label confirmPasswordError;
+    // Validation error labels
+    @FXML private Label lblUsernameError, lblPasswordError, lblNameError, lblEmailError,
+                     lblGenderError, lblPhoneError, lblSpecializedError, lblAddressError;
     
-    // Validation patterns
-    private final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
-    private final Pattern PHONE_PATTERN = Pattern.compile("^\\d{10,15}$");
-    private final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{3,20}$");
+    // Regex patterns for validation
+    private final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+    private final Pattern PHONE_PATTERN = Pattern.compile("^[0-9]{10,15}$");
     
     @FXML
     private void initialize() {
-        // Gender options
-        genderComboBox.getItems().addAll("Male", "Female", "Other");
+        // Initialize gender options
+        cmbGender.getItems().addAll("Male", "Female", "Other");
         
-        // Specialization options in English
-        specializedComboBox.getItems().addAll(
-            "General Medicine",
-            "Surgery",
-            "Pediatrics",
-            "Dermatology",
-            "Cardiology",
-            "Neurology",
-            "Orthopedics",
-            "Ophthalmology",
-            "ENT (Ear, Nose, Throat)",
-            "Gynecology",
-            "Urology",
-            "Psychiatry",
-            "Radiology",
-            "Oncology",
-            "Endocrinology",
-            "Gastroenterology",
-            "Pulmonology",
-            "Nephrology",
-            "Hematology",
-            "Infectious Disease",
-            "Emergency Medicine",
-            "Anesthesiology",
-            "Family Medicine"
+        // Initialize specialization options
+        cmbSpecialization.getItems().addAll(
+            "Cardiology", 
+            "Dermatology", 
+            "Endocrinology", 
+            "Gastroenterology", 
+            "Neurology", 
+            "Oncology", 
+            "Ophthalmology", 
+            "Orthopedics", 
+            "Pediatrics", 
+            "Psychiatry", 
+            "Radiology", 
+            "Surgery", 
+            "Urology"
         );
         
         // Add focus listeners for real-time validation
-        setupValidationListeners();
-    }
-    
-    private void setupValidationListeners() {
-        // Clear errors when fields are edited
-        nameField.textProperty().addListener((observable, oldValue, newValue) -> {
-            nameError.setVisible(false);
+        txtUsername.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validateUsername();
         });
         
-        usernameField.textProperty().addListener((observable, oldValue, newValue) -> {
-            usernameError.setVisible(false);
+        txtPassword.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validatePassword();
         });
         
-        genderComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-            genderError.setVisible(false);
+        txtName.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validateName();
         });
         
-        phoneField.textProperty().addListener((observable, oldValue, newValue) -> {
-            phoneError.setVisible(false);
+        txtEmail.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validateEmail();
         });
         
-        emailField.textProperty().addListener((observable, oldValue, newValue) -> {
-            emailError.setVisible(false);
+        txtPhone.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validatePhone();
         });
         
-        specializedComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-            specializedError.setVisible(false);
-        });
-        
-        addressField.textProperty().addListener((observable, oldValue, newValue) -> {
-            addressError.setVisible(false);
-        });
-        
-        passwordField.textProperty().addListener((observable, oldValue, newValue) -> {
-            passwordError.setVisible(false);
-            // Also check confirm password if it's already filled
-            if (!confirmPasswordField.getText().isEmpty()) {
-                confirmPasswordError.setVisible(!confirmPasswordField.getText().equals(newValue));
-            }
-        });
-        
-        confirmPasswordField.textProperty().addListener((observable, oldValue, newValue) -> {
-            confirmPasswordError.setVisible(!newValue.equals(passwordField.getText()));
+        txtAddress.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validateAddress();
         });
     }
     
     @FXML
-    private void handleAddDoctor() {
-        // Reset all error messages
-        hideAllErrors();
-        
-        // Run full validation
-        if (!validateAllFields()) {
-            return;
+    private void handleSave() {
+        if (validateAllFields()) {
+            saveDoctor();
         }
+    }
+    
+    @FXML
+    private void handleCancel() {
+        ((Stage) btnCancel.getScene().getWindow()).close();
+    }
+    
+    private boolean validateAllFields() {
+        boolean isValid = validateUsername();
+        isValid = validatePassword() && isValid;
+        isValid = validateName() && isValid;
+        isValid = validateEmail() && isValid;
+        isValid = validateGender() && isValid;
+        isValid = validatePhone() && isValid;
+        isValid = validateSpecialization() && isValid;
+        isValid = validateAddress() && isValid;
         
-        try {
-            String id = UUID.randomUUID().toString();
-            Connection conn = Database.connectDB();
+        return isValid;
+    }
+    
+    private boolean validateUsername() {
+        String username = txtUsername.getText().trim();
+        if (username.isEmpty()) {
+            showError(lblUsernameError, "Username is required");
+            return false;
+        } else if (username.length() < 4) {
+            showError(lblUsernameError, "Username must be at least 4 characters");
+            return false;
+        }
+        hideError(lblUsernameError);
+        return true;
+    }
+    
+    private boolean validatePassword() {
+        String password = txtPassword.getText();
+        if (password.isEmpty()) {
+            showError(lblPasswordError, "Password is required");
+            return false;
+        } else if (password.length() < 6) {
+            showError(lblPasswordError, "Password must be at least 6 characters");
+            return false;
+        }
+        hideError(lblPasswordError);
+        return true;
+    }
+    
+    private boolean validateName() {
+        String name = txtName.getText().trim();
+        if (name.isEmpty()) {
+            showError(lblNameError, "Name is required");
+            return false;
+        }
+        hideError(lblNameError);
+        return true;
+    }
+    
+    private boolean validateEmail() {
+        String email = txtEmail.getText().trim();
+        if (email.isEmpty()) {
+            showError(lblEmailError, "Email is required");
+            return false;
+        } else if (!EMAIL_PATTERN.matcher(email).matches()) {
+            showError(lblEmailError, "Invalid email format");
+            return false;
+        }
+        hideError(lblEmailError);
+        return true;
+    }
+    
+    private boolean validateGender() {
+        if (cmbGender.getValue() == null) {
+            showError(lblGenderError, "Please select a gender");
+            return false;
+        }
+        hideError(lblGenderError);
+        return true;
+    }
+    
+    private boolean validatePhone() {
+        String phone = txtPhone.getText().trim();
+        if (phone.isEmpty()) {
+            showError(lblPhoneError, "Phone number is required");
+            return false;
+        } else if (!PHONE_PATTERN.matcher(phone).matches()) {
+            showError(lblPhoneError, "Phone number must contain 10-15 digits only");
+            return false;
+        }
+        hideError(lblPhoneError);
+        return true;
+    }
+    
+    private boolean validateSpecialization() {
+        if (cmbSpecialization.getValue() == null) {
+            showError(lblSpecializedError, "Please select a specialization");
+            return false;
+        }
+        hideError(lblSpecializedError);
+        return true;
+    }
+    
+    private boolean validateAddress() {
+        String address = txtAddress.getText().trim();
+        if (address.isEmpty()) {
+            showError(lblAddressError, "Address is required");
+            return false;
+        }
+        hideError(lblAddressError);
+        return true;
+    }
+    
+    private void showError(Label label, String message) {
+        label.setText(message);
+        label.setVisible(true);
+    }
+    
+    private void hideError(Label label) {
+        label.setVisible(false);
+    }
+    
+    private void saveDoctor() {
+        String id = UUID.randomUUID().toString();
+        
+        try (Connection conn = Database.connectDB()) {
+            // Begin transaction
+            conn.setAutoCommit(false);
             
-            String sql = "INSERT INTO DOCTOR (Id, Username, Password, Name, Email, Gender, Phone, Specialized, Address, Is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, id);
-                ps.setString(2, usernameField.getText().trim());
-                ps.setString(3, passwordField.getText());
-                ps.setString(4, nameField.getText().trim());
-                ps.setString(5, emailField.getText().trim());
-                ps.setString(6, genderComboBox.getValue());
-                ps.setString(7, phoneField.getText().trim());
-                ps.setString(8, specializedComboBox.getValue());
-                ps.setString(9, addressField.getText().trim());
-                ps.setBoolean(10, true);
+            try {
+                // Insert into USER_ACCOUNT table
+                String sqlUser = "INSERT INTO USER_ACCOUNT (Id, Username, Password, Email, Name, Gender, Role, Is_active) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, 'DOCTOR', TRUE)";
+                PreparedStatement psUser = conn.prepareStatement(sqlUser);
+                psUser.setString(1, id);
+                psUser.setString(2, txtUsername.getText().trim());
+                psUser.setString(3, txtPassword.getText());
+                psUser.setString(4, txtEmail.getText().trim());
+                psUser.setString(5, txtName.getText().trim());
+                psUser.setString(6, cmbGender.getValue());
+                psUser.executeUpdate();
                 
-                ps.executeUpdate();
+                // Insert into DOCTOR table
+                String sqlDoctor = "INSERT INTO DOCTOR (Doctor_id, Phone, Specialized, Address, Is_confirmed) " +
+                                  "VALUES (?, ?, ?, ?, FALSE)";
+                PreparedStatement psDoctor = conn.prepareStatement(sqlDoctor);
+                psDoctor.setString(1, id);
+                psDoctor.setString(2, txtPhone.getText().trim());
+                psDoctor.setString(3, cmbSpecialization.getValue());
+                psDoctor.setString(4, txtAddress.getText().trim());
+                psDoctor.executeUpdate();
                 
+                // Commit transaction
+                conn.commit();
+                
+                // Show success message
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Success");
                 alert.setHeaderText(null);
                 alert.setContentText("Doctor added successfully!");
                 alert.showAndWait();
                 
-                closeForm();
-            }
-            
-            conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            String errorMessage = e.getMessage();
-            
-            // Check for specific database errors
-            if (errorMessage.contains("unique") || errorMessage.contains("duplicate")) {
-                // Likely a duplicate username error
-                usernameError.setText("Username already exists");
-                usernameError.setVisible(true);
-            } else {
+                // Close the form
+                ((Stage) btnSave.getScene().getWindow()).close();
+                
+            } catch (Exception e) {
+                // Rollback transaction in case of error
+                conn.rollback();
+                
+                // Show error message
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error");
                 alert.setHeaderText(null);
-                alert.setContentText("Database error: " + e.getMessage());
+                alert.setContentText("Failed to add doctor: " + e.getMessage());
                 alert.showAndWait();
+                e.printStackTrace();
             }
+            
         } catch (Exception e) {
-            e.printStackTrace();
+            // Connection error
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error");
+            alert.setTitle("Database Error");
             alert.setHeaderText(null);
-            alert.setContentText("An error occurred: " + e.getMessage());
+            alert.setContentText("Could not connect to database: " + e.getMessage());
             alert.showAndWait();
+            e.printStackTrace();
         }
-    }
-    
-    private void hideAllErrors() {
-        nameError.setVisible(false);
-        usernameError.setVisible(false);
-        genderError.setVisible(false);
-        phoneError.setVisible(false);
-        emailError.setVisible(false);
-        specializedError.setVisible(false);
-        addressError.setVisible(false);
-        passwordError.setVisible(false);
-        confirmPasswordError.setVisible(false);
-    }
-    
-    private boolean validateAllFields() {
-        boolean isValid = true;
-        
-        // Name validation
-        if (nameField.getText().trim().isEmpty()) {
-            nameError.setText("Please enter doctor's name");
-            nameError.setVisible(true);
-            isValid = false;
-        }
-        
-        // Username validation
-        String username = usernameField.getText().trim();
-        if (username.isEmpty()) {
-            usernameError.setText("Please enter a username");
-            usernameError.setVisible(true);
-            isValid = false;
-        } else if (!USERNAME_PATTERN.matcher(username).matches()) {
-            usernameError.setText("Username must be 3-20 characters (letters, numbers, underscore only)");
-            usernameError.setVisible(true);
-            isValid = false;
-        }
-        
-        // Gender validation
-        if (genderComboBox.getValue() == null) {
-            genderError.setVisible(true);
-            isValid = false;
-        }
-        
-        // Phone validation
-        String phone = phoneField.getText().trim();
-        if (phone.isEmpty()) {
-            phoneError.setText("Please enter a phone number");
-            phoneError.setVisible(true);
-            isValid = false;
-        } else if (!PHONE_PATTERN.matcher(phone).matches()) {
-            phoneError.setText("Please enter a valid phone number (10-15 digits)");
-            phoneError.setVisible(true);
-            isValid = false;
-        }
-        
-        // Email validation
-        String email = emailField.getText().trim();
-        if (email.isEmpty()) {
-            emailError.setText("Please enter an email address");
-            emailError.setVisible(true);
-            isValid = false;
-        } else if (!EMAIL_PATTERN.matcher(email).matches()) {
-            emailError.setText("Please enter a valid email address");
-            emailError.setVisible(true);
-            isValid = false;
-        }
-        
-        // Specialization validation
-        if (specializedComboBox.getValue() == null) {
-            specializedError.setVisible(true);
-            isValid = false;
-        }
-        
-        // Address validation
-        if (addressField.getText().trim().isEmpty()) {
-            addressError.setVisible(true);
-            isValid = false;
-        }
-        
-        // Password validation
-        String password = passwordField.getText();
-        if (password.isEmpty()) {
-            passwordError.setText("Please enter a password");
-            passwordError.setVisible(true);
-            isValid = false;
-        } else if (password.length() < 6) {
-            passwordError.setText("Password must be at least 6 characters");
-            passwordError.setVisible(true);
-            isValid = false;
-        }
-        
-        // Confirm password validation
-        String confirmPassword = confirmPasswordField.getText();
-        if (confirmPassword.isEmpty()) {
-            confirmPasswordError.setText("Please confirm your password");
-            confirmPasswordError.setVisible(true);
-            isValid = false;
-        } else if (!confirmPassword.equals(password)) {
-            confirmPasswordError.setText("Passwords do not match");
-            confirmPasswordError.setVisible(true);
-            isValid = false;
-        }
-        
-        return isValid;
-    }
-    
-    @FXML
-    private void handleCancel(ActionEvent event) {
-        // Show confirmation dialog
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Confirm");
-        alert.setHeaderText(null);
-        alert.setContentText("Are you sure you want to cancel? Any unsaved information will be lost.");
-        
-        if (alert.showAndWait().get() == ButtonType.OK) {
-            closeForm();
-        }
-    }
-    
-    private void closeForm() {
-        Stage stage = (Stage) nameField.getScene().getWindow();
-        stage.close();
     }
 }

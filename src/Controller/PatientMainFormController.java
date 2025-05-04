@@ -25,7 +25,7 @@ import Alert.AlertMessage;
 import DAO.Database;
 import Model.AppointmentData;
 import Model.Data;
-import Model.DoctorData;
+import Model.DoctorFullData;
 import Model.PatientData;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -387,7 +387,7 @@ public class PatientMainFormController implements Initializable {
 
     }
 
-    private ObservableList<DoctorData> doctorList = FXCollections.observableArrayList();
+    private ObservableList<DoctorFullData> doctorList = FXCollections.observableArrayList();
 
 //    public ObservableList<DoctorData> doctorGetData() {
 //
