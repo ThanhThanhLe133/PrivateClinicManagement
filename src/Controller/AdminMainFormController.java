@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import DAO.Database;
 import Model.DoctorFullData;
+import Model.ReceptionistFullData;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -93,6 +94,18 @@ public class AdminMainFormController {
     @FXML private TableColumn<DoctorFullData, String> doctors_col_action;
 
     /*=====================CRUD DOCTOR========================================*/
+    
+    
+    
+    @FXML private TableView<ReceptionistFullData> receptionist_tableView;
+    @FXML private TableColumn<ReceptionistFullData, String> receptionist_col_id;
+    @FXML private TableColumn<ReceptionistFullData, String> receptionist_col_name;
+    @FXML private TableColumn<ReceptionistFullData, String> receptionist_col_gender;
+    @FXML private TableColumn<ReceptionistFullData, String> receptionist_col_phone;
+    @FXML private TableColumn<ReceptionistFullData, String> receptionist_col_email;
+    @FXML private TableColumn<ReceptionistFullData, String> receptionist_col_address;
+    @FXML private TableColumn<ReceptionistFullData, String> receptionist_col_action;
+
  
 
 
@@ -164,6 +177,7 @@ public class AdminMainFormController {
             case "receptionist":
                 receptionist_form.setVisible(true);
                 current_form.setText("Receptionists Form");
+                loadReceptionistTable();
                 break;
             case "salary":
                 salary_form.setVisible(true);
@@ -338,8 +352,8 @@ public class AdminMainFormController {
 
             // Cột hành động
             doctors_col_action.setCellFactory(col -> new TableCell<>() {
-                private final Button editBtn = new Button("Sửa");
-                private final Button deleteBtn = new Button("Xoá");
+                private final Button editBtn = new Button("Update");
+                private final Button deleteBtn = new Button("Delete");
                 private final HBox hbox = new HBox(5, editBtn, deleteBtn);
 
                 {
@@ -373,9 +387,10 @@ public class AdminMainFormController {
     
     private void deleteDoctor(String doctorId) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Xác nhận xoá");
-        alert.setHeaderText("Bạn có chắc chắn muốn xoá bác sĩ?");
-        alert.setContentText("Hành động này không thể hoàn tác.");
+        alert.setTitle("Delete Confirmation");
+        alert.setHeaderText("Are you sure you want to delete this receptionist?");
+        alert.setContentText("This action cannot be undone.");
+
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
@@ -409,7 +424,7 @@ public class AdminMainFormController {
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initStyle(StageStyle.UNDECORATED);
-            stage.setTitle("Sửa thông tin bác sĩ");
+            stage.setTitle("Update Doctor");
             stage.setScene(new Scene(root));
 
             stage.setOnHidden(e -> loadDoctorTable());
@@ -417,7 +432,7 @@ public class AdminMainFormController {
 
         } catch (IOException e) {
             e.printStackTrace();
-            System.err.println("Lỗi khi mở form sửa: " + e.getMessage());
+            System.err.println("ERROR : " + e.getMessage());
         }
     }
 
@@ -434,7 +449,7 @@ public class AdminMainFormController {
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setTitle("Thêm bác sĩ mới");
+            stage.setTitle("Add New Doctor");
             stage.setScene(new Scene(root));
 
             stage.setOnHidden(e -> loadDoctorTable());
@@ -444,6 +459,166 @@ public class AdminMainFormController {
             e.printStackTrace();
         }
     }
+
+
+    
+    
+    
+    // =============================CRUD RECEPTIONIST=====================================
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    private void loadReceptionistTable() {
+        ObservableList<ReceptionistFullData> list = FXCollections.observableArrayList();
+
+        try (Connection conn = Database.connectDB()) {
+            String sql = "SELECT u.Id AS receptionist_id, u.Username, u.Password, u.Name, u.Email, u.Gender, " +
+                         "r.Phone, r.Address, r.Is_confirmed " +
+                         "FROM RECEPTIONIST r JOIN USER_ACCOUNT u ON r.Receptionist_id = u.Id";
+
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(new ReceptionistFullData(
+                    rs.getString("Receptionist_id"),
+                    rs.getString("Username"),
+                    rs.getString("Password"),
+                    rs.getString("Name"),
+                    rs.getString("Email"),
+                    rs.getString("Gender"),
+                    rs.getString("Phone"),
+                    rs.getString("Address"),
+                    rs.getBoolean("Is_confirmed")
+                ));
+            }
+
+            receptionist_col_id.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getReceptionistId()));
+            receptionist_col_name.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
+            receptionist_col_gender.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getGender()));
+            receptionist_col_phone.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getPhone()));
+            receptionist_col_email.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEmail()));
+            receptionist_col_address.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAddress()));
+
+            receptionist_col_action.setCellFactory(col -> new TableCell<>() {
+                private final Button editBtn = new Button("Update");
+                private final Button deleteBtn = new Button("Delete");
+                private final HBox hbox = new HBox(5, editBtn, deleteBtn);
+
+                {
+                    editBtn.setOnAction(e -> {
+                        ReceptionistFullData selected = getTableView().getItems().get(getIndex());
+                        openEditReceptionistForm(selected);
+                    });
+
+                    deleteBtn.setOnAction(e -> {
+                        ReceptionistFullData selected = getTableView().getItems().get(getIndex());
+                        deleteReceptionist(selected.getReceptionistId());
+                        loadReceptionistTable();
+                    });
+                }
+
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setGraphic(empty ? null : hbox);
+                }
+            });
+
+            receptionist_tableView.setItems(list);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    
+    
+    
+    private void deleteReceptionist(String receptionistId) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Confirmation");
+        alert.setHeaderText("Are you sure you want to delete this receptionist?");
+        alert.setContentText("This action cannot be undone.");
+
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try (Connection conn = Database.connectDB()) {
+                String sql = "DELETE FROM USER_ACCOUNT WHERE Id = ?";
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, receptionistId);
+                ps.executeUpdate();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    
+    
+    
+    private void openEditReceptionistForm(ReceptionistFullData data) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/EditReceptionistForm.fxml"));
+            Parent root = loader.load();
+
+            // Lấy controller và truyền dữ liệu
+            EditReceptionistFormController controller = loader.getController();
+            controller.setReceptionistData(
+                data.getReceptionistId(),
+                data.getName(),
+                data.getEmail(),
+                data.getGender(),
+                data.getPhone(),
+                data.getAddress()
+            );
+
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setTitle("Update Receptionist");
+            stage.setScene(new Scene(root));
+
+            // Reload lại bảng khi đóng form
+            stage.setOnHidden(e -> loadReceptionistTable());
+            stage.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    
+    
+    @FXML
+    private void openAddReceptionistForm() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/AddReceptionistForm.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setTitle("Add Receptionist");
+            stage.setScene(new Scene(root));
+
+            // Refresh lại bảng sau khi đóng form
+            stage.setOnHidden(e -> loadReceptionistTable());
+
+            stage.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
 
