@@ -9,8 +9,8 @@
 //import java.sql.PreparedStatement;
 //import java.util.UUID;
 //
-//public class AddDoctorFormController {
-//    @FXML private TextField txtUsername, txtPassword, txtName, txtEmail, txtPhone, txtSpecialized, txtAddress;
+//public class AddReceptionistFormController {
+//    @FXML private TextField txtUsername, txtPassword, txtName, txtEmail, txtPhone, txtAddress;
 //    @FXML private ComboBox<String> cmbGender;
 //    @FXML private Button btnSave;
 //
@@ -20,10 +20,10 @@
 //    }
 //
 //    @FXML
-//    private void addDoctor() {
+//    private void addReceptionist() {
 //        String id = UUID.randomUUID().toString();
 //        try (Connection conn = Database.connectDB()) {
-//            String sqlUser = "INSERT INTO USER_ACCOUNT (Id, Username, Password, Email, Name, Gender, Role, Is_active) VALUES (?, ?, ?, ?, ?, ?, 'DOCTOR', TRUE)";
+//            String sqlUser = "INSERT INTO USER_ACCOUNT (Id, Username, Password, Email, Name, Gender, Role, Is_active) VALUES (?, ?, ?, ?, ?, ?, 'RECEPTIONIST', TRUE)";
 //            PreparedStatement psUser = conn.prepareStatement(sqlUser);
 //            psUser.setString(1, id);
 //            psUser.setString(2, txtUsername.getText());
@@ -33,18 +33,17 @@
 //            psUser.setString(6, cmbGender.getValue());
 //            psUser.executeUpdate();
 //
-//            String sqlDoctor = "INSERT INTO DOCTOR (Doctor_id, Phone, Specialized, Address, Is_confirmed) VALUES (?, ?, ?, ?, FALSE)";
-//            PreparedStatement psDoctor = conn.prepareStatement(sqlDoctor);
-//            psDoctor.setString(1, id);
-//            psDoctor.setString(2, txtPhone.getText());
-//            psDoctor.setString(3, txtSpecialized.getText());
-//            psDoctor.setString(4, txtAddress.getText());
-//            psDoctor.executeUpdate();
+//            String sqlReception = "INSERT INTO RECEPTIONIST (Receptionist_id, Phone, Address) VALUES (?, ?, ?)";
+//            PreparedStatement psReception = conn.prepareStatement(sqlReception);
+//            psReception.setString(1, id);
+//            psReception.setString(2, txtPhone.getText());
+//            psReception.setString(3, txtAddress.getText());
+//            psReception.executeUpdate();
 //
 //            Alert alert = new Alert(Alert.AlertType.INFORMATION);
 //            alert.setTitle("Thành công");
 //            alert.setHeaderText(null);
-//            alert.setContentText("Đã thêm bác sĩ thành công!");
+//            alert.setContentText("Đã thêm lễ tân thành công!");
 //            alert.showAndWait();
 //            ((Stage) btnSave.getScene().getWindow()).close();
 //        } catch (Exception e) {
@@ -52,7 +51,6 @@
 //        }
 //    }
 //}
-
 
 
 package Controller;
@@ -68,15 +66,15 @@ import java.sql.PreparedStatement;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-public class AddDoctorFormController {
+public class AddReceptionistFormController {
     @FXML private TextField txtUsername, txtName, txtEmail, txtPhone, txtAddress;
     @FXML private PasswordField txtPassword;
-    @FXML private ComboBox<String> cmbGender, cmbSpecialization;
+    @FXML private ComboBox<String> cmbGender;
     @FXML private Button btnSave, btnCancel;
     
     // Validation error labels
     @FXML private Label lblUsernameError, lblPasswordError, lblNameError, lblEmailError,
-                     lblGenderError, lblPhoneError, lblSpecializedError, lblAddressError;
+                     lblGenderError, lblPhoneError, lblAddressError;
     
     // Regex patterns for validation
     private final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
@@ -86,23 +84,6 @@ public class AddDoctorFormController {
     private void initialize() {
         // Initialize gender options
         cmbGender.getItems().addAll("Male", "Female", "Other");
-        
-        // Initialize specialization options
-        cmbSpecialization.getItems().addAll(
-            "Cardiology", 
-            "Dermatology", 
-            "Endocrinology", 
-            "Gastroenterology", 
-            "Neurology", 
-            "Oncology", 
-            "Ophthalmology", 
-            "Orthopedics", 
-            "Pediatrics", 
-            "Psychiatry", 
-            "Radiology", 
-            "Surgery", 
-            "Urology"
-        );
         
         // Add focus listeners for real-time validation
         txtUsername.focusedProperty().addListener((obs, oldVal, newVal) -> {
@@ -133,7 +114,7 @@ public class AddDoctorFormController {
     @FXML
     private void handleSave() {
         if (validateAllFields()) {
-            saveDoctor();
+            saveReceptionist();
         }
     }
     
@@ -149,7 +130,6 @@ public class AddDoctorFormController {
         isValid = validateEmail() && isValid;
         isValid = validateGender() && isValid;
         isValid = validatePhone() && isValid;
-        isValid = validateSpecialization() && isValid;
         isValid = validateAddress() && isValid;
         
         return isValid;
@@ -226,15 +206,6 @@ public class AddDoctorFormController {
         return true;
     }
     
-    private boolean validateSpecialization() {
-        if (cmbSpecialization.getValue() == null) {
-            showError(lblSpecializedError, "Please select a specialization");
-            return false;
-        }
-        hideError(lblSpecializedError);
-        return true;
-    }
-    
     private boolean validateAddress() {
         String address = txtAddress.getText().trim();
         if (address.isEmpty()) {
@@ -254,7 +225,7 @@ public class AddDoctorFormController {
         label.setVisible(false);
     }
     
-    private void saveDoctor() {
+    private void saveReceptionist() {
         String id = UUID.randomUUID().toString();
         
         try (Connection conn = Database.connectDB()) {
@@ -264,7 +235,7 @@ public class AddDoctorFormController {
             try {
                 // Insert into USER_ACCOUNT table
                 String sqlUser = "INSERT INTO USER_ACCOUNT (Id, Username, Password, Email, Name, Gender, Role, Is_active) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, 'DOCTOR', TRUE)";
+                                "VALUES (?, ?, ?, ?, ?, ?, 'RECEPTIONIST', TRUE)";
                 PreparedStatement psUser = conn.prepareStatement(sqlUser);
                 psUser.setString(1, id);
                 psUser.setString(2, txtUsername.getText().trim());
@@ -274,15 +245,14 @@ public class AddDoctorFormController {
                 psUser.setString(6, cmbGender.getValue());
                 psUser.executeUpdate();
                 
-                // Insert into DOCTOR table
-                String sqlDoctor = "INSERT INTO DOCTOR (Doctor_id, Phone, Specialized, Address, Is_confirmed) " +
-                                  "VALUES (?, ?, ?, ?, FALSE)";
-                PreparedStatement psDoctor = conn.prepareStatement(sqlDoctor);
-                psDoctor.setString(1, id);
-                psDoctor.setString(2, txtPhone.getText().trim());
-                psDoctor.setString(3, cmbSpecialization.getValue());
-                psDoctor.setString(4, txtAddress.getText().trim());
-                psDoctor.executeUpdate();
+                // Insert into RECEPTIONIST table
+                String sqlReception = "INSERT INTO RECEPTIONIST (Receptionist_id, Phone, Address) " +
+                                    "VALUES (?, ?, ?)";
+                PreparedStatement psReception = conn.prepareStatement(sqlReception);
+                psReception.setString(1, id);
+                psReception.setString(2, txtPhone.getText().trim());
+                psReception.setString(3, txtAddress.getText().trim());
+                psReception.executeUpdate();
                 
                 // Commit transaction
                 conn.commit();
@@ -291,7 +261,7 @@ public class AddDoctorFormController {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Success");
                 alert.setHeaderText(null);
-                alert.setContentText("Doctor added successfully!");
+                alert.setContentText("Receptionist added successfully!");
                 alert.showAndWait();
                 
                 // Close the form
@@ -305,7 +275,7 @@ public class AddDoctorFormController {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error");
                 alert.setHeaderText(null);
-                alert.setContentText("Failed to add doctor: " + e.getMessage());
+                alert.setContentText("Failed to add receptionist: " + e.getMessage());
                 alert.showAndWait();
                 e.printStackTrace();
             }

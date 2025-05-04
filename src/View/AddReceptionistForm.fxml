@@ -4,9 +4,10 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.text.*?>
+<?import javafx.scene.paint.*?>
 <?import javafx.scene.effect.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml" fx:controller="Controller.AddDoctorFormController" 
+<BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml" fx:controller="Controller.AddReceptionistFormController" 
     style="-fx-background-color: white;">
     
     <top>
@@ -14,7 +15,7 @@
             <padding>
                 <Insets top="15" bottom="15" left="20" right="20" />
             </padding>
-            <Label text="Add New Doctor" textFill="WHITE">
+            <Label text="Add New Receptionist" textFill="WHITE">
                 <font>
                     <Font name="System Bold" size="18" />
                 </font>
@@ -39,56 +40,56 @@
                     <Label text="Username *" GridPane.rowIndex="0" GridPane.columnIndex="0" />
                     <VBox spacing="2" GridPane.rowIndex="0" GridPane.columnIndex="1">
                         <TextField fx:id="txtUsername" promptText="Enter username" />
-                        <Label fx:id="lblUsernameError" textFill="RED" visible="false" style="-fx-font-size: 11px;" />
+                        <Label fx:id="lblUsernameError" textFill="RED" visible="false" 
+                               style="-fx-font-size: 11px;" />
                     </VBox>
                     
                     <!-- Row 1 -->
                     <Label text="Password *" GridPane.rowIndex="1" GridPane.columnIndex="0" />
                     <VBox spacing="2" GridPane.rowIndex="1" GridPane.columnIndex="1">
                         <PasswordField fx:id="txtPassword" promptText="Enter password" />
-                        <Label fx:id="lblPasswordError" textFill="RED" visible="false" style="-fx-font-size: 11px;" />
+                        <Label fx:id="lblPasswordError" textFill="RED" visible="false" 
+                               style="-fx-font-size: 11px;" />
                     </VBox>
                     
                     <!-- Row 2 -->
                     <Label text="Full Name *" GridPane.rowIndex="2" GridPane.columnIndex="0" />
                     <VBox spacing="2" GridPane.rowIndex="2" GridPane.columnIndex="1">
                         <TextField fx:id="txtName" promptText="Enter full name" />
-                        <Label fx:id="lblNameError" textFill="RED" visible="false" style="-fx-font-size: 11px;" />
+                        <Label fx:id="lblNameError" textFill="RED" visible="false" 
+                               style="-fx-font-size: 11px;" />
                     </VBox>
                     
                     <!-- Row 3 -->
                     <Label text="Email *" GridPane.rowIndex="3" GridPane.columnIndex="0" />
                     <VBox spacing="2" GridPane.rowIndex="3" GridPane.columnIndex="1">
                         <TextField fx:id="txtEmail" promptText="example@gmail.com" />
-                        <Label fx:id="lblEmailError" textFill="RED" visible="false" style="-fx-font-size: 11px;" />
+                        <Label fx:id="lblEmailError" textFill="RED" visible="false" 
+                               style="-fx-font-size: 11px;" />
                     </VBox>
                     
                     <!-- Row 4 -->
                     <Label text="Gender *" GridPane.rowIndex="4" GridPane.columnIndex="0" />
                     <VBox spacing="2" GridPane.rowIndex="4" GridPane.columnIndex="1">
                         <ComboBox fx:id="cmbGender" promptText="Select gender" maxWidth="Infinity" />
-                        <Label fx:id="lblGenderError" textFill="RED" visible="false" style="-fx-font-size: 11px;" />
+                        <Label fx:id="lblGenderError" textFill="RED" visible="false" 
+                               style="-fx-font-size: 11px;" />
                     </VBox>
                     
                     <!-- Row 5 -->
                     <Label text="Phone Number *" GridPane.rowIndex="5" GridPane.columnIndex="0" />
                     <VBox spacing="2" GridPane.rowIndex="5" GridPane.columnIndex="1">
                         <TextField fx:id="txtPhone" promptText="Enter phone number" />
-                        <Label fx:id="lblPhoneError" textFill="RED" visible="false" style="-fx-font-size: 11px;" />
+                        <Label fx:id="lblPhoneError" textFill="RED" visible="false" 
+                               style="-fx-font-size: 11px;" />
                     </VBox>
                     
                     <!-- Row 6 -->
-                    <Label text="Specialization *" GridPane.rowIndex="6" GridPane.columnIndex="0" />
+                    <Label text="Address *" GridPane.rowIndex="6" GridPane.columnIndex="0" />
                     <VBox spacing="2" GridPane.rowIndex="6" GridPane.columnIndex="1">
-                        <ComboBox fx:id="cmbSpecialization" promptText="Select specialization" maxWidth="Infinity" />
-                        <Label fx:id="lblSpecializedError" textFill="RED" visible="false" style="-fx-font-size: 11px;" />
-                    </VBox>
-                    
-                    <!-- Row 7 -->
-                    <Label text="Address *" GridPane.rowIndex="7" GridPane.columnIndex="0" />
-                    <VBox spacing="2" GridPane.rowIndex="7" GridPane.columnIndex="1">
                         <TextField fx:id="txtAddress" promptText="Enter address" />
-                        <Label fx:id="lblAddressError" textFill="RED" visible="false" style="-fx-font-size: 11px;" />
+                        <Label fx:id="lblAddressError" textFill="RED" visible="false" 
+                               style="-fx-font-size: 11px;" />
                     </VBox>
                 </GridPane>
             </VBox>
@@ -101,9 +102,11 @@
                 <Insets top="15" bottom="15" left="20" right="20" />
             </padding>
             <Button fx:id="btnCancel" text="Cancel" prefWidth="100" 
-                    style="-fx-background-color: #6c757d; -fx-text-fill: white;" onAction="#handleCancel" />
+                    style="-fx-background-color: #6c757d; -fx-text-fill: white;"
+                    onAction="#handleCancel" />
             <Button fx:id="btnSave" text="Save" prefWidth="100" 
-                    style="-fx-background-color: #0c8599; -fx-text-fill: white;" onAction="#handleSave" />
+                    style="-fx-background-color: #0c8599; -fx-text-fill: white;"
+                    onAction="#handleSave" />
         </HBox>
     </bottom>
     
@@ -112,3 +115,18 @@
     </effect>
     
 </BorderPane>
+
+
+<!--<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox spacing="10" alignment="CENTER" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml" fx:controller="Controller.AddReceptionistFormController">
+    <TextField fx:id="txtUsername" promptText="Tên đăng nhập" />
+    <TextField fx:id="txtPassword" promptText="Mật khẩu" />
+    <TextField fx:id="txtName" promptText="Họ tên" />
+    <TextField fx:id="txtEmail" promptText="Email" />
+    <ComboBox fx:id="cmbGender" promptText="Giới tính" />
+    <TextField fx:id="txtPhone" promptText="Số điện thoại" />
+    <TextField fx:id="txtAddress" promptText="Địa chỉ" />
+    <Button fx:id="btnSave" text="Lưu" onAction="#addReceptionist" />
+</VBox>-->
