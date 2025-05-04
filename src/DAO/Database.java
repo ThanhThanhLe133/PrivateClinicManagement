@@ -61,8 +61,15 @@ public class Database {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             String url = "jdbc:mysql://localhost:3306/clinic?useSSL=false&serverTimezone=UTC";
-            String user = "root";
-            String password = "";
+            
+            // dùng cái này nếu không cài env
+//            String user = "root";
+//            String password = "";
+            
+            
+            // dùng cái này để bảo mật
+            String user = System.getenv("DB_USER");
+            String password = System.getenv("DB_PASS");
             Connection connect = DriverManager.getConnection(url, user, password);
             return connect;
 

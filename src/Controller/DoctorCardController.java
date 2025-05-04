@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import Model.DoctorData;
+import Model.DoctorFullData;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -41,7 +41,7 @@ public class DoctorCardController implements Initializable {
      * Thiết lập dữ liệu bác sĩ vào giao diện.
      * @param dData Đối tượng DoctorData chứa thông tin bác sĩ.
      */
-    public void setData(DoctorData dData) {
+    public void setData(DoctorFullData dData) {
        
     }
 
