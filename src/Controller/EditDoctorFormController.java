@@ -3,7 +3,7 @@ package Controller;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
-import Model.DoctorFullData;
+import Model.DoctorData;
 import DAO.Database;
 
 import java.sql.Connection;
@@ -16,9 +16,9 @@ public class EditDoctorFormController {
     @FXML private ComboBox<String> cmbSpecialization;
     @FXML private Button btnSave, btnCancel;
 
-    private DoctorFullData doctor;
+    private DoctorData doctor;
 
-    public void setDoctorData(DoctorFullData doctor) {
+    public void setDoctorData(DoctorData doctor) {
         this.doctor = doctor;
 //        txtUsername.setText(doctor.getUsername());
 //        txtPassword.setText(doctor.getPassword());

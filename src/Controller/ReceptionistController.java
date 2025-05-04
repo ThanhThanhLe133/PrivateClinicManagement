@@ -255,11 +255,11 @@ public class ReceptionistController implements Initializable {
 		gender_cb.setItems(genderOptions);
 		loadReceptionistProfile();
 
-//        homePatientDisplayData();
+		// homePatientDisplayData();
 		homeAppointmentDisplayData();
 		homeDoctorInfoDisplay();
 
-//        doctorShowCard();
+		// doctorShowCard();
 
 		appointmentAppointmentInfoDisplay();
 		appointmentDoctor();
@@ -313,47 +313,201 @@ public class ReceptionistController implements Initializable {
 			e.printStackTrace();
 		}
 	}
-//    public ObservableList<PatientData> homePatientGetData() {
-//
-//        ObservableList<PatientData> listData = FXCollections.observableArrayList();
-//
-//        String sql = "SELECT * FROM patient WHERE date_delete IS NULL AND patient_id = " + Data.patient_id;
-//        connect = Database.connectDB();
-//
-//        try {
-//            prepare = connect.prepareStatement(sql);
-//            result = prepare.executeQuery();
-//
-//            PatientData pData;
-//            while (result.next()) {
-////                PatientsData(Integer id, Integer patientID, String description
-////            , String diagnosis, String treatment, Date date)
-//                pData = new PatientData(result.getInt("id"),
-//                        result.getInt("patient_id"),
-//                        result.getString("description"),
-//                        result.getString("diagnosis"),
-//                        result.getString("treatment"), result.getDate("date"));
-//
-//                listData.add(pData);
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return listData;
-//    }
+
+	public void profileUpdateBtn() {
+		String name = txt_name_recept.getText();
+		String phone = txt_phone_recept.getText();
+		String username = txt_username_recept.getText();
+		String address = txt_address_recept.getText();
+		String email = email_recept.getText();
+		String gender = (String) gender_cb.getSelectionModel().getSelectedItem();
+
+		if (username.isEmpty() || name.isEmpty() || phone.isEmpty() || address.isEmpty()) {
+			alert.errorMessage("Please fill in all the fields.");
+			return;
+		}
+		if (gender == null || gender.isEmpty()) {
+			alert.errorMessage("Please select a gender.");
+			return;
+		}
+		String checkUsernameSQL = "SELECT * FROM user_account WHERE username = ?";
+		String updateUserSQL = "UPDATE user_account SET name = ?, username = ?, gender = ? WHERE email = ?";
+		String updateReceptionistSQL = "UPDATE receptionist SET phone = ?, address = ? WHERE receptionist_id = (SELECT id FROM user_account WHERE email = ?)";
+
+		connect = Database.connectDB();
+
+		try {
+			// Kiểm tra username đã tồn tại (trừ chính mình)
+			prepare = connect.prepareStatement(checkUsernameSQL);
+			prepare.setString(1, username);
+			result = prepare.executeQuery();
+
+			if (result.next()) {
+				alert.errorMessage("Username \"" + username + "\" already exists!");
+				return;
+			}
+
+			// Cập nhật user_account
+			prepare = connect.prepareStatement(updateUserSQL);
+			prepare.setString(1, name);
+			prepare.setString(2, username);
+			prepare.setString(3, gender);
+			prepare.setString(4, email);
+			int rowsUserUpdated = prepare.executeUpdate();
+
+			// Cập nhật receptionist
+			prepare = connect.prepareStatement(updateReceptionistSQL);
+			prepare.setString(1, phone);
+			prepare.setString(2, address);
+			prepare.setString(3, email);
+			int rowsReceptionistUpdated = prepare.executeUpdate();
+
+			if (rowsUserUpdated > 0 || rowsReceptionistUpdated > 0) {
+				alert.successMessage("Profile updated successfully.");
+				loadReceptionistProfile();
+			} else {
+				alert.errorMessage("No user found.");
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			alert.errorMessage("Error updating profile: " + e.getMessage());
+		}
+		profileDisplayImages();
+	}
+
+	public void profileDisplayImages() {
+
+		String sql = "SELECT * FROM user_acount WHERE username = " + username;
+		connect = Database.connectDB();
+
+		try {
+			prepare = connect.prepareStatement(sql);
+			result = prepare.executeQuery();
+
+			if (result.next()) {
+				// Lấy ảnh nhị phân từ DB
+				InputStream inputStream = result.getBinaryStream("image");
+
+				if (inputStream != null) {
+					// Chuyển InputStream thành Image
+					Image img = new Image(inputStream, 137, 95, false, true);
+					profile_circle.setFill(new ImagePattern(img));
+
+					// Thêm logic nếu cần thêm hình ảnh khác
+					img = new Image(inputStream, 1012, 22, false, true);
+					top_profile.setFill(new ImagePattern(img));
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@FXML
+	private void profileImportBtn(ActionEvent event) {
+		FileChooser open = new FileChooser();
+		open.getExtensionFilters().add(new ExtensionFilter("Open Image", "*jpg", "*jpeg", "*png"));
+
+		File file = open.showOpenDialog(profile_importBtn.getScene().getWindow());
+
+		if (file != null) {
+			Data.path = file.getAbsolutePath();
+
+			// Hiển thị ảnh lên UI
+			image = new Image(file.toURI().toString(), 137, 95, false, true);
+			profile_circle.setFill(new ImagePattern(image));
+
+			// Lưu ảnh vào DB
+			try {
+				connect = Database.connectDB();
+				String updateAvatarSQL = "UPDATE user_account SET avatar = ? WHERE email = ?";
+
+				FileInputStream input = new FileInputStream(file);
+				prepare = connect.prepareStatement(updateAvatarSQL);
+				prepare.setBinaryStream(1, input, (int) file.length());
+				prepare.setString(2, email_recept.getText());
+
+				int rows = prepare.executeUpdate();
+				if (rows > 0) {
+					alert.successMessage("Avatar updated successfully.");
+				} else {
+					alert.errorMessage("Failed to update avatar.");
+				}
+				profileDisplayImages();
+			} catch (Exception e) {
+				e.printStackTrace();
+				alert.errorMessage("Error uploading avatar: " + e.getMessage());
+			}
+		}
+	}
+
+	@FXML
+	void logoutBtn(ActionEvent event) {
+
+		try {
+			if (alert.confirmationMessage("Are you sure you want to logout?")) {
+				Parent root = FXMLLoader.load(getClass().getResource("PatientPage.fxml"));
+				Stage stage = new Stage();
+
+				stage.setScene(new Scene(root));
+				stage.show();
+
+				logout_btn.getScene().getWindow().hide();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	// public ObservableList<PatientData> homePatientGetData() {
+	//
+	// ObservableList<PatientData> listData = FXCollections.observableArrayList();
+	//
+	// String sql = "SELECT * FROM patient WHERE date_delete IS NULL AND patient_id
+	// = " + Data.patient_id;
+	// connect = Database.connectDB();
+	//
+	// try {
+	// prepare = connect.prepareStatement(sql);
+	// result = prepare.executeQuery();
+	//
+	// PatientData pData;
+	// while (result.next()) {
+	//// PatientsData(Integer id, Integer patientID, String description
+	//// , String diagnosis, String treatment, Date date)
+	// pData = new PatientData(result.getInt("id"),
+	// result.getInt("patient_id"),
+	// result.getString("description"),
+	// result.getString("diagnosis"),
+	// result.getString("treatment"), result.getDate("date"));
+	//
+	// listData.add(pData);
+	// }
+	// } catch (Exception e) {
+	// e.printStackTrace();
+	// }
+	// return listData;
+	// }
 
 	public ObservableList<PatientData> homePatientListData;
 
-//    public void homePatientDisplayData() {
-//        homePatientListData = homePatientGetData();
-//
-//        home_patient_col_description.setCellValueFactory(new PropertyValueFactory<>("description"));
-//        home_patient_col_diagnosis.setCellValueFactory(new PropertyValueFactory<>("diagnosis"));
-//        home_patient_col_treatment.setCellValueFactory(new PropertyValueFactory<>("treatment"));
-//        home_patient_col_dateIn.setCellValueFactory(new PropertyValueFactory<>("date"));
-//
-//        home_patient_tableView.setItems(homePatientListData);
-//    }
+	// public void homePatientDisplayData() {
+	// homePatientListData = homePatientGetData();
+	//
+	// home_patient_col_description.setCellValueFactory(new
+	// PropertyValueFactory<>("description"));
+	// home_patient_col_diagnosis.setCellValueFactory(new
+	// PropertyValueFactory<>("diagnosis"));
+	// home_patient_col_treatment.setCellValueFactory(new
+	// PropertyValueFactory<>("treatment"));
+	// home_patient_col_dateIn.setCellValueFactory(new
+	// PropertyValueFactory<>("date"));
+	//
+	// home_patient_tableView.setItems(homePatientListData);
+	// }
 
 	public ObservableList<AppointmentData> homeAppointmentGetData() {
 
@@ -369,8 +523,8 @@ public class ReceptionistController implements Initializable {
 
 			AppointmentData aData;
 			while (result.next()) {
-//                AppointmentData(Integer appointmentID, String description,
-//            String diagnosis, String treatment, String doctorID, Date schedule)
+				// AppointmentData(Integer appointmentID, String description,
+				// String diagnosis, String treatment, String doctorID, Date schedule)
 				aData = new AppointmentData(result.getInt("appointment_id"), result.getString("description"),
 						result.getString("diagnosis"), result.getString("treatment"), result.getString("doctor"),
 						result.getDate("schedule"));
@@ -442,74 +596,76 @@ public class ReceptionistController implements Initializable {
 
 	}
 
-	private ObservableList<DoctorData> doctorList = FXCollections.observableArrayList();
+	// private ObservableList<DoctorData> doctorList =
+	// FXCollections.observableArrayList();
 
-//    public ObservableList<DoctorData> doctorGetData() {
-//
-//        String sql = "SELECT * FROM doctor WHERE status = 'Active'";
-//
-//        connect = Database.connectDB();
-//
-//        ObservableList<DoctorData> listData = FXCollections.observableArrayList();
-//
-//        try {
-//            prepare = connect.prepareStatement(sql);
-//            result = prepare.executeQuery();
-//
-//            DoctorData dData;
-//
-//            while (result.next()) {
-////                DoctorData(Integer id, String doctorID, String fullName, String specialized, String email)
-//                dData = new DoctorData(result.getInt("id"),
-//                        result.getString("doctor_id"),
-//                        result.getString("full_name"),
-//                        result.getString("specialized"),
-//                        result.getString("email"),
-//                        result.getString("image"));
-//
-//                listData.add(dData);
-//            }
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return listData;
-//    }
+	// public ObservableList<DoctorData> doctorGetData() {
+	//
+	// String sql = "SELECT * FROM doctor WHERE status = 'Active'";
+	//
+	// connect = Database.connectDB();
+	//
+	// ObservableList<DoctorData> listData = FXCollections.observableArrayList();
+	//
+	// try {
+	// prepare = connect.prepareStatement(sql);
+	// result = prepare.executeQuery();
+	//
+	// DoctorData dData;
+	//
+	// while (result.next()) {
+	//// DoctorData(Integer id, String doctorID, String fullName, String
+	// specialized, String email)
+	// dData = new DoctorData(result.getInt("id"),
+	// result.getString("doctor_id"),
+	// result.getString("full_name"),
+	// result.getString("specialized"),
+	// result.getString("email"),
+	// result.getString("image"));
+	//
+	// listData.add(dData);
+	// }
+	//
+	// } catch (Exception e) {
+	// e.printStackTrace();
+	// }
+	// return listData;
+	// }
 
-//    public void doctorShowCard() {
-//        doctorList.clear();
-//        doctorList.addAll(doctorGetData());
-//
-//        doctors_gridPane.getChildren().clear();
-//        doctors_gridPane.getColumnConstraints().clear();
-//        doctors_gridPane.getRowConstraints().clear();
-//
-//        int row = 0, column = 0;
-//
-//        for (int q = 0; q < doctorList.size(); q++) {
-//            try {
-//                FXMLLoader loader = new FXMLLoader();
-//                loader.setLocation(getClass().getResource("DoctorCard.fxml"));
-//                StackPane stack = loader.load();
-//
-//                DoctorCardController dController = loader.getController();
-//                dController.setData(doctorList.get(q));
-//
-//                if (column == 3) {
-//                    column = 0;
-//                    row++;
-//                }
-//
-//                doctors_gridPane.add(stack, column++, row);
-//
-//                GridPane.setMargin(stack, new Insets(15));
-//
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//    }
+	// public void doctorShowCard() {
+	// doctorList.clear();
+	// doctorList.addAll(doctorGetData());
+	//
+	// doctors_gridPane.getChildren().clear();
+	// doctors_gridPane.getColumnConstraints().clear();
+	// doctors_gridPane.getRowConstraints().clear();
+	//
+	// int row = 0, column = 0;
+	//
+	// for (int q = 0; q < doctorList.size(); q++) {
+	// try {
+	// FXMLLoader loader = new FXMLLoader();
+	// loader.setLocation(getClass().getResource("DoctorCard.fxml"));
+	// StackPane stack = loader.load();
+	//
+	// DoctorCardController dController = loader.getController();
+	// dController.setData(doctorList.get(q));
+	//
+	// if (column == 3) {
+	// column = 0;
+	// row++;
+	// }
+	//
+	// doctors_gridPane.add(stack, column++, row);
+	//
+	// GridPane.setMargin(stack, new Insets(15));
+	//
+	// } catch (Exception e) {
+	// e.printStackTrace();
+	// }
+	// }
+	//
+	// }
 
 	public void appointmentAppointmentInfoDisplay() {
 
@@ -651,154 +807,6 @@ public class ReceptionistController implements Initializable {
 				e.printStackTrace();
 			}
 		}
-	}
-
-
-
-	public void profileUpdateBtn() {
-		String name = txt_name_recept.getText();
-		String phone = txt_phone_recept.getText();
-		String username = txt_username_recept.getText();
-		String address = txt_address_recept.getText();
-		String email=email_recept.getText();
-		String gender = (String) gender_cb.getSelectionModel().getSelectedItem();
-
-		if (username.isEmpty() || name.isEmpty() || phone.isEmpty() || address.isEmpty()) {
-			alert.errorMessage("Please fill in all the fields.");
-			return;
-		}
-		if (gender == null || gender.isEmpty()) {
-			alert.errorMessage("Please select a gender.");
-			return;
-		}
-		String checkUsernameSQL = "SELECT * FROM user_account WHERE username = ?";
-		String updateUserSQL = "UPDATE user_account SET name = ?, username = ?, gender = ? WHERE email = ?";
-		String updateReceptionistSQL = "UPDATE receptionist SET phone = ?, address = ? WHERE receptionist_id = (SELECT id FROM user_account WHERE email = ?)";
-
-		connect = Database.connectDB();
-
-		try {
-			// Kiểm tra username đã tồn tại (trừ chính mình)
-			prepare = connect.prepareStatement(checkUsernameSQL);
-			prepare.setString(1, username);
-			result = prepare.executeQuery();
-
-			if (result.next()) {
-				alert.errorMessage("Username \"" + username + "\" already exists!");
-				return;
-			}
-
-			// Cập nhật user_account
-			prepare = connect.prepareStatement(updateUserSQL);
-			prepare.setString(1, name);
-			prepare.setString(2, username);
-			prepare.setString(3, gender);
-			prepare.setString(4, email);
-			int rowsUserUpdated = prepare.executeUpdate();
-
-			// Cập nhật receptionist
-			prepare = connect.prepareStatement(updateReceptionistSQL);
-			prepare.setString(1, phone);
-			prepare.setString(2, address);
-			prepare.setString(3, email);
-			int rowsReceptionistUpdated = prepare.executeUpdate();
-
-			if (rowsUserUpdated > 0 || rowsReceptionistUpdated > 0) {
-				alert.successMessage("Profile updated successfully.");
-				loadReceptionistProfile();
-			} else {
-				alert.errorMessage("No user found.");
-			}
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			alert.errorMessage("Error updating profile: " + e.getMessage());
-		}
-		profileDisplayImages();
-	}
-	public void profileDisplayImages() {
-
-		  String sql = "SELECT * FROM user_acount WHERE username = " + username;
-		    connect = Database.connectDB();
-
-		    try {
-		        prepare = connect.prepareStatement(sql);
-		        result = prepare.executeQuery();
-
-		        if (result.next()) {
-		            // Lấy ảnh nhị phân từ DB
-		            InputStream inputStream = result.getBinaryStream("image");
-
-		            if (inputStream != null) {
-		                // Chuyển InputStream thành Image
-		                Image img = new Image(inputStream, 137, 95, false, true);
-		                profile_circle.setFill(new ImagePattern(img));
-
-		                // Thêm logic nếu cần thêm hình ảnh khác
-		                img = new Image(inputStream, 1012, 22, false, true);
-		                top_profile.setFill(new ImagePattern(img));
-		            }
-		        }
-		    } catch (Exception e) {
-		        e.printStackTrace();
-		    }
-	}
-	@FXML
-	private void profileImportBtn(ActionEvent event) {
-		FileChooser open = new FileChooser();
-		open.getExtensionFilters().add(new ExtensionFilter("Open Image", "*jpg", "*jpeg", "*png"));
-
-		File file = open.showOpenDialog(profile_importBtn.getScene().getWindow());
-
-		 if (file != null) {
-		        Data.path = file.getAbsolutePath();
-
-		        // Hiển thị ảnh lên UI
-		        image = new Image(file.toURI().toString(), 137, 95, false, true);
-		        profile_circle.setFill(new ImagePattern(image));
-
-		        // Lưu ảnh vào DB
-		        try {
-		            connect = Database.connectDB();
-		            String updateAvatarSQL = "UPDATE user_account SET avatar = ? WHERE email = ?";
-
-		            FileInputStream input = new FileInputStream(file);
-		            prepare = connect.prepareStatement(updateAvatarSQL);
-		            prepare.setBinaryStream(1, input, (int) file.length());
-		            prepare.setString(2, email_recept.getText());
-
-		            int rows = prepare.executeUpdate();
-		            if (rows > 0) {
-		                alert.successMessage("Avatar updated successfully.");
-		            } else {
-		                alert.errorMessage("Failed to update avatar.");
-		            }
-		            profileDisplayImages();
-		        } catch (Exception e) {
-		            e.printStackTrace();
-		            alert.errorMessage("Error uploading avatar: " + e.getMessage());
-		        }
-		    }
-	}
-
-	@FXML
-	void logoutBtn(ActionEvent event) {
-
-		try {
-			if (alert.confirmationMessage("Are you sure you want to logout?")) {
-				Parent root = FXMLLoader.load(getClass().getResource("PatientPage.fxml"));
-				Stage stage = new Stage();
-
-				stage.setScene(new Scene(root));
-				stage.show();
-
-				logout_btn.getScene().getWindow().hide();
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
 	}
 
 	@FXML
