@@ -24,7 +24,6 @@ CREATE TABLE ADMIN (
     FOREIGN KEY (Admin_id) REFERENCES USER_ACCOUNT(Id) ON DELETE CASCADE
 );
 
-
 -- BẢNG doctor
 CREATE TABLE DOCTOR (
     Doctor_id CHAR(36) PRIMARY KEY NOT NULL,
@@ -34,7 +33,6 @@ CREATE TABLE DOCTOR (
     Is_confirmed BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (Doctor_id) REFERENCES USER_ACCOUNT(Id) ON DELETE CASCADE
 );
-
 
 -- BẢNG RECEPTIONIST
 CREATE TABLE RECEPTIONIST (
@@ -59,6 +57,7 @@ CREATE TABLE PATIENT (
     Create_date DATETIME,
     Update_date DATETIME
 );
+
 -- BẢNG appointment
 CREATE TABLE APPOINTMENT (
     Id CHAR(36) PRIMARY KEY NOT NULL,
@@ -73,13 +72,9 @@ CREATE TABLE APPOINTMENT (
     FOREIGN KEY (Patient_id) REFERENCES PATIENT(Patient_id)
 );
 
-
-
--- insert mẫu ADMIN
--- Tạo UUID sẵn
+-- INSERT mẫu ADMIN
 SET @Admin_id := UUID();
 
--- Chèn vào USER_ACCOUNT
 INSERT INTO USER_ACCOUNT (
     Id, Username, Password, Email, Name, Avartar, Gender, Role, Is_active
 ) VALUES (
@@ -94,22 +89,17 @@ INSERT INTO USER_ACCOUNT (
     TRUE
 );
 
--- Chèn vào ADMIN
 INSERT INTO ADMIN (Admin_id) VALUES (@Admin_id);
 
-
-
--- INSERT MẪU: DOCTOR
--- Tạo UUID dùng cho bác sĩ
+-- INSERT mẫu DOCTOR
 SET @doctor_id := UUID();
 
--- Chèn vào USER_ACCOUNT
 INSERT INTO USER_ACCOUNT (
     Id, Username, Password, Email, Name, Avartar, Gender, Role, Is_active
 ) VALUES (
     @doctor_id,
     'dr.smith',
-    'doctor123', -- Mật khẩu nên mã hóa khi triển khai thực tế
+    'doctor123',
     'dr.smith@example.com',
     'Dr. John Smith',
     NULL,
@@ -118,7 +108,6 @@ INSERT INTO USER_ACCOUNT (
     TRUE
 );
 
--- Chèn vào bảng DOCTOR
 INSERT INTO DOCTOR (
     doctor_id, Phone, Specialized, Address
 ) VALUES (
@@ -128,11 +117,9 @@ INSERT INTO DOCTOR (
     '12 Medical Lane, District 1'
 );
 
--- INSERT MẪU: RECEPTIONIST
--- Tạo UUID dùng cho lễ tân
+-- INSERT mẫu RECEPTIONIST
 SET @recept_id := UUID();
 
--- Chèn vào USER_ACCOUNT
 INSERT INTO USER_ACCOUNT (
     Id, Username, Password, Email, Name, Avartar, Gender, Role, Is_active
 ) VALUES (
@@ -147,7 +134,6 @@ INSERT INTO USER_ACCOUNT (
     TRUE
 );
 
--- Chèn vào bảng RECEPTIONIST
 INSERT INTO RECEPTIONIST (
     Receptionist_id, Phone, Address
 ) VALUES (

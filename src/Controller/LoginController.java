@@ -200,7 +200,13 @@ public class LoginController implements Initializable {
 				};
 
 				if (fxmlFile != null) {
-					Parent root = FXMLLoader.load(getClass().getResource(fxmlFile));
+					
+					FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
+					Parent root = loader.load();
+					if (selectedRole.equalsIgnoreCase("ADMIN")) {
+					    AdminMainFormController adminController = loader.getController();
+					    adminController.setUsername(login_username.getText()); // truyền email đã nhập
+					}
 					Stage stage = new Stage();
 					stage.setTitle("Private Clinic | " + selectedRole);
 					stage.setScene(new Scene(root));
@@ -260,12 +266,21 @@ public class LoginController implements Initializable {
 			alert.errorMessage("Password must be at least 8 characters and include a number and an uppercase letter.");
 			return;
 		}
-
+		//kt email tồn tại chưa nữa
+		String checkEmailSQL = "SELECT * FROM user_account WHERE email = ?";
 		String checkUsernameSQL = "SELECT * FROM user_account WHERE username = ?";
 		String insertUserSQL = "INSERT INTO user_account (Id, email, username, password, role) VALUES (?, ?, ?, ?, ?)";
 
 		connect = Database.connectDB();
 		try {
+			prepare = connect.prepareStatement(checkEmailSQL);
+			prepare.setString(1, email);
+			result = prepare.executeQuery();
+
+			if (result.next()) {
+				alert.errorMessage(email + " already exists!");
+				return;
+			}
 
 			prepare = connect.prepareStatement(checkUsernameSQL);
 			prepare.setString(1, username);
