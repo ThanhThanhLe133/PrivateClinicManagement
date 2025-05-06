@@ -31,9 +31,55 @@ import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Modality;
+
+// MainFormController
+
+import java.util.Optional;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.layout.HBox;
+import javafx.stage.StageStyle;
+import Model.DoctorData;
+import Model.ReceptionistFullData;
+
+
+
+
+
+
+
 
 public class AdminMainFormController {
 
+	/*=====================CRUD DOCTOR========================================*/
+
+	@FXML private TableView<DoctorData> doctors_tableView;
+	@FXML private TableColumn<DoctorData, String> doctors_col_doctorID;
+	@FXML private TableColumn<DoctorData, String> doctors_col_name;
+	@FXML private TableColumn<DoctorData, String> doctors_col_gender;
+	@FXML private TableColumn<DoctorData, String> doctors_col_contactNumber;
+	@FXML private TableColumn<DoctorData, String> doctors_col_email;
+	@FXML private TableColumn<DoctorData, String> doctors_col_specialization;
+	@FXML private TableColumn<DoctorData, String> doctors_col_address;
+	@FXML private TableColumn<DoctorData, String> doctors_col_confirm;
+	@FXML private TableColumn<DoctorData, String> doctors_col_action;
+
+
+/*=====================CRUD RECEPTIONIST========================================*/
+
+	@FXML private TableView<ReceptionistFullData> receptionist_tableView;
+	@FXML private TableColumn<ReceptionistFullData, String> receptionist_col_id;
+	@FXML private TableColumn<ReceptionistFullData, String> receptionist_col_name;
+	@FXML private TableColumn<ReceptionistFullData, String> receptionist_col_gender;
+	@FXML private TableColumn<ReceptionistFullData, String> receptionist_col_phone;
+	@FXML private TableColumn<ReceptionistFullData, String> receptionist_col_email;
+	@FXML private TableColumn<ReceptionistFullData, String> receptionist_col_address;
+	@FXML private TableColumn<ReceptionistFullData, String> receptionist_col_action;
+
+
+
+
+	
 	@FXML
 	private AnchorPane main_form;
 
@@ -113,7 +159,7 @@ public class AdminMainFormController {
 	}
 
 	private void loadAdminProfile() {
-		String checkUserSQL = "SELECT name, username, email, gender, created_at FROM user_account WHERE username = ?";
+		String checkUserSQL = "SELECT name, username, email, gender, created_at  FROM user_account WHERE username = ?";
 		Connection connect = Database.connectDB();
 
 		try {
@@ -130,7 +176,8 @@ public class AdminMainFormController {
 			String username = result.getString("username");
 			String email = result.getString("email");
 			String gender = result.getString("gender");
-			String createdAt = result.getString("created_at");
+		
+			String createdAt = result.getString("created_at ");
 
 			// Gán cho các Label
 			name_adminDB.setText(name != null ? name : "UNKNOWN");
@@ -164,6 +211,15 @@ public class AdminMainFormController {
 			e.printStackTrace();
 		}
 	}
+	
+	
+	
+	
+	
+	
+		
+	
+	
 
 	public void runTime() {
 
@@ -254,10 +310,12 @@ public class AdminMainFormController {
 			case "doctors":
 				doctors_form.setVisible(true);
 				current_form.setText("Doctors Form");
+				 loadDoctorTable(); // Add this line
 				break;
 			case "receptionist":
 				receptionist_form.setVisible(true);
 				current_form.setText("Receptionists Form");
+				 loadReceptionistTable(); // Add this line
 				break;
 			case "salary":
 				salary_form.setVisible(true);
@@ -278,7 +336,7 @@ public class AdminMainFormController {
 
 	// update thông tin admin
 	@FXML
-	private void profileUpdateBtn(ActionEvent event) {
+	public void profileUpdateBtn(ActionEvent event) {
 		String name = txt_name_admin.getText();
 		String username = txt_username_admin.getText();
 		String gender = (String) gender_cb.getSelectionModel().getSelectedItem();
@@ -473,6 +531,349 @@ public class AdminMainFormController {
 		System.out.println("Revenue calculated for " + type + ": " + filterDatePicker.getValue());
 	}
 
+
+
+
+
+
+
+	// CRUD ADMINFORMCONTROLLER code
+
+
+		// =======================CRUD Doctor==================================
+    
+private void loadDoctorTable() {
+    ObservableList<DoctorData> list = FXCollections.observableArrayList();
+
+    try {
+        Connection conn = Database.connectDB();
+        String sql = "SELECT u.Id AS doctorId, u.Username, u.Name, u.Email, u.Gender, u.Password, " +
+                "d.Phone, d.Specialized, d.Address, d.Is_confirmed " +
+                "FROM DOCTOR d " +
+                "JOIN USER_ACCOUNT u ON d.Doctor_id = u.Id";
+
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ResultSet rs = ps.executeQuery();
+
+        while (rs.next()) {
+            list.add(new DoctorData(
+                rs.getString("doctorId"),
+                rs.getString("Username"),
+                rs.getString("Name"),
+                rs.getString("Email"),
+                rs.getString("Gender"),
+                rs.getString("Password"),
+                rs.getString("Phone"),
+                rs.getString("Specialized"),
+                rs.getString("Address"),
+                rs.getBoolean("Is_confirmed")
+            ));
+        }
+
+        // Cột dữ liệu
+        doctors_col_doctorID.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDoctorId()));
+        doctors_col_name.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
+        doctors_col_gender.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getGender()));
+        doctors_col_contactNumber.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getPhone()));
+        doctors_col_email.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEmail()));
+        doctors_col_specialization.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getSpecialized()));
+        doctors_col_address.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAddress()));
+      
+        // Cột hành động
+        doctors_col_action.setCellFactory(col -> new TableCell<>() {
+            private final Button editBtn = new Button("Update");
+            private final Button deleteBtn = new Button("Delete");
+            private final HBox hbox = new HBox(5, editBtn, deleteBtn);
+
+            {
+                editBtn.setOnAction(e -> {
+                    DoctorData doctor = getTableView().getItems().get(getIndex());
+                    openEditDoctorForm(doctor);
+                });
+
+                deleteBtn.setOnAction(e -> {
+                    DoctorData doctor = getTableView().getItems().get(getIndex());
+                    deleteDoctor(doctor.getDoctorId());
+                });
+            }
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : hbox);
+            }
+        });
+
+        doctors_tableView.setItems(list);
+        conn.close();
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+
+private void deleteDoctor(String doctorId) {
+    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+    alert.setTitle("Delete Confirmation");
+    alert.setHeaderText("Are you sure you want to delete this receptionist?");
+    alert.setContentText("This action cannot be undone.");
+
+    Optional<ButtonType> result = alert.showAndWait();
+    if (result.isPresent() && result.get() == ButtonType.OK) {
+        try {
+            Connection conn = Database.connectDB();
+
+            // Xoá bác sĩ sẽ tự động xoá trong bảng DOCTOR nhờ ON DELETE CASCADE
+            String sql = "DELETE FROM USER_ACCOUNT WHERE Id = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, doctorId);
+            ps.executeUpdate();
+
+            conn.close();
+            loadDoctorTable();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+private void openEditDoctorForm(DoctorData doctor) {
+    try {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/EditDoctorForm.fxml"));
+        Parent root = loader.load();
+
+        EditDoctorFormController controller = loader.getController();
+        controller.setDoctorData(doctor);
+
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.initStyle(StageStyle.UNDECORATED);
+        stage.setTitle("Update Doctor");
+        stage.setScene(new Scene(root));
+
+        stage.setOnHidden(e -> loadDoctorTable());
+        stage.showAndWait();
+
+    } catch (IOException e) {
+        e.printStackTrace();
+        System.err.println("ERROR : " + e.getMessage());
+    }
+}
+
+@FXML
+private void openAddDoctorForm() {
+    try {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/AddDoctorForm.fxml"));
+        Parent root = loader.load();
+
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle("Add New Doctor");
+        stage.setScene(new Scene(root));
+
+        stage.setOnHidden(e -> loadDoctorTable());
+        stage.showAndWait();
+
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+
+// =============================CRUD RECEPTIONIST=====================================
+
+private void loadReceptionistTable() {
+    ObservableList<ReceptionistFullData> list = FXCollections.observableArrayList();
+
+    try (Connection conn = Database.connectDB()) {
+        String sql = "SELECT u.Id AS receptionist_id, u.Username, u.Password, u.Name, u.Email, u.Gender, " +
+                     "r.Phone, r.Address, r.Is_confirmed " +
+                     "FROM RECEPTIONIST r JOIN USER_ACCOUNT u ON r.Receptionist_id = u.Id";
+
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ResultSet rs = ps.executeQuery();
+
+        while (rs.next()) {
+            list.add(new ReceptionistFullData(
+                rs.getString("Receptionist_id"),
+                rs.getString("Username"),
+                rs.getString("Password"),
+                rs.getString("Name"),
+                rs.getString("Email"),
+                rs.getString("Gender"),
+                rs.getString("Phone"),
+                rs.getString("Address"),
+                rs.getBoolean("Is_confirmed")
+            ));
+        }
+
+        receptionist_col_id.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getReceptionistId()));
+        receptionist_col_name.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
+        receptionist_col_gender.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getGender()));
+        receptionist_col_phone.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getPhone()));
+        receptionist_col_email.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEmail()));
+        
+        receptionist_col_address.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAddress()));
+
+        receptionist_col_action.setCellFactory(col -> new TableCell<>() {
+            private final Button editBtn = new Button("Update");
+            private final Button deleteBtn = new Button("Delete");
+            private final HBox hbox = new HBox(5, editBtn, deleteBtn);
+
+            {
+                editBtn.setOnAction(e -> {
+                    ReceptionistFullData selected = getTableView().getItems().get(getIndex());
+                    openEditReceptionistForm(selected);
+                });
+
+                deleteBtn.setOnAction(e -> {
+                    ReceptionistFullData selected = getTableView().getItems().get(getIndex());
+                    deleteReceptionist(selected.getReceptionistId());
+                    loadReceptionistTable();
+                });
+            }
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : hbox);
+            }
+        });
+
+        receptionist_tableView.setItems(list);
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+
+private void deleteReceptionist(String receptionistId) {
+    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+    alert.setTitle("Delete Confirmation");
+    alert.setHeaderText("Are you sure you want to delete this receptionist?");
+    alert.setContentText("This action cannot be undone.");
+
+    Optional<ButtonType> result = alert.showAndWait();
+    if (result.isPresent() && result.get() == ButtonType.OK) {
+        try (Connection conn = Database.connectDB()) {
+            String sql = "DELETE FROM USER_ACCOUNT WHERE Id = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, receptionistId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+private void openEditReceptionistForm(ReceptionistFullData data) {
+    try {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/EditReceptionistForm.fxml"));
+        Parent root = loader.load();
+
+        // Lấy controller và truyền dữ liệu
+        EditReceptionistFormController controller = loader.getController();
+        controller.setReceptionistData(
+            data.getReceptionistId(),
+            data.getName(),
+            data.getEmail(),
+            data.getGender(),
+            data.getPhone(),
+            data.getAddress()
+        );
+
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle("Update Receptionist");
+        stage.setScene(new Scene(root));
+
+        // Reload lại bảng khi đóng form
+        stage.setOnHidden(e -> loadReceptionistTable());
+        stage.showAndWait();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+
+@FXML
+private void openAddReceptionistForm() {
+    try {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/AddReceptionistForm.fxml"));
+        Parent root = loader.load();
+
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle("Add Receptionist");
+        stage.setScene(new Scene(root));
+
+        // Refresh lại bảng sau khi đóng form
+        stage.setOnHidden(e -> loadReceptionistTable());
+
+        stage.showAndWait();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+
+// Profile Image handling method
+@FXML
+private void profileInsertImage(ActionEvent event) {
+    FileChooser open = new FileChooser();
+    open.getExtensionFilters().add(new ExtensionFilter("Open Image", "*jpg", "*jpeg", "*png"));
+
+    File file = open.showOpenDialog(profile_importBtn.getScene().getWindow());
+
+    if (file != null) {
+        Data.path = file.getAbsolutePath();
+
+        image = new Image(file.toURI().toString(), 137, 95, false, true);
+        profile_circle.setFill(new ImagePattern(image));
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	@FXML
 	private void filterRevenueData(ActionEvent event) {
 		// TODO: Viết code xử lý khi nhấn nút lọc revenue ở đây
@@ -487,5 +888,40 @@ public class AdminMainFormController {
 	private void exportRevenueReport(ActionEvent event) {
 		// TODO: Viết code xuất báo cáo doanh thu ở đây
 	}
+
+
+// 4. Replace the existing openAddDoctorForm method with the full implementation
+	@FXML
+	private void openAddDoctorForm(ActionEvent event) {
+		try {
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/AddDoctorForm.fxml"));
+			Parent root = loader.load();
+
+			Stage stage = new Stage();
+			stage.initModality(Modality.APPLICATION_MODAL);
+			stage.setTitle("Add New Doctor");
+			stage.setScene(new Scene(root));
+
+			stage.setOnHidden(e -> loadDoctorTable());
+			stage.showAndWait();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
 
 }
