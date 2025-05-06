@@ -55,10 +55,10 @@ public class EditDoctorFormController {
             PreparedStatement psUser = conn.prepareStatement(sqlUser);
 //            psUser.setString(1, txtUsername.getText());
 //            psUser.setString(2, txtPassword.getText());
-            psUser.setString(3, txtEmail.getText());
-            psUser.setString(4, txtName.getText());
-            psUser.setString(5, cmbGender.getValue());
-            psUser.setString(6, doctor.getDoctorId());
+            psUser.setString(1, txtEmail.getText());
+            psUser.setString(2, txtName.getText());
+            psUser.setString(3, cmbGender.getValue());
+            psUser.setString(4, doctor.getDoctorId());
             psUser.executeUpdate();
 
             // Cập nhật bảng DOCTOR
