@@ -264,7 +264,7 @@
                                               <TableColumn fx:id="dashboad_col_doctorID" prefWidth="81.0" text="Doctor ID" />
                                               <TableColumn fx:id="dashboad_col_name" prefWidth="117.0" text="Name" />
                                                 <TableColumn fx:id="dashboad_col_specialized" prefWidth="119.0" text="Specialized" />
-                                                <TableColumn fx:id="dashboad_col_status" prefWidth="89.0" text="Status" />
+                                                <TableColumn fx:id="dashboad_col_confirm" prefWidth="89.0" text="Confirm" />
                                             </columns>
                                              <columnResizePolicy>
                                                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -310,7 +310,7 @@
                                           <TableColumn fx:id="doctors_col_email" prefWidth="100.0" text="Email Address" />
                                           <TableColumn fx:id="doctors_col_specialization" prefWidth="110.0" text="Specialization" />
                                           <TableColumn fx:id="doctors_col_address" prefWidth="109.0" text="Address" />
-                                          <TableColumn fx:id="doctors_col_status" prefWidth="101.0" text="Status" />
+                                          <TableColumn fx:id="doctors_col_confirm" prefWidth="101.0" text="Confirm" />
                                           <TableColumn fx:id="doctors_col_action" prefWidth="100.0" text="Action" />
                                       </columns>
                                        <columnResizePolicy>
@@ -349,6 +349,7 @@
 											<TableColumn fx:id="receptionist_col_phone" prefWidth="105.0" text="Contact Number" />
 											<TableColumn fx:id="receptionist_col_email" prefWidth="105.0" text="Email" />
 											<TableColumn fx:id="receptionist_col_address" prefWidth="105.0" text="Address" />
+											<TableColumn fx:id="receptionist_col_confirm" prefWidth="105.0" text="Confirm" />
 											<TableColumn fx:id="receptionist_col_action" prefWidth="100.0" text="Action" />
 
                                        </columns>
