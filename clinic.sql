@@ -72,6 +72,42 @@ CREATE TABLE APPOINTMENT (
     FOREIGN KEY (Patient_id) REFERENCES PATIENT(Patient_id)
 );
 
+CREATE TABLE DRUG (
+    Id CHAR(36) PRIMARY KEY NOT NULL DEFAULT (UUID()),
+    Name VARCHAR(50) NOT NULL,
+    Manufacturer VARCHAR(100) NOT NULL,
+    Expiry_date DATE NOT NULL,
+    Unit VARCHAR(50) NOT NULL, 
+    Price DECIMAL(10,2) NOT NULL,  
+    Stock INT NOT NULL, 
+    Create_date DATETIME DEFAULT (Now()),
+    Update_date DATETIME DEFAULT (Now())
+);
+
+CREATE TABLE PRESCRIPTION (
+    Id CHAR(36) PRIMARY KEY NOT NULL,
+    Patient_id CHAR(36) NOT NULL,
+    Doctor_id CHAR(36) NOT NULL,
+    DateIssued DATE NOT NULL, 
+    TotalAmount DECIMAL(10,2) NOT NULL, 
+    Create_date DATETIME,
+    Update_date DATETIME,
+    FOREIGN KEY (Patient_id) REFERENCES PATIENT(patient_Id),
+    FOREIGN KEY (Doctor_id) REFERENCES DOCTOR(doctor_Id)
+);
+
+CREATE TABLE PRESCRIPTION_DETAILS (
+    Prescription_id CHAR(36) NOT NULL,
+    Drug_id CHAR(36) NOT NULL,
+    Quantity INT NOT NULL,  -- Số lượng
+    Instructions TEXT NOT NULL,  -- Cách dùng: uống sáng/tối…
+    Create_date DATETIME,
+    Update_date DATETIME,
+    PRIMARY KEY (Prescription_id, Drug_id),
+    FOREIGN KEY (Prescription_id) REFERENCES PRESCRIPTION(Id),
+    FOREIGN KEY (Drug_id) REFERENCES DRUG(Id)
+);
+
 -- INSERT mẫu ADMIN
 SET @Admin_id := UUID();
 
@@ -132,7 +168,19 @@ INSERT INTO USER_ACCOUNT (
     'Female',
     'RECEPTIONIST',
     TRUE
+),
+(
+    '10',
+    'asdf',
+    '123456',
+    'anna.reception@example.com',
+    'Receptionist Anna',
+    NULL,
+    'Male',
+    'RECEPTIONIST',
+    TRUE
 );
+
 
 INSERT INTO RECEPTIONIST (
     Receptionist_id, Phone, Address
@@ -140,4 +188,41 @@ INSERT INTO RECEPTIONIST (
     @recept_id,
     '0988123456',
     '23 Front Office Blvd, District 3'
+),
+(
+    '10',
+    '0988123456',
+    '23 Front Office Blvd, District 3'
 );
+
+-- INSERT mẫu DRUG
+INSERT INTO DRUG (Id, Name, Manufacturer, Expiry_date, Unit, Price, Stock, Create_date, Update_date)
+VALUES 
+(
+  UUID(),
+  'Paracetamol 500mg',
+  'ABC Pharma Co., Ltd',
+  '2026-12-31',
+  'Tablet',
+  150000.00,
+  100,
+  NOW(),
+  NOW()
+),
+(
+  UUID(),
+  'Amoxicillin 250mg',
+  'XYZ Healthcare Inc.',
+  '2025-10-15',
+  'Capsule',
+  250000.00,
+  50,
+  NOW(),
+  NOW()
+);
+
+INSERT INTO DRUG (Id, Name, Manufacturer, Expiry_date, Unit, Price, Stock, Create_date, Update_date)
+VALUES
+(UUID(), 'Ibuprofen', 'ABC Health', '2027-05-20', 'Bottle', 75.00, 200, '2025-05-07 13:00:00', '2025-05-07 13:00:00'),
+(UUID(), 'Aspirin', 'GHI Pharma', '2028-01-15', 'Bottle', 60.00, 120, '2025-05-07 15:00:00', '2025-05-07 15:00:00'),
+(UUID(), 'Vitamin C', 'JKL Health', '2025-12-31', 'Box', 25.00, 250, '2025-05-07 16:00:00', '2025-05-07 16:00:00');

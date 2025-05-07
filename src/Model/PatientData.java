@@ -6,7 +6,7 @@
 package Model;
 
 import java.math.BigDecimal;
-import java.security.Timestamp;
+import java.sql.Timestamp;
 import java.sql.Date;
 
 /**
