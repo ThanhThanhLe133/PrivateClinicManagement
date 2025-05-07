@@ -209,7 +209,7 @@ public class LoginController implements Initializable {
 					}
 					else if (selectedRole.equalsIgnoreCase("DOCTOR")) {
 					    DoctorMainFormController doctorController = loader.getController();
-					    doctorController.setUsername(login_username.getText()); 
+//					    doctorController.setUsername(login_username.getText()); 
 					}
 					else if(selectedRole.equalsIgnoreCase("RECEPTIONIST")) {
 					    ReceptionistController receptController = loader.getController();
