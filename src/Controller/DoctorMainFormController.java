@@ -314,6 +314,13 @@
       private Image image;
   
       private final AlertMessage alert = new AlertMessage();
+      
+      // load data admin
+  	  private String username;
+
+  	  public void setUsername(String username) {
+  	  	  this.username = username;
+  	  }
   
       public void dashbboardDisplayIP() {
          

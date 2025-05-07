@@ -100,3 +100,18 @@ and open the template in the editor.
     -fx-border-color: linear-gradient(to bottom right, #a31336, #861d2a);
     -fx-border-width: 1px;
 }
+
+.drug {
+    -fx-background-image: url("../resources/Drug.png");
+    -fx-background-size: cover;
+}
+
+.drug-white {
+    -fx-background-image: url("../resources/Drug%20white.png");
+    -fx-background-size: cover;
+}
+
+.patient {
+    -fx-background-image: url("../resources/Patient.png");
+    -fx-background-size: cover;
+}

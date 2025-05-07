@@ -7,6 +7,7 @@ package Controller;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
@@ -22,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 import Alert.AlertMessage;
@@ -30,7 +32,11 @@ import Model.AppointmentData;
 import Model.Data;
 import Model.DoctorData;
 import Model.PatientData;
+import Model.ReceptionistData;
+import Model.ReceptionistFullData;
+import Model.DrugData;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -40,11 +46,14 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -53,18 +62,36 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 /**
  *
  * @author WINDOWS 10
  */
 public class ReceptionistController implements Initializable {
+	
+	/*=====================CRUD DRUG========================================*/
+
+	@FXML private TableView<DrugData> drug_tableView;
+	@FXML private TableColumn<DrugData, String> drug_col_id;
+	@FXML private TableColumn<DrugData, String> drug_col_name;
+	@FXML private TableColumn<DrugData, String> drug_col_manufacturer;
+	@FXML private TableColumn<DrugData, String> drug_col_expiry;
+	@FXML private TableColumn<DrugData, String> drug_col_unit;
+	@FXML private TableColumn<DrugData, String> drug_col_price;
+	@FXML private TableColumn<DrugData, String> drug_col_stock;
+	@FXML private TableColumn<DrugData, String> drug_col_create;
+	@FXML private TableColumn<DrugData, String> drug_col_update;
+	@FXML private TableColumn<DrugData, Void> drug_col_action;
+
 
 	@FXML
 	private AnchorPane main_form;
@@ -88,7 +115,10 @@ public class ReceptionistController implements Initializable {
 	private Button dashboard_btn;
 
 	@FXML
-	private Button doctors_btn;
+	private Button patients_btn;
+	
+	@FXML
+	private Button drugs_btn;
 
 	@FXML
 	private Button appointments_btn;
@@ -154,7 +184,7 @@ public class ReceptionistController implements Initializable {
 	private TableColumn<AppointmentData, String> home_appointment_col_schedule;
 
 	@FXML
-	private AnchorPane doctors_form;
+	private AnchorPane patients_form;
 
 	@FXML
 	private ScrollPane doctors_scrollPane;
@@ -203,6 +233,9 @@ public class ReceptionistController implements Initializable {
 
 	@FXML
 	private Button appointment_d_clearBtn;
+	
+	@FXML
+	private AnchorPane drugs_form;
 
 	@FXML
 	private AnchorPane profile_form;
@@ -241,7 +274,7 @@ public class ReceptionistController implements Initializable {
 	private ResultSet result;
 	private Statement statement;
 
-	// load data recreptionist
+	// load data receptionist
 	private String username;
 
 	public void setUsername(String username) {
@@ -254,15 +287,17 @@ public class ReceptionistController implements Initializable {
 		ObservableList<String> genderOptions = FXCollections.observableArrayList("Male", "Female");
 		gender_cb.setItems(genderOptions);
 		loadReceptionistProfile();
+		
+		showForm("dashboard");
 
-		// homePatientDisplayData();
-		homeAppointmentDisplayData();
-		homeDoctorInfoDisplay();
+		//homePatientDisplayData();
+		//homeAppointmentDisplayData();
+		//homeDoctorInfoDisplay();
 
 		// doctorShowCard();
 
-		appointmentAppointmentInfoDisplay();
-		appointmentDoctor();
+		//appointmentAppointmentInfoDisplay();
+		//appointmentDoctor();
 
 	}
 
@@ -403,7 +438,7 @@ public class ReceptionistController implements Initializable {
 			e.printStackTrace();
 		}
 	}
-
+//
 	@FXML
 	private void profileImportBtn(ActionEvent event) {
 		FileChooser open = new FileChooser();
@@ -447,10 +482,10 @@ public class ReceptionistController implements Initializable {
 
 		try {
 			if (alert.confirmationMessage("Are you sure you want to logout?")) {
-				Parent root = FXMLLoader.load(getClass().getResource("PatientPage.fxml"));
+				Parent root = FXMLLoader.load(getClass().getResource("/View/Login.fxml"));
 				Stage stage = new Stage();
-
 				stage.setScene(new Scene(root));
+				stage.setTitle("Login");
 				stage.show();
 
 				logout_btn.getScene().getWindow().hide();
@@ -461,379 +496,402 @@ public class ReceptionistController implements Initializable {
 		}
 
 	}
-
-	// public ObservableList<PatientData> homePatientGetData() {
-	//
-	// ObservableList<PatientData> listData = FXCollections.observableArrayList();
-	//
-	// String sql = "SELECT * FROM patient WHERE date_delete IS NULL AND patient_id
-	// = " + Data.patient_id;
-	// connect = Database.connectDB();
-	//
-	// try {
-	// prepare = connect.prepareStatement(sql);
-	// result = prepare.executeQuery();
-	//
-	// PatientData pData;
-	// while (result.next()) {
-	//// PatientsData(Integer id, Integer patientID, String description
-	//// , String diagnosis, String treatment, Date date)
-	// pData = new PatientData(result.getInt("id"),
-	// result.getInt("patient_id"),
-	// result.getString("description"),
-	// result.getString("diagnosis"),
-	// result.getString("treatment"), result.getDate("date"));
-	//
-	// listData.add(pData);
-	// }
-	// } catch (Exception e) {
-	// e.printStackTrace();
-	// }
-	// return listData;
-	// }
-
-	public ObservableList<PatientData> homePatientListData;
-
-	// public void homePatientDisplayData() {
-	// homePatientListData = homePatientGetData();
-	//
-	// home_patient_col_description.setCellValueFactory(new
-	// PropertyValueFactory<>("description"));
-	// home_patient_col_diagnosis.setCellValueFactory(new
-	// PropertyValueFactory<>("diagnosis"));
-	// home_patient_col_treatment.setCellValueFactory(new
-	// PropertyValueFactory<>("treatment"));
-	// home_patient_col_dateIn.setCellValueFactory(new
-	// PropertyValueFactory<>("date"));
-	//
-	// home_patient_tableView.setItems(homePatientListData);
-	// }
-
-	public ObservableList<AppointmentData> homeAppointmentGetData() {
-
-		ObservableList<AppointmentData> listData = FXCollections.observableArrayList();
-
-		String sql = "SELECT * FROM appointment WHERE date_delete IS NULL AND patient_id = " + Data.patient_id;
-
-		connect = Database.connectDB();
-
-		try {
-			prepare = connect.prepareStatement(sql);
-			result = prepare.executeQuery();
-
-			AppointmentData aData;
-			while (result.next()) {
-				// AppointmentData(Integer appointmentID, String description,
-				// String diagnosis, String treatment, String doctorID, Date schedule)
-				aData = new AppointmentData(result.getInt("appointment_id"), result.getString("description"),
-						result.getString("diagnosis"), result.getString("treatment"), result.getString("doctor"),
-						result.getDate("schedule"));
-
-				listData.add(aData);
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return listData;
-	}
-
-	public ObservableList<AppointmentData> homeAppointmentListData;
-
-	public void homeAppointmentDisplayData() {
-		homeAppointmentListData = homeAppointmentGetData();
-
-		home_appointment_col_appointmenID.setCellValueFactory(new PropertyValueFactory<>("appointmentID"));
-		home_appointment_col_description.setCellValueFactory(new PropertyValueFactory<>("description"));
-		home_appointment_col_diagnosis.setCellValueFactory(new PropertyValueFactory<>("diagnosis"));
-		home_appointment_col_treatment.setCellValueFactory(new PropertyValueFactory<>("treatment"));
-		home_appointment_col_doctor.setCellValueFactory(new PropertyValueFactory<>("doctor"));
-		home_appointment_col_schedule.setCellValueFactory(new PropertyValueFactory<>("schedule"));
-
-		home_appointment_tableView.setItems(homeAppointmentListData);
-	}
-
-	public void homeDoctorInfoDisplay() {
-
-		String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
-
-		connect = Database.connectDB();
-
-		String tempDoctorID = "";
-		try {
-			prepare = connect.prepareStatement(sql);
-			result = prepare.executeQuery();
-
-			if (result.next()) {
-				tempDoctorID = result.getString("doctor");
-			}
-
-			String checkDoctor = "SELECT * FROM doctor WHERE doctor_id = '" + tempDoctorID + "'";
-
-			statement = connect.createStatement();
-			result = statement.executeQuery(checkDoctor);
-
-			if (result.next()) {
-				home_doctor_name.setText(result.getString("full_name"));
-				home_doctor_specialization.setText(result.getString("specialized"));
-				home_doctor_email.setText(result.getString("email"));
-				home_doctor_mobileNumber.setText(result.getString("mobile_number"));
-
-				String path = result.getString("image");
-
-				if (path != null) {
-					path = path.replace("\\", "\\\\");
-
-					image = new Image("File:" + path, 138, 82, false, true);
-					home_doctor_circle.setFill(new ImagePattern(image));
-				}
-
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-	}
-
-	// private ObservableList<DoctorData> doctorList =
-	// FXCollections.observableArrayList();
-
-	// public ObservableList<DoctorData> doctorGetData() {
-	//
-	// String sql = "SELECT * FROM doctor WHERE status = 'Active'";
-	//
-	// connect = Database.connectDB();
-	//
-	// ObservableList<DoctorData> listData = FXCollections.observableArrayList();
-	//
-	// try {
-	// prepare = connect.prepareStatement(sql);
-	// result = prepare.executeQuery();
-	//
-	// DoctorData dData;
-	//
-	// while (result.next()) {
-	//// DoctorData(Integer id, String doctorID, String fullName, String
-	// specialized, String email)
-	// dData = new DoctorData(result.getInt("id"),
-	// result.getString("doctor_id"),
-	// result.getString("full_name"),
-	// result.getString("specialized"),
-	// result.getString("email"),
-	// result.getString("image"));
-	//
-	// listData.add(dData);
-	// }
-	//
-	// } catch (Exception e) {
-	// e.printStackTrace();
-	// }
-	// return listData;
-	// }
-
-	// public void doctorShowCard() {
-	// doctorList.clear();
-	// doctorList.addAll(doctorGetData());
-	//
-	// doctors_gridPane.getChildren().clear();
-	// doctors_gridPane.getColumnConstraints().clear();
-	// doctors_gridPane.getRowConstraints().clear();
-	//
-	// int row = 0, column = 0;
-	//
-	// for (int q = 0; q < doctorList.size(); q++) {
-	// try {
-	// FXMLLoader loader = new FXMLLoader();
-	// loader.setLocation(getClass().getResource("DoctorCard.fxml"));
-	// StackPane stack = loader.load();
-	//
-	// DoctorCardController dController = loader.getController();
-	// dController.setData(doctorList.get(q));
-	//
-	// if (column == 3) {
-	// column = 0;
-	// row++;
-	// }
-	//
-	// doctors_gridPane.add(stack, column++, row);
-	//
-	// GridPane.setMargin(stack, new Insets(15));
-	//
-	// } catch (Exception e) {
-	// e.printStackTrace();
-	// }
-	// }
-	//
-	// }
-
-	public void appointmentAppointmentInfoDisplay() {
-
-		String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
-
-		connect = Database.connectDB();
-
-		try {
-			prepare = connect.prepareStatement(sql);
-			result = prepare.executeQuery();
-
-			if (result.next()) {
-				appointment_ad_name.setText(result.getString("full_name"));
-				appointment_ad_mobileNumber.setText(result.getString("mobile_number"));
-				appointment_ad_gender.setText(result.getString("gender"));
-				appointment_ad_address.setText(result.getString("address"));
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-	}
-
-	public void appointmentConfirmBtn() {
-
-		if (appointment_d_description.getText().isEmpty() || appointment_d_schedule.getValue() == null
-				|| appointment_d_doctor.getSelectionModel().isEmpty()) {
-			alert.errorMessage("Please fill all blank fields");
-		} else {
-
-			appointment_ad_description.setText(appointment_d_description.getText());
-			appointment_ad_doctorName.setText(appointment_d_doctor.getSelectionModel().getSelectedItem());
-
-			String sql = "SELECT * FROM doctor WHERE doctor_id = '"
-					+ appointment_d_doctor.getSelectionModel().getSelectedItem() + "'";
-
-			connect = Database.connectDB();
-			String tempSpecialized = "";
-			try {
-				prepare = connect.prepareStatement(sql);
-				result = prepare.executeQuery();
-
-				if (result.next()) {
-					tempSpecialized = result.getString("specialized");
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-			appointment_ad_specialization.setText(tempSpecialized);
-			appointment_ad_schedule.setText(String.valueOf(appointment_d_schedule.getValue()));
-		}
-
-	}
-
-	public void appointmentDoctor() {
-		String sql = "SELECT * FROM doctor WHERE delete_date IS NULL";
-		connect = Database.connectDB();
-
-		try {
-			prepare = connect.prepareStatement(sql);
-			result = prepare.executeQuery();
-
-			ObservableList listData = FXCollections.observableArrayList();
-			while (result.next()) {
-				listData.add(result.getString("doctor_id"));
-			}
-
-			appointment_d_doctor.setItems(listData);
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void appointmentClearBtn() {
-		appointment_d_doctor.getSelectionModel().clearSelection();
-		appointment_d_description.clear();
-		appointment_d_schedule.setValue(null);
-
-		appointment_ad_description.setText("");
-		appointment_ad_doctorName.setText("");
-		appointment_ad_specialization.setText("");
-		appointment_ad_schedule.setText("");
-	}
-
-	public void appointmentBookBtn() {
-		connect = Database.connectDB();
-
-		if (appointment_ad_description.getText().isEmpty() || appointment_d_doctor.getSelectionModel().isEmpty()
-				|| appointment_ad_specialization.getText().isEmpty() || appointment_ad_schedule.getText().isEmpty()) {
-			alert.errorMessage("Invalid");
-		} else {
-			String selectData = "SELECT MAX(appointment_id) FROM appointment";
-
-			int tempAppID = 0;
-
-			try {
-				statement = connect.createStatement();
-				result = statement.executeQuery(selectData);
-
-				if (result.next()) {
-					tempAppID = result.getInt("MAX(appointment_id)") + 1;
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-			String insertData = "INSERT INTO appointment (appointment_id, patient_id, name, gender"
-					+ ", description, mobile_number, address, date" + ", doctor, specialized, schedule, status) "
-					+ "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
-			Date date = new Date();
-			java.sql.Date sqlDate = new java.sql.Date(date.getTime());
-			try {
-				if (alert.confirmationMessage("Are you sure you want to book?")) {
-					prepare = connect.prepareStatement(insertData);
-					prepare.setString(1, String.valueOf(tempAppID));
-					prepare.setString(2, String.valueOf(Data.patient_id));
-					prepare.setString(3, appointment_ad_name.getText());
-					prepare.setString(4, appointment_ad_gender.getText());
-					prepare.setString(5, appointment_ad_description.getText());
-					prepare.setString(6, appointment_ad_mobileNumber.getText());
-					prepare.setString(7, appointment_ad_address.getText());
-					prepare.setString(8, String.valueOf(appointment_d_schedule.getValue()));
-					prepare.setString(9, appointment_d_doctor.getSelectionModel().getSelectedItem());
-					prepare.setString(10, appointment_ad_specialization.getText());
-					prepare.setString(11, appointment_ad_schedule.getText());
-					prepare.setString(12, "Active");
-
-					prepare.executeUpdate();
-
-					alert.successMessage("Successful !");
-
-					appointmentClearBtn();
-				} else {
-					alert.errorMessage("Cancelled.");
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
+//
+//	// public ObservableList<PatientData> homePatientGetData() {
+//	//
+//	// ObservableList<PatientData> listData = FXCollections.observableArrayList();
+//	//
+//	// String sql = "SELECT * FROM patient WHERE date_delete IS NULL AND patient_id
+//	// = " + Data.patient_id;
+//	// connect = Database.connectDB();
+//	//
+//	// try {
+//	// prepare = connect.prepareStatement(sql);
+//	// result = prepare.executeQuery();
+//	//
+//	// PatientData pData;
+//	// while (result.next()) {
+//	//// PatientsData(Integer id, Integer patientID, String description
+//	//// , String diagnosis, String treatment, Date date)
+//	// pData = new PatientData(result.getInt("id"),
+//	// result.getInt("patient_id"),
+//	// result.getString("description"),
+//	// result.getString("diagnosis"),
+//	// result.getString("treatment"), result.getDate("date"));
+//	//
+//	// listData.add(pData);
+//	// }
+//	// } catch (Exception e) {
+//	// e.printStackTrace();
+//	// }
+//	// return listData;
+//	// }
+//
+//	public ObservableList<PatientData> homePatientListData;
+//
+//	// public void homePatientDisplayData() {
+//	// homePatientListData = homePatientGetData();
+//	//
+//	// home_patient_col_description.setCellValueFactory(new
+//	// PropertyValueFactory<>("description"));
+//	// home_patient_col_diagnosis.setCellValueFactory(new
+//	// PropertyValueFactory<>("diagnosis"));
+//	// home_patient_col_treatment.setCellValueFactory(new
+//	// PropertyValueFactory<>("treatment"));
+//	// home_patient_col_dateIn.setCellValueFactory(new
+//	// PropertyValueFactory<>("date"));
+//	//
+//	// home_patient_tableView.setItems(homePatientListData);
+//	// }
+//
+//	public ObservableList<AppointmentData> homeAppointmentGetData() {
+//
+//		ObservableList<AppointmentData> listData = FXCollections.observableArrayList();
+//
+//		String sql = "SELECT * FROM appointment WHERE date_delete IS NULL AND patient_id = " + Data.patient_id;
+//
+//		connect = Database.connectDB();
+//
+//		try {
+//			prepare = connect.prepareStatement(sql);
+//			result = prepare.executeQuery();
+//
+//			AppointmentData aData;
+//			while (result.next()) {
+//				// AppointmentData(Integer appointmentID, String description,
+//				// String diagnosis, String treatment, String doctorID, Date schedule)
+//				aData = new AppointmentData(result.getInt("appointment_id"), result.getString("description"),
+//						result.getString("diagnosis"), result.getString("treatment"), result.getString("doctor"),
+//						result.getDate("schedule"));
+//
+//				listData.add(aData);
+//			}
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//		return listData;
+//	}
+//
+//	public ObservableList<AppointmentData> homeAppointmentListData;
+//
+//	public void homeAppointmentDisplayData() {
+//		homeAppointmentListData = homeAppointmentGetData();
+//
+//		home_appointment_col_appointmenID.setCellValueFactory(new PropertyValueFactory<>("appointmentID"));
+//		home_appointment_col_description.setCellValueFactory(new PropertyValueFactory<>("description"));
+//		home_appointment_col_diagnosis.setCellValueFactory(new PropertyValueFactory<>("diagnosis"));
+//		home_appointment_col_treatment.setCellValueFactory(new PropertyValueFactory<>("treatment"));
+//		home_appointment_col_doctor.setCellValueFactory(new PropertyValueFactory<>("doctor"));
+//		home_appointment_col_schedule.setCellValueFactory(new PropertyValueFactory<>("schedule"));
+//
+//		home_appointment_tableView.setItems(homeAppointmentListData);
+//	}
+//
+//	public void homeDoctorInfoDisplay() {
+//
+//		String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
+//
+//		connect = Database.connectDB();
+//
+//		String tempDoctorID = "";
+//		try {
+//			prepare = connect.prepareStatement(sql);
+//			result = prepare.executeQuery();
+//
+//			if (result.next()) {
+//				tempDoctorID = result.getString("doctor");
+//			}
+//
+//			String checkDoctor = "SELECT * FROM doctor WHERE doctor_id = '" + tempDoctorID + "'";
+//
+//			statement = connect.createStatement();
+//			result = statement.executeQuery(checkDoctor);
+//
+//			if (result.next()) {
+//				home_doctor_name.setText(result.getString("full_name"));
+//				home_doctor_specialization.setText(result.getString("specialized"));
+//				home_doctor_email.setText(result.getString("email"));
+//				home_doctor_mobileNumber.setText(result.getString("mobile_number"));
+//
+//				String path = result.getString("image");
+//
+//				if (path != null) {
+//					path = path.replace("\\", "\\\\");
+//
+//					image = new Image("File:" + path, 138, 82, false, true);
+//					home_doctor_circle.setFill(new ImagePattern(image));
+//				}
+//
+//			}
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//
+//	}
+//
+//	// private ObservableList<DoctorData> doctorList =
+//	// FXCollections.observableArrayList();
+//
+//	// public ObservableList<DoctorData> doctorGetData() {
+//	//
+//	// String sql = "SELECT * FROM doctor WHERE status = 'Active'";
+//	//
+//	// connect = Database.connectDB();
+//	//
+//	// ObservableList<DoctorData> listData = FXCollections.observableArrayList();
+//	//
+//	// try {
+//	// prepare = connect.prepareStatement(sql);
+//	// result = prepare.executeQuery();
+//	//
+//	// DoctorData dData;
+//	//
+//	// while (result.next()) {
+//	//// DoctorData(Integer id, String doctorID, String fullName, String
+//	// specialized, String email)
+//	// dData = new DoctorData(result.getInt("id"),
+//	// result.getString("doctor_id"),
+//	// result.getString("full_name"),
+//	// result.getString("specialized"),
+//	// result.getString("email"),
+//	// result.getString("image"));
+//	//
+//	// listData.add(dData);
+//	// }
+//	//
+//	// } catch (Exception e) {
+//	// e.printStackTrace();
+//	// }
+//	// return listData;
+//	// }
+//
+//	// public void doctorShowCard() {
+//	// doctorList.clear();
+//	// doctorList.addAll(doctorGetData());
+//	//
+//	// doctors_gridPane.getChildren().clear();
+//	// doctors_gridPane.getColumnConstraints().clear();
+//	// doctors_gridPane.getRowConstraints().clear();
+//	//
+//	// int row = 0, column = 0;
+//	//
+//	// for (int q = 0; q < doctorList.size(); q++) {
+//	// try {
+//	// FXMLLoader loader = new FXMLLoader();
+//	// loader.setLocation(getClass().getResource("DoctorCard.fxml"));
+//	// StackPane stack = loader.load();
+//	//
+//	// DoctorCardController dController = loader.getController();
+//	// dController.setData(doctorList.get(q));
+//	//
+//	// if (column == 3) {
+//	// column = 0;
+//	// row++;
+//	// }
+//	//
+//	// doctors_gridPane.add(stack, column++, row);
+//	//
+//	// GridPane.setMargin(stack, new Insets(15));
+//	//
+//	// } catch (Exception e) {
+//	// e.printStackTrace();
+//	// }
+//	// }
+//	//
+//	// }
+//
+//	public void appointmentAppointmentInfoDisplay() {
+//
+//		String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
+//
+//		connect = Database.connectDB();
+//
+//		try {
+//			prepare = connect.prepareStatement(sql);
+//			result = prepare.executeQuery();
+//
+//			if (result.next()) {
+//				appointment_ad_name.setText(result.getString("full_name"));
+//				appointment_ad_mobileNumber.setText(result.getString("mobile_number"));
+//				appointment_ad_gender.setText(result.getString("gender"));
+//				appointment_ad_address.setText(result.getString("address"));
+//			}
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//
+//	}
+//
+//	public void appointmentConfirmBtn() {
+//
+//		if (appointment_d_description.getText().isEmpty() || appointment_d_schedule.getValue() == null
+//				|| appointment_d_doctor.getSelectionModel().isEmpty()) {
+//			alert.errorMessage("Please fill all blank fields");
+//		} else {
+//
+//			appointment_ad_description.setText(appointment_d_description.getText());
+//			appointment_ad_doctorName.setText(appointment_d_doctor.getSelectionModel().getSelectedItem());
+//
+//			String sql = "SELECT * FROM doctor WHERE doctor_id = '"
+//					+ appointment_d_doctor.getSelectionModel().getSelectedItem() + "'";
+//
+//			connect = Database.connectDB();
+//			String tempSpecialized = "";
+//			try {
+//				prepare = connect.prepareStatement(sql);
+//				result = prepare.executeQuery();
+//
+//				if (result.next()) {
+//					tempSpecialized = result.getString("specialized");
+//				}
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//
+//			appointment_ad_specialization.setText(tempSpecialized);
+//			appointment_ad_schedule.setText(String.valueOf(appointment_d_schedule.getValue()));
+//		}
+//
+//	}
+//
+//	public void appointmentDoctor() {
+//		String sql = "SELECT * FROM doctor WHERE delete_date IS NULL";
+//		connect = Database.connectDB();
+//
+//		try {
+//			prepare = connect.prepareStatement(sql);
+//			result = prepare.executeQuery();
+//
+//			ObservableList listData = FXCollections.observableArrayList();
+//			while (result.next()) {
+//				listData.add(result.getString("doctor_id"));
+//			}
+//
+//			appointment_d_doctor.setItems(listData);
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
+//
+//	public void appointmentClearBtn() {
+//		appointment_d_doctor.getSelectionModel().clearSelection();
+//		appointment_d_description.clear();
+//		appointment_d_schedule.setValue(null);
+//
+//		appointment_ad_description.setText("");
+//		appointment_ad_doctorName.setText("");
+//		appointment_ad_specialization.setText("");
+//		appointment_ad_schedule.setText("");
+//	}
+//
+//	public void appointmentBookBtn() {
+//		connect = Database.connectDB();
+//
+//		if (appointment_ad_description.getText().isEmpty() || appointment_d_doctor.getSelectionModel().isEmpty()
+//				|| appointment_ad_specialization.getText().isEmpty() || appointment_ad_schedule.getText().isEmpty()) {
+//			alert.errorMessage("Invalid");
+//		} else {
+//			String selectData = "SELECT MAX(appointment_id) FROM appointment";
+//
+//			int tempAppID = 0;
+//
+//			try {
+//				statement = connect.createStatement();
+//				result = statement.executeQuery(selectData);
+//
+//				if (result.next()) {
+//					tempAppID = result.getInt("MAX(appointment_id)") + 1;
+//				}
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//
+//			String insertData = "INSERT INTO appointment (appointment_id, patient_id, name, gender"
+//					+ ", description, mobile_number, address, date" + ", doctor, specialized, schedule, status) "
+//					+ "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
+//			Date date = new Date();
+//			java.sql.Date sqlDate = new java.sql.Date(date.getTime());
+//			try {
+//				if (alert.confirmationMessage("Are you sure you want to book?")) {
+//					prepare = connect.prepareStatement(insertData);
+//					prepare.setString(1, String.valueOf(tempAppID));
+//					prepare.setString(2, String.valueOf(Data.patient_id));
+//					prepare.setString(3, appointment_ad_name.getText());
+//					prepare.setString(4, appointment_ad_gender.getText());
+//					prepare.setString(5, appointment_ad_description.getText());
+//					prepare.setString(6, appointment_ad_mobileNumber.getText());
+//					prepare.setString(7, appointment_ad_address.getText());
+//					prepare.setString(8, String.valueOf(appointment_d_schedule.getValue()));
+//					prepare.setString(9, appointment_d_doctor.getSelectionModel().getSelectedItem());
+//					prepare.setString(10, appointment_ad_specialization.getText());
+//					prepare.setString(11, appointment_ad_schedule.getText());
+//					prepare.setString(12, "Active");
+//
+//					prepare.executeUpdate();
+//
+//					alert.successMessage("Successful !");
+//
+//					appointmentClearBtn();
+//				} else {
+//					alert.errorMessage("Cancelled.");
+//				}
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//		}
+//	}
+	
 	@FXML
-	void switchForm(ActionEvent event) {
+	private void switchForm(ActionEvent event) {
 
 		if (event.getSource() == dashboard_btn) {
-			home_form.setVisible(true);
-			doctors_form.setVisible(false);
-			appointments_form.setVisible(false);
-			profile_form.setVisible(false);
-		} else if (event.getSource() == doctors_btn) {
-			home_form.setVisible(false);
-			doctors_form.setVisible(true);
-			appointments_form.setVisible(false);
-			profile_form.setVisible(false);
+			showForm("dashboard");
+		} else if (event.getSource() == patients_btn) {
+			showForm("patients");
+		} else if (event.getSource() == drugs_btn) {
+			showForm("drugs");
 		} else if (event.getSource() == appointments_btn) {
-			home_form.setVisible(false);
-			doctors_form.setVisible(false);
-			appointments_form.setVisible(true);
-			profile_form.setVisible(false);
+			showForm("appointments");
 		} else if (event.getSource() == profile_btn) {
-			home_form.setVisible(false);
-			doctors_form.setVisible(false);
-			appointments_form.setVisible(false);
-			profile_form.setVisible(true);
-		}
+			showForm("profile");
+		} 
+	}
 
+	private void showForm(String formName) {
+		home_form.setVisible(false);
+		drugs_form.setVisible(false);
+		patients_form.setVisible(false);
+		appointments_form.setVisible(false);
+		profile_form.setVisible(false);
+
+		switch (formName) {
+			case "dashboard":
+				home_form.setVisible(true);
+				current_form.setText("Home Form");
+				break;
+			case "drugs":
+				drugs_form.setVisible(true);
+				current_form.setText("Drugs Form");
+				 loadDrugTable(); 
+				break;
+			case "patients":
+				patients_form.setVisible(true);
+				current_form.setText("Patients Form");
+				 //loadPatientTable(); 
+				break;
+			case "appointments":
+				appointments_form.setVisible(true);
+				current_form.setText("Appointments Form");
+				break;
+
+			case "profile":
+				profile_form.setVisible(true);
+				current_form.setText("Profile Form");
+				break;
+		}
 	}
 
 	public void runTime() {
@@ -857,7 +915,143 @@ public class ReceptionistController implements Initializable {
 				}
 			}
 		}.start();
+	}
+	
+	// =======================CRUD Drug==================================
+	
+	private void loadDrugTable() {
+	    ObservableList<DrugData> list = FXCollections.observableArrayList();
 
+	    try {
+	        Connection conn = Database.connectDB();
+	        String sql = "SELECT Id, Name, Manufacturer, Expiry_date, Unit, Price, Stock, Create_date, Update_date\r\n"
+	        		+ "FROM DRUG ";
+
+	        PreparedStatement ps = conn.prepareStatement(sql);
+	        ResultSet rs = ps.executeQuery();
+
+	        while (rs.next()) {
+	        	list.add(new DrugData(
+	        		    rs.getString("Id"),
+	        		    rs.getString("Name"),
+	        		    rs.getString("Manufacturer"),
+	        		    rs.getString("Unit"),
+	        		    rs.getBigDecimal("Price"),
+	        		    rs.getInt("Stock"),
+	        		    rs.getDate("Expiry_date").toLocalDate(),
+	        		    rs.getTimestamp("Create_date"),
+	        		    rs.getTimestamp("Update_date")
+	        		));
+	        }
+
+	        // Cột dữ liệu
+	        drug_col_id.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDrugId()));
+	        drug_col_name.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
+	        drug_col_manufacturer.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getManufacturer()));
+	        drug_col_expiry.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getExpiryDate().toString()));
+	        drug_col_unit.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getUnit()));
+	        drug_col_price.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getPrice().toString()));
+	        drug_col_stock.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(data.getValue().getStock())));
+	        drug_col_create.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCreateDate().toString()));
+	        drug_col_update.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getUpdateDate().toString()));
+	      
+	     // Cột hành động
+	        drug_col_action.setCellFactory(col -> new TableCell<>() {
+	            private final Button editBtn = new Button("Update");
+	            private final Button deleteBtn = new Button("Delete");
+	            private final HBox hbox = new HBox(5, editBtn, deleteBtn);
+	            {
+	                editBtn.setOnAction(e -> {
+	                    DrugData drug = getTableView().getItems().get(getIndex());
+	                    openEditDrugForm(drug);
+	                });
+
+	                deleteBtn.setOnAction(e -> {
+	                    DrugData drug = getTableView().getItems().get(getIndex());
+	                    deleteDrug(drug.getDrugId());
+	                });
+	            }
+
+	            @Override
+	            protected void updateItem(Void item, boolean empty) {
+	                super.updateItem(item, empty);
+	                setGraphic(empty ? null : hbox);
+	            }
+	        });
+
+	        drug_tableView.setItems(list);
+	        conn.close();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
 	}
 
+	private void deleteDrug(String drugId) {
+	    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+	    alert.setTitle("Delete Confirmation");
+	    alert.setHeaderText("Are you sure you want to delete this drug?");
+	    alert.setContentText("This action cannot be undone.");
+
+	    Optional<ButtonType> result = alert.showAndWait();
+	    if (result.isPresent() && result.get() == ButtonType.OK) {
+	        try {
+	            Connection conn = Database.connectDB();
+
+	            String sql = "DELETE FROM DRUG WHERE Id = ?";
+	            PreparedStatement ps = conn.prepareStatement(sql);
+	            ps.setString(1, drugId);
+	            ps.executeUpdate();
+
+	            conn.close();
+	            loadDrugTable(); // Refresh lại bảng sau khi xoá
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
+	    }
+	}
+
+	private void openEditDrugForm(DrugData drug) {
+	    try {
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/EditDrugForm.fxml"));
+	        Parent root = loader.load();
+
+	        EditDrugFormController controller = loader.getController();
+	        controller.setDrugData(drug); // Truyền dữ liệu sang form chỉnh sửa
+
+	        Stage stage = new Stage();
+	        stage.initModality(Modality.APPLICATION_MODAL);
+	        stage.initStyle(StageStyle.UNDECORATED);
+	        stage.setTitle("Update Drug");
+	        stage.setScene(new Scene(root));
+
+	        stage.setOnHidden(e -> loadDrugTable()); // Tải lại bảng khi form đóng
+	        stage.showAndWait();
+
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	        System.err.println("ERROR : " + e.getMessage());
+	    }
+	}
+
+
+	@FXML
+	private void openAddDrugForm() {
+	    try {
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/AddDrugForm.fxml"));
+	        Parent root = loader.load();
+
+	        Stage stage = new Stage();
+	        stage.initModality(Modality.APPLICATION_MODAL);
+	        stage.setTitle("Add New Drug");
+	        stage.setScene(new Scene(root));
+
+	        stage.setOnHidden(e -> loadDrugTable()); // Refresh lại bảng khi thêm thuốc
+	        stage.showAndWait();
+
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+	}
+
+	
 }
