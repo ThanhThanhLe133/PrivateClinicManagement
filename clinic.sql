@@ -8,7 +8,7 @@ CREATE TABLE USER_ACCOUNT (
     Id CHAR(36) PRIMARY KEY NOT NULL,
     Username VARCHAR(50) UNIQUE NOT NULL,
     Password VARCHAR(50) NOT NULL,
-    Email VARCHAR(50),
+    email VARCHAR(50),
     Name VARCHAR(50),
     Avatar LONGBLOB,
     Gender VARCHAR(10),
@@ -30,7 +30,7 @@ CREATE TABLE DOCTOR (
     Phone VARCHAR(50),
     Specialized TEXT,
     Address TEXT,
-    Is_confirmed BOOLEAN DEFAULT FALSE,
+    Is_confirmed BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (Doctor_id) REFERENCES USER_ACCOUNT(Id) ON DELETE CASCADE
 );
 
@@ -39,7 +39,7 @@ CREATE TABLE RECEPTIONIST (
     Receptionist_id CHAR(36) PRIMARY KEY NOT NULL,
     Phone VARCHAR(50),
     Address TEXT,
-    Is_confirmed BOOLEAN DEFAULT FALSE,
+    Is_confirmed BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (Receptionist_id) REFERENCES USER_ACCOUNT(Id) ON DELETE CASCADE
 );
 
@@ -76,7 +76,7 @@ CREATE TABLE APPOINTMENT (
 SET @Admin_id := UUID();
 
 INSERT INTO USER_ACCOUNT (
-    Id, Username, Password, Email, Name, Avartar, Gender, Role, Is_active
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
 ) VALUES (
     @Admin_id,
     'admin02',
@@ -95,7 +95,7 @@ INSERT INTO ADMIN (Admin_id) VALUES (@Admin_id);
 SET @doctor_id := UUID();
 
 INSERT INTO USER_ACCOUNT (
-    Id, Username, Password, Email, Name, Avartar, Gender, Role, Is_active
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
 ) VALUES (
     @doctor_id,
     'dr.smith',
@@ -121,7 +121,7 @@ INSERT INTO DOCTOR (
 SET @recept_id := UUID();
 
 INSERT INTO USER_ACCOUNT (
-    Id, Username, Password, Email, Name, Avartar, Gender, Role, Is_active
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
 ) VALUES (
     @recept_id,
     'recept.anna',
