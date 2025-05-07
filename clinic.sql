@@ -73,15 +73,15 @@ CREATE TABLE APPOINTMENT (
 );
 
 CREATE TABLE DRUG (
-    Id CHAR(36) PRIMARY KEY NOT NULL,
+    Id CHAR(36) PRIMARY KEY NOT NULL DEFAULT (UUID()),
     Name VARCHAR(50) NOT NULL,
     Manufacturer VARCHAR(100) NOT NULL,
     Expiry_date DATE NOT NULL,
     Unit VARCHAR(50) NOT NULL, 
     Price DECIMAL(10,2) NOT NULL,  
     Stock INT NOT NULL, 
-    Create_date DATETIME,
-    Update_date DATETIME
+    Create_date DATETIME DEFAULT (Now()),
+    Update_date DATETIME DEFAULT (Now())
 );
 
 CREATE TABLE PRESCRIPTION (
@@ -194,3 +194,35 @@ INSERT INTO RECEPTIONIST (
     '0988123456',
     '23 Front Office Blvd, District 3'
 );
+
+-- INSERT mẫu DRUG
+INSERT INTO DRUG (Id, Name, Manufacturer, Expiry_date, Unit, Price, Stock, Create_date, Update_date)
+VALUES 
+(
+  UUID(),
+  'Paracetamol 500mg',
+  'ABC Pharma Co., Ltd',
+  '2026-12-31',
+  'Tablet',
+  150000.00,
+  100,
+  NOW(),
+  NOW()
+),
+(
+  UUID(),
+  'Amoxicillin 250mg',
+  'XYZ Healthcare Inc.',
+  '2025-10-15',
+  'Capsule',
+  250000.00,
+  50,
+  NOW(),
+  NOW()
+);
+
+INSERT INTO DRUG (Id, Name, Manufacturer, Expiry_date, Unit, Price, Stock, Create_date, Update_date)
+VALUES
+(UUID(), 'Ibuprofen', 'ABC Health', '2027-05-20', 'Bottle', 75.00, 200, '2025-05-07 13:00:00', '2025-05-07 13:00:00'),
+(UUID(), 'Aspirin', 'GHI Pharma', '2028-01-15', 'Bottle', 60.00, 120, '2025-05-07 15:00:00', '2025-05-07 15:00:00'),
+(UUID(), 'Vitamin C', 'JKL Health', '2025-12-31', 'Box', 25.00, 250, '2025-05-07 16:00:00', '2025-05-07 16:00:00');
