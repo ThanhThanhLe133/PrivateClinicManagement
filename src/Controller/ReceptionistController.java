@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -92,6 +94,21 @@ public class ReceptionistController implements Initializable {
 	@FXML private TableColumn<DrugData, String> drug_col_update;
 	@FXML private TableColumn<DrugData, Void> drug_col_action;
 
+	/*=====================CRUD PATIENT========================================*/
+
+	@FXML private TableView<PatientData> patients_tableView;
+	@FXML private TableColumn<PatientData, String> patients_col_patientID;
+	@FXML private TableColumn<PatientData, String> patients_col_name;
+	@FXML private TableColumn<PatientData, String> patients_col_email;
+	@FXML private TableColumn<PatientData, String> patients_col_gender;
+	@FXML private TableColumn<PatientData, String> patients_col_phone;
+	@FXML private TableColumn<PatientData, String> patients_col_address;
+	@FXML private TableColumn<PatientData, String> patients_col_diagnosis;
+	@FXML private TableColumn<PatientData, BigDecimal> patients_col_height;
+	@FXML private TableColumn<PatientData, BigDecimal> patients_col_weight;
+	@FXML private TableColumn<PatientData, Timestamp> patients_col_create;
+	@FXML private TableColumn<PatientData, Timestamp> patients_col_update;
+	@FXML private TableColumn<PatientData, Void> patients_col_action;
 
 	@FXML
 	private AnchorPane main_form;
@@ -128,24 +145,6 @@ public class ReceptionistController implements Initializable {
 
 	@FXML
 	private AnchorPane home_form;
-
-	@FXML
-	private TableView<PatientData> home_patient_tableView;
-
-	@FXML
-	private TableColumn<PatientData, String> home_patient_col_description;
-
-	@FXML
-	private TableColumn<PatientData, String> home_patient_col_diagnosis;
-
-	@FXML
-	private TableColumn<PatientData, String> home_patient_col_treatment;
-
-	@FXML
-	private TableColumn<PatientData, String> home_patient_col_dateIn;
-
-	@FXML
-	private TableColumn<PatientData, String> home_patient_col_dateDischarge;
 
 	@FXML
 	private Circle home_doctor_circle;
@@ -501,8 +500,8 @@ public class ReceptionistController implements Initializable {
 //	//
 //	// ObservableList<PatientData> listData = FXCollections.observableArrayList();
 //	//
-//	// String sql = "SELECT * FROM patient WHERE date_delete IS NULL AND patient_id
-//	// = " + Data.patient_id;
+//	// String sql = "SELECT * FROM patient WHERE date_delete IS NULL AND patientId
+//	// = " + Data.patientId;
 //	// connect = Database.connectDB();
 //	//
 //	// try {
@@ -514,7 +513,7 @@ public class ReceptionistController implements Initializable {
 //	//// PatientsData(Integer id, Integer patientID, String description
 //	//// , String diagnosis, String treatment, Date date)
 //	// pData = new PatientData(result.getInt("id"),
-//	// result.getInt("patient_id"),
+//	// result.getInt("patientId"),
 //	// result.getString("description"),
 //	// result.getString("diagnosis"),
 //	// result.getString("treatment"), result.getDate("date"));
@@ -548,7 +547,7 @@ public class ReceptionistController implements Initializable {
 //
 //		ObservableList<AppointmentData> listData = FXCollections.observableArrayList();
 //
-//		String sql = "SELECT * FROM appointment WHERE date_delete IS NULL AND patient_id = " + Data.patient_id;
+//		String sql = "SELECT * FROM appointment WHERE date_delete IS NULL AND patientId = " + Data.patientId;
 //
 //		connect = Database.connectDB();
 //
@@ -590,7 +589,7 @@ public class ReceptionistController implements Initializable {
 //
 //	public void homeDoctorInfoDisplay() {
 //
-//		String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
+//		String sql = "SELECT * FROM patient WHERE patientId = " + Data.patientId;
 //
 //		connect = Database.connectDB();
 //
@@ -704,7 +703,7 @@ public class ReceptionistController implements Initializable {
 //
 //	public void appointmentAppointmentInfoDisplay() {
 //
-//		String sql = "SELECT * FROM patient WHERE patient_id = " + Data.patient_id;
+//		String sql = "SELECT * FROM patient WHERE patientId = " + Data.patientId;
 //
 //		connect = Database.connectDB();
 //
@@ -809,7 +808,7 @@ public class ReceptionistController implements Initializable {
 //				e.printStackTrace();
 //			}
 //
-//			String insertData = "INSERT INTO appointment (appointment_id, patient_id, name, gender"
+//			String insertData = "INSERT INTO appointment (appointment_id, patientId, name, gender"
 //					+ ", description, mobile_number, address, date" + ", doctor, specialized, schedule, status) "
 //					+ "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
 //			Date date = new Date();
@@ -818,7 +817,7 @@ public class ReceptionistController implements Initializable {
 //				if (alert.confirmationMessage("Are you sure you want to book?")) {
 //					prepare = connect.prepareStatement(insertData);
 //					prepare.setString(1, String.valueOf(tempAppID));
-//					prepare.setString(2, String.valueOf(Data.patient_id));
+//					prepare.setString(2, String.valueOf(Data.patientId));
 //					prepare.setString(3, appointment_ad_name.getText());
 //					prepare.setString(4, appointment_ad_gender.getText());
 //					prepare.setString(5, appointment_ad_description.getText());
@@ -880,7 +879,7 @@ public class ReceptionistController implements Initializable {
 			case "patients":
 				patients_form.setVisible(true);
 				current_form.setText("Patients Form");
-				 //loadPatientTable(); 
+				 loadPatientTable(); 
 				break;
 			case "appointments":
 				appointments_form.setVisible(true);
@@ -983,6 +982,9 @@ public class ReceptionistController implements Initializable {
 	        conn.close();
 	    } catch (Exception e) {
 	        e.printStackTrace();
+	        Alert alert = new Alert(Alert.AlertType.ERROR);
+	        alert.setContentText("Error loading drug list!");
+	        alert.showAndWait();
 	    }
 	}
 
@@ -1046,6 +1048,180 @@ public class ReceptionistController implements Initializable {
 	        stage.setScene(new Scene(root));
 
 	        stage.setOnHidden(e -> loadDrugTable()); // Refresh lại bảng khi thêm thuốc
+	        stage.showAndWait();
+
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	// =======================CRUD Patient==================================
+	public void loadPatientTable() {
+	    ObservableList<PatientData> patientList = FXCollections.observableArrayList();
+
+	    String sql = "SELECT Patient_id, Name, Email, Gender, Phone, Address, Diagnosis, Height, Weight, Create_date, Update_date FROM PATIENT";
+
+	    try {
+	    	 Connection conn = Database.connectDB();
+	         PreparedStatement ps = conn.prepareStatement(sql);
+	         ResultSet rs = ps.executeQuery();
+
+	        while (rs.next()) {
+	            PatientData patient = new PatientData(
+	                rs.getString("Patient_Id"),
+	                rs.getString("Name"),
+	                rs.getString("Email"),
+	                rs.getString("Gender"),
+	                rs.getString("Phone"),
+	                rs.getString("Address"),
+	                rs.getString("Diagnosis"),
+	                rs.getBigDecimal("Height"),
+	                rs.getBigDecimal("Weight"),
+	                rs.getTimestamp("Create_date"),
+	                rs.getTimestamp("Update_date")
+	            );
+	            patientList.add(patient);
+	        }
+
+	        // Gán dữ liệu cho TableView
+	        patients_col_patientID.setCellValueFactory(new PropertyValueFactory<>("patientId"));
+	        patients_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
+	        patients_col_email.setCellValueFactory(new PropertyValueFactory<>("email"));
+	        patients_col_gender.setCellValueFactory(new PropertyValueFactory<>("gender"));
+	        patients_col_phone.setCellValueFactory(new PropertyValueFactory<>("phone"));
+	        patients_col_address.setCellValueFactory(new PropertyValueFactory<>("address"));
+	        patients_col_diagnosis.setCellValueFactory(new PropertyValueFactory<>("diagnosis"));
+	        patients_col_height.setCellValueFactory(new PropertyValueFactory<>("height"));
+	        patients_col_weight.setCellValueFactory(new PropertyValueFactory<>("weight"));
+	        patients_col_create.setCellValueFactory(new PropertyValueFactory<>("createDate"));
+	        patients_col_update.setCellValueFactory(new PropertyValueFactory<>("updateDate"));
+	        
+	        // Cột hành động
+	        patients_col_action.setCellFactory(col -> new TableCell<>() {
+	            private final Button editBtn = new Button("Update");
+	            private final Button deleteBtn = new Button("Delete");
+	            private final HBox hbox = new HBox(5, editBtn, deleteBtn);
+	            {
+	                editBtn.setOnAction(e -> {
+	                    PatientData patient = getTableView().getItems().get(getIndex());
+	                    openEditPatientForm(patient);
+	                });
+
+	                deleteBtn.setOnAction(e -> {
+	                    PatientData patient = getTableView().getItems().get(getIndex());
+	                    deletePatient(patient.getPatientId());
+	                });
+	            }
+
+	            @Override
+	            protected void updateItem(Void item, boolean empty) {
+	                super.updateItem(item, empty);
+	                setGraphic(empty ? null : hbox);
+	            }
+	        });
+
+	        patients_tableView.setItems(patientList);
+	        conn.close();
+	        
+//	        // Thêm nút cập nhật và xóa vào mỗi dòng
+//	        patients_col_action.setCellFactory(col -> new TableCell<>() {
+//	            private final Button btnEdit = new Button("Edit");
+//	            private final Button btnDelete = new Button("Delete");
+//	            private final HBox hbox = new HBox(5, btnEdit, btnDelete);
+//
+//	            {
+//	                btnEdit.getStyleClass().add("btn-2");
+//	                btnDelete.getStyleClass().add("btn-danger");
+//
+//	                btnEdit.setOnAction(e -> {
+//	                    PatientData patient = getTableView().getItems().get(getIndex());
+//	                    //openEditPatientForm(patient); // Mở form sửa
+//	                });
+//
+//	                btnDelete.setOnAction(e -> {
+//	                    PatientData patient = getTableView().getItems().get(getIndex());
+//	                    //deletePatient(patient); // Gọi hàm xóa
+//	                });
+//	            }
+//
+//	            @Override
+//	            protected void updateItem(Void item, boolean empty) {
+//	                super.updateItem(item, empty);
+//	                if (empty) {
+//	                    setGraphic(null);
+//	                } else {
+//	                    setGraphic(hbox);
+//	                }
+//	            }
+//	        });
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        Alert alert = new Alert(Alert.AlertType.ERROR);
+	        alert.setContentText("Error loading patient list!");
+	        alert.showAndWait();
+	    }
+	}
+	
+	private void deletePatient(String patientId) {
+	    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+	    alert.setTitle("Delete Confirmation");
+	    alert.setHeaderText("Are you sure you want to delete this patient?");
+	    alert.setContentText("This action cannot be undone.");
+
+	    Optional<ButtonType> result = alert.showAndWait();
+	    if (result.isPresent() && result.get() == ButtonType.OK) {
+	        try {
+	            Connection conn = Database.connectDB();
+
+	            String sql = "DELETE FROM PATIENT WHERE Patient_Id = ?";
+	            PreparedStatement ps = conn.prepareStatement(sql);
+	            ps.setString(1, patientId);
+	            ps.executeUpdate();
+
+	            conn.close();
+	            loadPatientTable(); // Refresh lại bảng sau khi xoá
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
+	    }
+	}
+	
+	private void openEditPatientForm(PatientData patient) {
+	    try {
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/EditPatientForm.fxml"));
+	        Parent root = loader.load();
+
+	        EditPatientFormController controller = loader.getController();
+	        controller.setPatientData(patient); // Truyền dữ liệu sang form chỉnh sửa
+
+	        Stage stage = new Stage();
+	        stage.initModality(Modality.APPLICATION_MODAL);
+	        stage.initStyle(StageStyle.UNDECORATED);
+	        stage.setTitle("Update Patient");
+	        stage.setScene(new Scene(root));
+
+	        stage.setOnHidden(e -> loadPatientTable()); // Tải lại bảng khi form đóng
+	        stage.showAndWait();
+
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	        System.err.println("ERROR : " + e.getMessage());
+	    }
+	}
+	
+	@FXML
+	private void openAddPatientForm() {
+	    try {
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/AddPatientForm.fxml"));
+	        Parent root = loader.load();
+
+	        Stage stage = new Stage();
+	        stage.initModality(Modality.APPLICATION_MODAL);
+	        stage.setTitle("Add New Patient");
+	        stage.setScene(new Scene(root));
+
+	        stage.setOnHidden(e -> loadPatientTable()); // Refresh lại bảng khi thêm thuốc
 	        stage.showAndWait();
 
 	    } catch (IOException e) {

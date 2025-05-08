@@ -126,7 +126,7 @@ public class EditDrugFormController {
 
     private void updateDrug() {
         try (Connection conn = Database.connectDB()) {
-            String sql = "UPDATE DRUG SET Name = ?, Manufacturer = ?, Expiry_date = ?, Unit = ?, Price = ?, Stock = ? WHERE Id = ?";
+            String sql = "UPDATE DRUG SET Name = ?, Manufacturer = ?, Expiry_date = ?, Unit = ?, Price = ?, Stock = ?, Update_date = ? WHERE Id = ?";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, txtDrugName.getText().trim());
             ps.setString(2, txtManufacturer.getText().trim());
@@ -134,7 +134,8 @@ public class EditDrugFormController {
             ps.setString(4, txtUnit.getText().trim());
             ps.setDouble(5, Double.parseDouble(txtPrice.getText().trim()));
             ps.setInt(6, Integer.parseInt(txtStock.getText().trim()));
-            ps.setString(7, drug.getDrugId());
+            ps.setTimestamp(7, new java.sql.Timestamp(System.currentTimeMillis()));
+            ps.setString(8, drug.getDrugId());
 
             ps.executeUpdate();
 

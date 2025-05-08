@@ -45,17 +45,17 @@ CREATE TABLE RECEPTIONIST (
 
 -- Bảng Patient
 CREATE TABLE PATIENT (
-    Patient_id CHAR(36) PRIMARY KEY NOT NULL,
+    Patient_id CHAR(36) PRIMARY KEY NOT NULL DEFAULT (UUID()),
     Name VARCHAR(50) NOT NULL,
     Email VARCHAR(50) NOT NULL,
     Gender VARCHAR(10) NOT NULL,
     Phone VARCHAR(50) NOT NULL,
     Address TEXT,
     Diagnosis TEXT,
-    Height DECIMAL,
-    Weight DECIMAL,
-    Create_date DATETIME,
-    Update_date DATETIME
+    Height DECIMAL(10,2),
+    Weight DECIMAL(10,2),
+    Create_date DATETIME DEFAULT (Now()),
+    Update_date DATETIME DEFAULT (Now())
 );
 
 -- BẢNG appointment
@@ -226,3 +226,10 @@ VALUES
 (UUID(), 'Ibuprofen', 'ABC Health', '2027-05-20', 'Bottle', 75.00, 200, '2025-05-07 13:00:00', '2025-05-07 13:00:00'),
 (UUID(), 'Aspirin', 'GHI Pharma', '2028-01-15', 'Bottle', 60.00, 120, '2025-05-07 15:00:00', '2025-05-07 15:00:00'),
 (UUID(), 'Vitamin C', 'JKL Health', '2025-12-31', 'Box', 25.00, 250, '2025-05-07 16:00:00', '2025-05-07 16:00:00');
+
+INSERT INTO PATIENT (Patient_id, Name, Email, Gender, Phone, Address, Diagnosis, Height, Weight, Create_date, Update_date) VALUES
+(UUID(), 'John Smith', 'john.smith@example.com', 'Male', '555-1234', '123 Main St, New York, NY', 'Common cold', 180.25, 75.50, '2024-05-01 08:00:00', '2024-05-01 08:00:00'),
+(UUID(), 'Emily Johnson', 'emily.johnson@example.com', 'Female', '555-5678', '456 Park Ave, Los Angeles, CA', 'Stomach ulcer', 165.00, 60.20, '2024-05-02 09:30:00', '2024-05-02 09:30:00'),
+(UUID(), 'Michael Brown', 'michael.brown@example.com', 'Male', '555-9101', '789 Broadway, Chicago, IL', 'Hypertension', 172.75, 82.40, '2024-05-03 10:45:00', '2024-05-03 10:45:00'),
+(UUID(), 'Sarah Davis', 'sarah.davis@example.com', 'Female', '555-1213', '321 Ocean Dr, Miami, FL', 'Diabetes', 160.50, 68.75, '2024-05-04 14:00:00', '2024-05-04 14:00:00'),
+(UUID(), 'David Wilson', 'david.wilson@example.com', 'Male', '555-1415', '654 River Rd, Seattle, WA', 'Sore throat', 177.60, 70.10, '2024-05-05 16:15:00', '2024-05-05 16:15:00');
