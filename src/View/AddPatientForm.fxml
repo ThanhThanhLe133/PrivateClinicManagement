@@ -4,7 +4,6 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.effect.DropShadow?>
@@ -16,7 +15,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.AddDoctorFormController">
+<BorderPane style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.AddPatientFormController">
     
     <top>
         <VBox alignment="CENTER" style="-fx-background-color: #0c8599;">
@@ -54,7 +53,7 @@
                     <!-- Row 1 -->
                     <Label text="Email *" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                     <VBox spacing="2" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                        <PasswordField fx:id="txtEmail" promptText="example@gmail.com" />
+                  <TextField fx:id="txtEmail" promptText="example@gmail.com" />
                         <Label fx:id="lblEmailError" style="-fx-font-size: 11px;" textFill="RED" visible="false" />
                     </VBox>
                     
