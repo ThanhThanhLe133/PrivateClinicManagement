@@ -5,38 +5,43 @@
  */
 package Model;
 
-import java.security.Timestamp;
+import java.sql.Timestamp;
+import java.util.UUID;
 
 /**
  *
  * @author WINDOWS 10
  */
-public class UserAccount {
+public abstract class UserAccount {
 
-	private String id; // CHAR(36)
-	private String username; // VARCHAR(50)
-	private String password; // VARCHAR(50)
-	private String name; // VARCHAR(50)
-	private String avatar; // TEXT
-	private String email; // VARCHAR(50)
-	private String gender; // VARCHAR(10)
-	private Boolean isActive; // BOOLEAN
-	private Timestamp createDate; // TIMESTAMP
-	private Timestamp updateDate; // TIMESTAMP
+	protected String id; // CHAR(36)
+	protected String username; // VARCHAR(50)
+	protected String password; // VARCHAR(50)
+	protected String name; // VARCHAR(50)
+	protected byte[] avatar;
+	protected String email; // VARCHAR(50)
+	protected String gender; // VARCHAR(10)
+	protected Boolean isActive; // BOOLEAN
+	protected Timestamp createDate; // TIMESTAMP
+	protected Timestamp updateDate; // TIMESTAMP
 
-	public UserAccount(String id, String username, String password, String name, String avatar, String email,
-			String gender, Boolean isActive, Timestamp createDate, Timestamp updateDate) {
-		super();
+	public UserAccount(String id, String username, String password, String name, String email,
+			String gender, Boolean isActive) {
 		this.id = id;
 		this.username = username;
 		this.password = password;
 		this.name = name;
-		this.avatar = avatar;
 		this.email = email;
 		this.gender = gender;
 		this.isActive = isActive;
-		this.createDate = createDate;
-		this.updateDate = updateDate;
+	}
+
+	public UserAccount() {
+		this.id = UUID.randomUUID().toString();
+		this.username = "";
+		this.password = "";
+		this.name = "";
+		this.email = "";
 	}
 
 	public String getId() {
@@ -55,7 +60,7 @@ public class UserAccount {
 		return name;
 	}
 
-	public String getAvatar() {
+	public byte[] getAvatar() {
 		return avatar;
 	}
 

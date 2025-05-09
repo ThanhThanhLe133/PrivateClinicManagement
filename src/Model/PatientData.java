@@ -19,17 +19,17 @@ import java.sql.Date;
 public class PatientData {
     
 
-    private String patientId;                // CHAR(36) PRIMARY KEY
-    private String name;             // VARCHAR(50) NOT NULL
-    private String email;            // VARCHAR(50) NOT NULL
-    private String gender;           // VARCHAR(10) NOT NULL
-    private String phone;            // VARCHAR(50) NOT NULL
-    private String address;          // TEXT
-    private String diagnosis;        // TEXT
-    private BigDecimal height;       // DECIMAL
-    private BigDecimal weight;       // DECIMAL
-    private Timestamp createDate;    // DATETIME
-    private Timestamp updateDate;    // DATETIME
+    private String patientId;              
+    private String name;            
+    private String email;          
+    private String gender;           
+    private String phone;          
+    private String address;        
+    private String diagnosis;       
+    private BigDecimal height;     
+    private BigDecimal weight;      
+    private Timestamp createDate;   
+    private Timestamp updateDate;   
     
     public String getPatientId() {
     	return patientId;
@@ -78,28 +78,18 @@ public class PatientData {
 	public PatientData()
     {
     	this.patientId = UUID.randomUUID().toString();
-    	this.createDate = Timestamp.valueOf(LocalDateTime.now());
-    	this.updateDate = Timestamp.valueOf(LocalDateTime.now());
-    }
-    
-    public PatientData(String name, String email, String gender, String phone, String address,
-			String diagnosis, BigDecimal height, BigDecimal weight)
-    {
-    	this.patientId = UUID.randomUUID().toString();
-    	this.name = name;
-		this.email = email;
-		this.gender = gender;
-		this.phone = phone;
-		this.address = address;
-		this.diagnosis = diagnosis;
-		this.height = height;
-		this.weight = weight;
-    	this.createDate = Timestamp.valueOf(LocalDateTime.now());
-    	this.updateDate = Timestamp.valueOf(LocalDateTime.now());
+    	this.name = "";
+		this.email = "";
+		this.gender = "";
+		this.phone = "";
+		this.address = "";
+		this.diagnosis = "";
+		this.height = BigDecimal.ZERO;
+		this.weight = BigDecimal.ZERO;
     }
 
 	public PatientData(String patientId, String name, String email, String gender, String phone, String address,
-			String diagnosis, BigDecimal height, BigDecimal weight, Timestamp createDate, Timestamp updateDate) {
+			String diagnosis, BigDecimal height, BigDecimal weight) {
 		this.patientId = patientId;
 		this.name = name;
 		this.email = email;
@@ -109,7 +99,5 @@ public class PatientData {
 		this.diagnosis = diagnosis;
 		this.height = height;
 		this.weight = weight;
-		this.createDate = createDate;
-		this.updateDate = updateDate;
 	}   
 }

@@ -87,34 +87,34 @@
 //
 //    AlertMessage alert = new AlertMessage();
 //
-////    public ObservableList<PatientData> getPatientRecordData() {
-////
-////        ObservableList<PatientData> listData = FXCollections.observableArrayList();
-////// RESTART RECORD PAGEFORM FXML IF YOU DIDNT SEE THE RECORDPAGEFORMCONTROLLER CLASS
-////        String selectData = "SELECT * FROM patient WHERE date_delete IS NULL AND doctor = '"
-////                + Data.doctor_id + "'";
-////        connect = Database.connectDB();
-////
-////        try {
-////            prepare = connect.prepareStatement(selectData);
-////            result = prepare.executeQuery();
-////
-////            PatientData pData;
-//////            PatientsData(Integer id, Integer patientID, String fullName, 
-//////            Long mobileNumber, String address, Date date
-//////            , Date dateModify, Date dateDelete)
-////            while (result.next()) {
-////                pData = new PatientData(result.getInt("id"), result.getInt("patient_id"),
-////                        result.getString("full_name"), result.getString("gender"), result.getLong("mobile_number"),
-////                        result.getString("address"), result.getString("status"), result.getDate("date"),
-////                        result.getDate("date_modify"), result.getDate("date_delete"));
-////                listData.add(pData);
-////            }
-////        } catch (Exception e) {
-////            e.printStackTrace();
-////        }
-////        return listData;
-////    }
+//    public ObservableList<PatientData> getPatientRecordData() {
+//
+//        ObservableList<PatientData> listData = FXCollections.observableArrayList();
+//// RESTART RECORD PAGEFORM FXML IF YOU DIDNT SEE THE RECORDPAGEFORMCONTROLLER CLASS
+//        String selectData = "SELECT * FROM patient WHERE date_delete IS NULL AND doctor = '"
+//                + Data.doctor_id + "'";
+//        connect = Database.connectDB();
+//
+//        try {
+//            prepare = connect.prepareStatement(selectData);
+//            result = prepare.executeQuery();
+//
+//            PatientData pData;
+////            PatientsData(Integer id, Integer patientID, String fullName, 
+////            Long mobileNumber, String address, Date date
+////            , Date dateModify, Date dateDelete)
+//            while (result.next()) {
+//                pData = new PatientData(result.getInt("id"), result.getInt("patient_id"),
+//                        result.getString("full_name"), result.getString("gender"), result.getLong("mobile_number"),
+//                        result.getString("address"), result.getString("status"), result.getDate("date"),
+//                        result.getDate("date_modify"), result.getDate("date_delete"));
+//                listData.add(pData);
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        return listData;
+//    }
 //
 //    private ObservableList<PatientData> patientRecordData;
 //

@@ -113,8 +113,8 @@ public class AddDrugFormController {
 
     private void saveDrug() {
         try (Connection conn = Database.connectDB()) {
-            String sql = "INSERT INTO DRUG (Name, Manufacturer, Expiry_date, Unit, Price, Stock) " +
-                         "VALUES (?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO DRUG (Id,Name, Manufacturer, Expiry_date, Unit, Price, Stock) " +
+                         "VALUES (UUID(),?, ?, ?, ?, ?, ?)";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, txtDrugName.getText().trim());
             ps.setString(2, txtManufacturer.getText().trim());

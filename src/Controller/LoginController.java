@@ -11,14 +11,17 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import Alert.AlertMessage;
 import DAO.Database;
+import Enum.ServiceType;
+import Enum.User;
 import Model.Data;
-import Model.Users;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -69,7 +72,7 @@ public class LoginController implements Initializable {
 	private Button login_loginBtn;
 
 	@FXML
-	private ComboBox<?> login_user;
+	private ComboBox<String> login_user;
 
 	@FXML
 	private ComboBox<?> register_user;
@@ -377,14 +380,13 @@ public class LoginController implements Initializable {
 	}
 
 	@FXML
-	public void userList() {
+	public void loadCombobox() {
 		// Đổ dữ liệu cho login_user ComboBox
-		List<String> listU = new ArrayList<>();
-		for (String data : Users.user) {
-			listU.add(data);
-		}
-		ObservableList listData = FXCollections.observableList(listU);
-		login_user.setItems(listData);
+		login_user.setItems(FXCollections.observableArrayList(
+    		    Arrays.stream(User.values())
+		          .map(Enum::name)
+		          .collect(Collectors.toList())
+		));
 
 		// Đổ dữ liệu cho register_user ComboBox
 		List<String> listRegister = new ArrayList<>();
@@ -421,6 +423,6 @@ public class LoginController implements Initializable {
 
 	@Override
 	public void initialize(URL url, ResourceBundle rb) {
-		userList();
+		loadCombobox();
 	}
 }

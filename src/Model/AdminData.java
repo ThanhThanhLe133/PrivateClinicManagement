@@ -5,27 +5,16 @@
  */
 package Model;
 
-import java.security.Timestamp;
+import java.sql.Timestamp;
 
 /**
  *
  * @author WINDOWS 10
  */
-public class AdminData {
+public class AdminData extends UserAccount{
 
-	private String adminId; // CHAR(36)
-
-	public String getAdminId() {
-		return adminId;
-	}
-
-	public void setAdminId(String adminId) {
-		this.adminId = adminId;
-	}
-
-	public AdminData(String adminId) {
+	public AdminData() {
 		super();
-		this.adminId = adminId;
 	}
 
 

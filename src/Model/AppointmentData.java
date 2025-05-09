@@ -6,6 +6,10 @@
 package Model;
 
 import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.UUID;
+
+import Enum.AppointmentStatus;
 
 /**
  *
@@ -13,148 +17,109 @@ import java.sql.Date;
  */
 public class AppointmentData {
 
-    private Integer id;
-    private Integer appointmentID;
-    private Integer patientID;
-    private String name;
-    private String gender;
-    private String description;
-    private String diagnosis;
-    private String treatment;
-    private Long mobileNumber;
-    private String address;
-    private Date date;
-    private Date dateModify;
-    private Date dateDelete;
-    private String status;
-    private String doctorID;
-    private String specialized;
-    private Date schedule;
+	private String id;
+	private Timestamp time;
+	private String status;
+	private String cancelReason;
+	private String doctorId;
+	private String patientId;
+	private String serviceId;
+	private Timestamp createDate;
+	private Timestamp updateDate;
 
-    public AppointmentData(Integer id, Integer appointmentID, String name, String gender,
-            Long mobileNumber, String description, String diagnosis, String treatment, String address,
-            String doctorID, String specialized,
-            Date date, Date dateModify, Date dateDelete, String status, Date schedule) {
-        this.id = id;
-        this.appointmentID = appointmentID;
-        this.name = name;
-        this.gender = gender;
-        this.mobileNumber = mobileNumber;
-        this.description = description;
-        this.diagnosis = diagnosis;
-        this.treatment = treatment;
-        this.address = address;
-        this.doctorID = doctorID;
-        this.specialized = specialized;
-        this.date = date;
-        this.dateModify = dateModify;
-        this.dateDelete = dateDelete;
-        this.status = status;
-        this.schedule = schedule;
+	public AppointmentData() {
+		this.id = UUID.randomUUID().toString();
+		this.time = new Timestamp(System.currentTimeMillis());
+		this.status = AppointmentStatus.Coming.name();
+		this.cancelReason = "";
+		this.doctorId = "";
+		this.patientId = "";
+		this.serviceId = "";
+	}
 
-    }
+	public AppointmentData(String id, Timestamp time, String status, String cancelReason, String doctorId,
+			String patientId, String serviceId) {
+		this.id = id;
+		this.time = time;
+		this.status = status;
+		this.cancelReason = cancelReason;
+		this.doctorId = doctorId;
+		this.patientId = patientId;
+		this.serviceId = serviceId;
+	}
 
-    public AppointmentData(Integer appointmentID, String name, String gender,
-            Long mobileNumber, String description, String diagnosis, String treatment, String address,
-            Date date, Date dateModify, Date dateDelete, String status, Date schedule) {
+	// Getter và Setter
 
-        this.appointmentID = appointmentID;
-        this.name = name;
-        this.gender = gender;
-        this.mobileNumber = mobileNumber;
-        this.description = description;
-        this.diagnosis = diagnosis;
-        this.treatment = treatment;
-        this.address = address;
-        this.date = date;
-        this.dateModify = dateModify;
-        this.dateDelete = dateDelete;
-        this.status = status;
-        this.schedule = schedule;
+	public String getId() {
+		return id;
+	}
 
-    }
+	public void setId(String id) {
+		this.id = id;
+	}
 
-    public AppointmentData(Integer appointmentID, String name,
-            String description, Date date, String status) {
-        this.appointmentID = appointmentID;
-        this.name = name;
-        this.description = description;
-        this.date = date;
-        this.status = status;
-    }
+	public Timestamp getTime() {
+		return time;
+	}
 
-    public AppointmentData(Integer appointmentID, String description,
-            String diagnosis, String treatment, String doctorID, Date schedule) {
-        this.appointmentID = appointmentID;
-        this.description = description;
-        this.diagnosis = diagnosis;
-        this.treatment = treatment;
-        this.doctorID = doctorID;
-        this.schedule = schedule;
-    }
+	public void setTime(Timestamp time) {
+		this.time = time;
+	}
 
-    public Integer getId() {
-        return id;
-    }
+	public String getStatus() {
+		return status;
+	}
 
-    public Integer getAppointmentID() {
-        return appointmentID;
-    }
+	public void setStatus(String status) {
+		this.status = status;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public String getCancelReason() {
+		return cancelReason;
+	}
 
-    public String getGender() {
-        return gender;
-    }
+	public void setCancelReason(String cancelReason) {
+		this.cancelReason = cancelReason;
+	}
 
-    public Long getMobileNumber() {
-        return mobileNumber;
-    }
+	public String getDoctorId() {
+		return doctorId;
+	}
 
-    public String getDescription() {
-        return description;
-    }
+	public void setDoctorId(String doctorId) {
+		this.doctorId = doctorId;
+	}
 
-    public String getDiagnosis() {
-        return diagnosis;
-    }
+	public String getPatientId() {
+		return patientId;
+	}
 
-    public String getTreatment() {
-        return treatment;
-    }
+	public void setPatientId(String patientId) {
+		this.patientId = patientId;
+	}
 
-    public String getAddress() {
-        return address;
-    }
+	public String getServiceId() {
+		return serviceId;
+	}
 
-    public String getDoctorID() {
-        return doctorID;
-    }
+	public void setServiceId(String serviceId) {
+		this.serviceId = serviceId;
+	}
 
-    public String getSpecialized() {
-        return specialized;
-    }
+	public Timestamp getCreateDate() {
+		return createDate;
+	}
 
-    public Date getDate() {
-        return date;
-    }
+	public void setCreateDate(Timestamp createDate) {
+		this.createDate = createDate;
+	}
 
-    public Date getDateModify() {
-        return dateModify;
-    }
+	public Timestamp getUpdateDate() {
+		return updateDate;
+	}
 
-    public Date getDateDelete() {
-        return dateDelete;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public Date getSchedule() {
-        return schedule;
-    }
+	public void setUpdateDate(Timestamp updateDate) {
+		this.updateDate = updateDate;
+	}
 
 }

@@ -1,38 +1,48 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+// ReceptionistFullData.java
 package Model;
 
-import java.security.Timestamp;
+import java.sql.Timestamp;
 
-/**
- *
- * @author WINDOWS 10
- */
-public class ReceptionistData {
+public class ReceptionistData extends UserAccount {
+	private String phone;
+	private String address;
+	private boolean isConfirmed;
 
-	private String receptionistId; // CHAR(36)
-	private String phone; // VARCHAR(50)
-	private String address; // TEXT
-	
-	public ReceptionistData(String receptionistId, String phone, String address) {
+	public ReceptionistData() {
 		super();
-		this.receptionistId = receptionistId;
+	}
+
+	public ReceptionistData(String id, String username, String password, String name, String email,
+			String gender, Boolean isActive, String phone, 
+			String address, boolean isConfirmed) {
+		super(id, username, password, name,email, gender, isActive);
 		this.phone = phone;
 		this.address = address;
+		this.isConfirmed = isConfirmed;
 	}
-	public String getReceptionistId() {
-		return receptionistId;
-	}
+
+	// Getter & Setter cho DOCTOR
 	public String getPhone() {
 		return phone;
 	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
 	public String getAddress() {
 		return address;
 	}
 
-	
+	public void setAddress(String address) {
+		this.address = address;
+	}
 
+	public boolean isConfirmed() {
+		return isConfirmed;
+	}
+
+	public void setConfirmed(boolean confirmed) {
+		isConfirmed = confirmed;
+	}
 }
