@@ -27,7 +27,6 @@ import com.mysql.cj.Session;
 import Alert.AlertMessage;
 import DAO.Database;
 import Model.Data;
-import Model.Users;
 import javafx.animation.Timeline;
 import javafx.animation.KeyFrame;
 import javafx.util.Duration;

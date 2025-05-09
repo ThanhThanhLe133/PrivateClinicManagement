@@ -3,12 +3,21 @@ DROP DATABASE IF EXISTS clinic;
 CREATE DATABASE clinic;
 USE clinic;
 
+-- Bảng SERVICE
+CREATE TABLE SERVICE (
+    Id CHAR(36) PRIMARY KEY NOT NULL,
+    Name VARCHAR(100) UNIQUE NOT NULL,
+    Type VARCHAR(100) NOT NULL,-- EXAMINATION/TEST
+    Price DECIMAL(10,2) NOT NULL,
+    Create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 -- Bảng USER
 CREATE TABLE USER_ACCOUNT (
     Id CHAR(36) PRIMARY KEY NOT NULL,
     Username VARCHAR(50) UNIQUE NOT NULL,
     Password VARCHAR(50) NOT NULL,
-    email VARCHAR(50),
+    email VARCHAR(50) NOT NULL,
     Name VARCHAR(50),
     Avatar LONGBLOB,
     Gender VARCHAR(10),
@@ -28,9 +37,10 @@ CREATE TABLE ADMIN (
 CREATE TABLE DOCTOR (
     Doctor_id CHAR(36) PRIMARY KEY NOT NULL,
     Phone VARCHAR(50),
-    Specialized TEXT,
+    Service_id CHAR(36),
     Address TEXT,
     Is_confirmed BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (Service_id) REFERENCES SERVICE(Id) ON DELETE SET NULL,
     FOREIGN KEY (Doctor_id) REFERENCES USER_ACCOUNT(Id) ON DELETE CASCADE
 );
 
@@ -54,23 +64,26 @@ CREATE TABLE PATIENT (
     Diagnosis TEXT,
     Height DECIMAL(10,2),
     Weight DECIMAL(10,2),
-    Create_date DATETIME DEFAULT (Now()),
-    Update_date DATETIME DEFAULT (Now())
+    Create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
 
 -- BẢNG appointment
 CREATE TABLE APPOINTMENT (
     Id CHAR(36) PRIMARY KEY NOT NULL,
     Time DATETIME NOT NULL,
-    Status VARCHAR(50) NOT NULL,  -- Finish, Cancel, Unfinish
+    Status VARCHAR(50) NOT NULL,  -- Finish, Cancel, Coming
     Cancel_reason TEXT,
     Doctor_id CHAR(36) NOT NULL,
     Patient_id CHAR(36) NOT NULL,
-    Create_date DATETIME,
-    Update_date DATETIME,
     FOREIGN KEY (Doctor_id) REFERENCES DOCTOR(Doctor_id),
-    FOREIGN KEY (Patient_id) REFERENCES PATIENT(Patient_id)
+    FOREIGN KEY (Patient_id) REFERENCES PATIENT(Patient_id),
+    Create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+
 
 CREATE TABLE DRUG (
     Id CHAR(36) PRIMARY KEY NOT NULL DEFAULT (UUID()),
@@ -80,20 +93,21 @@ CREATE TABLE DRUG (
     Unit VARCHAR(50) NOT NULL, 
     Price DECIMAL(10,2) NOT NULL,  
     Stock INT NOT NULL, 
-    Create_date DATETIME DEFAULT (Now()),
-    Update_date DATETIME DEFAULT (Now())
+    Create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE PRESCRIPTION (
     Id CHAR(36) PRIMARY KEY NOT NULL,
     Patient_id CHAR(36) NOT NULL,
     Doctor_id CHAR(36) NOT NULL,
-    DateIssued DATE NOT NULL, 
-    TotalAmount DECIMAL(10,2) NOT NULL, 
-    Create_date DATETIME,
-    Update_date DATETIME,
+    TotalAmount DECIMAL(20,2) NOT NULL, 
+    diagnose TEXT,
+    advice TEXT,
     FOREIGN KEY (Patient_id) REFERENCES PATIENT(patient_Id),
-    FOREIGN KEY (Doctor_id) REFERENCES DOCTOR(doctor_Id)
+    FOREIGN KEY (Doctor_id) REFERENCES DOCTOR(doctor_Id),
+    Create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE PRESCRIPTION_DETAILS (
@@ -101,12 +115,26 @@ CREATE TABLE PRESCRIPTION_DETAILS (
     Drug_id CHAR(36) NOT NULL,
     Quantity INT NOT NULL,  -- Số lượng
     Instructions TEXT NOT NULL,  -- Cách dùng: uống sáng/tối…
-    Create_date DATETIME,
-    Update_date DATETIME,
     PRIMARY KEY (Prescription_id, Drug_id),
     FOREIGN KEY (Prescription_id) REFERENCES PRESCRIPTION(Id),
-    FOREIGN KEY (Drug_id) REFERENCES DRUG(Id)
+    FOREIGN KEY (Drug_id) REFERENCES DRUG(Id),
+    Create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- Insert mẫu service
+INSERT INTO SERVICE (Id, Name, Price, Type)
+VALUES 
+    (UUID(), 'General Psychological Checkup', 300000.00, 'Examination'),
+    (UUID(), 'Personal Psychological Counseling', 350000.00, 'Examination'),
+    (UUID(), 'School Psychological Counseling', 250000.00, 'Examination'),
+    (UUID(), 'Cognitive Behavioral Therapy (CBT)', 500000.00, 'Examination'),
+    (UUID(), 'Electrocardiogram (ECG)', 200000.00, 'Test'),
+    (UUID(), 'Basic Blood Test', 150000.00, 'Test'),
+    (UUID(), 'General Health Checkup', 400000.00, 'Examination'),
+    (UUID(), 'Customized Health Checkup', 450000.00, 'Examination'),
+    (UUID(), 'MRI Scan', 1500000.00, 'Test'),
+    (UUID(), 'Psychological Assessment', 600000.00, 'Test');
 
 -- INSERT mẫu ADMIN
 SET @Admin_id := UUID();
@@ -127,7 +155,7 @@ INSERT INTO USER_ACCOUNT (
 
 INSERT INTO ADMIN (Admin_id) VALUES (@Admin_id);
 
--- INSERT mẫu DOCTOR
+-- INSERT mẫu DOCTOR (NHỚ LẤY ID BÊN SERVICE ĐỂ GÁN VÀO DOCTOR)
 SET @doctor_id := UUID();
 
 INSERT INTO USER_ACCOUNT (
@@ -145,11 +173,11 @@ INSERT INTO USER_ACCOUNT (
 );
 
 INSERT INTO DOCTOR (
-    doctor_id, Phone, Specialized, Address
+    doctor_id, Phone, Service_id, Address
 ) VALUES (
     @doctor_id,
     '0912345678',
-    'Neurology',
+    'c2c50b36-2ceb-11f0-8c3f-d8bbc1b1785e',
     '12 Medical Lane, District 1'
 );
 

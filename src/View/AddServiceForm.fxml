@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.AddServiceFormController">
+    
+    <top>
+        <VBox alignment="CENTER" style="-fx-background-color: #0c8599;">
+            <padding>
+                <Insets bottom="15" left="20" right="20" top="15" />
+            </padding>
+            <Label text="Edit Service" textFill="WHITE">
+                <font>
+                    <Font name="System Bold" size="18" />
+                </font>
+            </Label>
+        </VBox>
+    </top>
+    
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+            <VBox alignment="TOP_CENTER" spacing="15">
+                <padding>
+                    <Insets bottom="25" left="30" right="30" top="25" />
+                </padding>
+                
+                <GridPane hgap="15" vgap="12">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="90" prefWidth="120" />
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="200" prefWidth="300" />
+                    </columnConstraints>
+                    
+                    <!-- Row 0 -->
+                    <Label text="Service name *" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                    <VBox alignment="CENTER_LEFT" spacing="2" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                        <TextField fx:id="txtServiceName" alignment="TOP_LEFT" promptText="Enter service name" />
+                  <Label fx:id="lbServiceNameError" style="-fx-font-size: 11px;" textFill="RED" visible="false" />
+                    </VBox>
+                    
+                    <!-- Row 1 -->
+                    <Label text="Type" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                    <VBox fx:id="cbType" prefHeight="26.0" prefWidth="300.0" spacing="2" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                  <children>
+                     <ComboBox fx:id="cbType" prefHeight="26.0" prefWidth="303.0" promptText="Select Type" />
+                     <Label fx:id="lbTypeError" style="-fx-font-size: 11px;" textFill="RED" visible="false" />
+                  </children>
+                    </VBox>
+                    
+                             <!-- Row 4 -->
+                    <Label text="Price *" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                    <VBox spacing="2" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                  <TextField fx:id="txtPrice" promptText="Enter price" />
+                  <Label fx:id="lbPriceError" style="-fx-font-size: 11px;" textFill="RED" visible="false" />
+                    </VBox>
+               <rowConstraints>
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+               </rowConstraints>
+                </GridPane>
+            </VBox>
+        </ScrollPane>
+    </center>
+    
+    <bottom>
+        <HBox alignment="CENTER" spacing="15" style="-fx-background-color: #f5f5f5;">
+            <padding>
+                <Insets bottom="15" left="20" right="20" top="15" />
+            </padding>
+            <Button fx:id="btnCancel" onAction="#handleCancel" prefWidth="100" style="-fx-background-color: #6c757d; -fx-text-fill: white;" text="Cancel" />
+            <Button fx:id="btnSave" onAction="#handleSave" prefWidth="100" style="-fx-background-color: #0c8599; -fx-text-fill: white;" text="Save" />
+        </HBox>
+    </bottom>
+    
+    <effect>
+        <DropShadow color="#00000033" radius="5" />
+    </effect>
+    
+</BorderPane>

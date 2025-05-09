@@ -60,13 +60,22 @@ package Controller;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import DAO.Database;
+import Enum.Gender;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import Alert.AlertMessage;
 
 public class AddDoctorFormController {
     @FXML private TextField txtUsername, txtName, txtEmail, txtPhone, txtAddress;
@@ -81,28 +90,10 @@ public class AddDoctorFormController {
     // Regex patterns for validation
     private final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     private final Pattern PHONE_PATTERN = Pattern.compile("^[0-9]{10,15}$");
-    
+	private final AlertMessage alert = new AlertMessage();
     @FXML
     private void initialize() {
-        // Initialize gender options
-        cmbGender.getItems().addAll("Male", "Female", "Other");
-        
-        // Initialize specialization options
-        cmbSpecialization.getItems().addAll(
-            "Cardiology", 
-            "Dermatology", 
-            "Endocrinology", 
-            "Gastroenterology", 
-            "Neurology", 
-            "Oncology", 
-            "Ophthalmology", 
-            "Orthopedics", 
-            "Pediatrics", 
-            "Psychiatry", 
-            "Radiology", 
-            "Surgery", 
-            "Urology"
-        );
+        loadComboBox();
         
         // Add focus listeners for real-time validation
         txtUsername.focusedProperty().addListener((obs, oldVal, newVal) -> {
@@ -130,6 +121,27 @@ public class AddDoctorFormController {
         });
     }
     
+    public void loadComboBox() {
+
+    	cmbGender.setItems(FXCollections
+				.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
+		ObservableList<String> specializationCb = FXCollections.observableArrayList();
+		try (Connection conn = Database.connectDB()) {
+			String sql = "SELECT DISTINCT Name FROM SERVICE";
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ResultSet rs = ps.executeQuery();
+
+			while (rs.next()) {
+				specializationCb.add(rs.getString("Name"));
+			}
+
+			cmbSpecialization.setItems(specializationCb);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			alert.errorMessage("Error loading specializations: " + e.getMessage());
+		}
+	}
+
     @FXML
     private void handleSave() {
         if (validateAllFields()) {
@@ -274,15 +286,18 @@ public class AddDoctorFormController {
                 psUser.setString(6, cmbGender.getValue());
                 psUser.executeUpdate();
                 
-                // Insert into DOCTOR table
-                String sqlDoctor = "INSERT INTO DOCTOR (Doctor_id, Phone, Specialized, Address, Is_confirmed) " +
-                                  "VALUES (?, ?, ?, ?, FALSE)";
-                PreparedStatement psDoctor = conn.prepareStatement(sqlDoctor);
-                psDoctor.setString(1, id);
-                psDoctor.setString(2, txtPhone.getText().trim());
-                psDoctor.setString(3, cmbSpecialization.getValue());
-                psDoctor.setString(4, txtAddress.getText().trim());
-                psDoctor.executeUpdate();
+                String sqlDoctor = """
+                	    INSERT INTO DOCTOR (Doctor_id, Phone, Address, Is_confirmed, Service_id)
+                	    VALUES (?, ?, ?, FALSE, (SELECT id FROM service WHERE name = ?))
+                	""";
+
+                	PreparedStatement psDoctor = conn.prepareStatement(sqlDoctor);
+                	psDoctor.setString(1, id);                           
+                	psDoctor.setString(2, txtPhone.getText().trim());      
+                	psDoctor.setString(3, txtAddress.getText().trim());    
+                	psDoctor.setString(4, cmbSpecialization.getValue()); 
+                	psDoctor.executeUpdate();
+
                 
                 // Commit transaction
                 conn.commit();
