@@ -62,7 +62,7 @@
                   </AnchorPane>
                </top>
                <left>
-                  <AnchorPane prefHeight="560.0" prefWidth="214.0" styleClass="bg-color-1" stylesheets="@../design/MainFormDesign.css" visible="false" BorderPane.alignment="CENTER">
+                  <AnchorPane prefHeight="560.0" prefWidth="214.0" styleClass="bg-color-1" stylesheets="@../design/MainFormDesign.css" BorderPane.alignment="CENTER">
                      <children>
                         <FontAwesomeIcon fill="WHITE" glyphName="USER" layoutX="83.0" layoutY="65.0" size="5em" />
                         <Label layoutX="23.0" layoutY="85.0" text="Name" textFill="WHITE" />
@@ -95,7 +95,7 @@
                               <FontAwesomeIcon glyphName="USER" size="1.5em" />
                            </graphic>
                         </Button>
-                        <Button fx:id="salary_btn" layoutX="7.0" layoutY="335.0" mnemonicParsing="false" onAction="#switchForm" prefHeight="40.0" prefWidth="200.0" styleClass="nav-btn-1" stylesheets="@../design/MainFormDesign.css" text="Salary">
+                        <Button fx:id="service_btn" layoutX="7.0" layoutY="335.0" mnemonicParsing="false" onAction="#switchForm" prefHeight="40.0" prefWidth="200.0" styleClass="nav-btn-1" stylesheets="@../design/MainFormDesign.css" text="Service">
                            <graphic>
                               <FontAwesomeIcon glyphName="CLIPBOARD" size="1.5em" />
                            </graphic>
@@ -281,7 +281,7 @@
                               </AnchorPane>
                            </children>
                         </AnchorPane>
-                        <AnchorPane fx:id="doctors_form" layoutX="324.0" layoutY="144.0" prefHeight="560.0" prefWidth="886.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <AnchorPane fx:id="doctors_form" layoutX="324.0" layoutY="144.0" prefHeight="560.0" prefWidth="886.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
                               <AnchorPane layoutX="9.0" layoutY="12.0" prefHeight="537.0" prefWidth="868.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="11.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="12.0">
                                  <styleClass>
@@ -432,7 +432,7 @@
 								</AnchorPane>
 								-->
 								
-	<AnchorPane fx:id="service_form" layoutX="5.0" layoutY="5.0" prefHeight="560.0" prefWidth="886.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+	<AnchorPane fx:id="service_form" layoutX="5.0" layoutY="5.0" prefHeight="560.0" prefWidth="886.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
     <children>
 
         <!-- Header -->
@@ -532,7 +532,7 @@
                                         <Font size="16.0" />
                                     </font>
                                 </Label>
-                                <Label fx:id="revenue_consultationFees" alignment="CENTER_RIGHT" layoutX="10.0" layoutY="65.0" prefHeight="30.0" prefWidth="180.0" text="0 VNĐ" textFill="WHITE">
+                                <Label fx:id="revenue_examineFees" alignment="CENTER_RIGHT" layoutX="10.0" layoutY="65.0" prefHeight="30.0" prefWidth="180.0" text="0 VNĐ" textFill="WHITE">
                                     <font>
                                         <Font name="System Bold" size="18.0" />
                                     </font>
@@ -592,8 +592,8 @@
                 <TableView fx:id="revenue_service" layoutX="10.0" layoutY="40.0" prefHeight="200.0" prefWidth="417.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="40.0">
                     <columns>
                         <TableColumn fx:id="revenue_col_serviceName" prefWidth="88.79995572566986" text="Service Name" />
-                        <TableColumn fx:id="revenue_col_patientID" prefWidth="80.0" text="Type" />
-                        <TableColumn fx:id="revenue_col_serviceType" prefWidth="66.39990234375" text="Quantity" />
+                        <TableColumn fx:id="revenue_col_serviceType" prefWidth="80.0" text="Type" />
+                        <TableColumn fx:id="revenue_col_serviceQuantity" prefWidth="66.39990234375" text="Quantity" />
                         <TableColumn fx:id="revenue_col_servicePrice" prefWidth="85.60003662109375" text="Price" />
                                           <TableColumn fx:id="revenue_col_serviceRevenue" prefWidth="100.0" text="Revenue" />
                     </columns>

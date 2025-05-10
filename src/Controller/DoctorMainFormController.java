@@ -1,5 +1,7 @@
 package Controller;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -313,6 +315,8 @@ public class DoctorMainFormController implements Initializable {
 
 	public void setUsername(String username) {
 		this.username = username;
+		loadDoctorProfile();
+		profileDisplayImages();
 	}
 
 	public void dashbboardDisplayIP() {
@@ -587,31 +591,47 @@ public class DoctorMainFormController implements Initializable {
 	}
 	public void profileDisplayImages() {
 
-		String sql = "SELECT * FROM user_acount WHERE username = " + username;
+		String sql = "SELECT Avatar FROM user_account WHERE username = ?";
 		connect = Database.connectDB();
 
 		try {
 			prepare = connect.prepareStatement(sql);
+			prepare.setString(1, username);
 			result = prepare.executeQuery();
-
 			if (result.next()) {
-				// Lấy ảnh nhị phân từ DB
-				InputStream inputStream = result.getBinaryStream("image");
+			    InputStream inputStream = result.getBinaryStream("Avatar");
 
-				if (inputStream != null) {
-					// Chuyển InputStream thành Image
-					Image img = new Image(inputStream, 137, 95, false, true);
-					profile_circleImage.setFill(new ImagePattern(img));
+			    if (inputStream != null) {
+			        // Đọc toàn bộ dữ liệu từ inputStream vào byte[]
+			        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+			        byte[] data = new byte[1024];
+			        int nRead;
+			        while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+			            buffer.write(data, 0, nRead);
+			        }
+			        buffer.flush();
+			        byte[] imageBytes = buffer.toByteArray();
+			        inputStream.close();
 
-					// Thêm logic nếu cần thêm hình ảnh khác
-					img = new Image(inputStream, 1012, 22, false, true);
-					top_profile.setFill(new ImagePattern(img));
-				}
+			        // Tạo nhiều InputStream từ cùng một mảng byte
+			        InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
+			        InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
+
+			        Image img1 = new Image(imgStream1, 137, 95, true, true);
+			        profile_circleImage.setFill(new ImagePattern(img1));
+
+			        Image img2 = new Image(imgStream2, 1012, 22, true, true);
+
+			        top_profile.setFill(new ImagePattern(img2));
+			    } else {
+			        System.out.println("Ảnh trong DB bị null.");
+			    }
 			}
+
 		} catch (Exception e) {
+			  System.out.println("Lỗi khi xử lý dữ liệu hình ảnh: " + e.getMessage());
 			e.printStackTrace();
 		}
-
 	}
 	/* =====================EDIT PROFILE======================================== */
 	public void profileUpdateBtn() {
@@ -851,9 +871,6 @@ public class DoctorMainFormController implements Initializable {
 		appointmentAppointmentID();
 
 		patientGenderList();
-
-		loadDoctorProfile();
-		profileDisplayImages();
 
 	}
 
