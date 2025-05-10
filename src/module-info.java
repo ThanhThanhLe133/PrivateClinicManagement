@@ -12,6 +12,8 @@ module myModule {
 	requires javafx.base;
 	requires mysql.connector.j;
 	requires jakarta.mail;
+	requires org.apache.poi.ooxml;
+	requires java.desktop;
 
 	opens application to javafx.fxml, javafx.graphics;
 	opens Alert to javafx.fxml;

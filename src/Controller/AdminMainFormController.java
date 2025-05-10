@@ -1,10 +1,18 @@
 package Controller;
 
+import java.awt.Desktop;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -14,9 +22,13 @@ import java.sql.Timestamp;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import Alert.AlertMessage;
 import DAO.Database;
@@ -45,6 +57,13 @@ import javafx.stage.Modality;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.XWPFTable;
+import org.apache.poi.xwpf.usermodel.XWPFTableCell;
+import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -154,7 +173,7 @@ public class AdminMainFormController {
 	@FXML
 	private AnchorPane main_form;
 	private String currentUserId; // Lưu ID của user đang đăng nhập
-
+	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd_MM_yyyy");
 	// Top panel
 	@FXML
 	private Label top_username, current_form, date_time;
@@ -163,7 +182,7 @@ public class AdminMainFormController {
 	private Circle top_profile;
 
 	@FXML
-	private Button logout_btn,revenue_resetBtn,revenue_exportBtn,revenue_filterBtn;
+	private Button logout_btn, revenue_resetBtn, revenue_exportBtn, revenue_filterBtn;
 
 	// Left panel
 	@FXML
@@ -184,7 +203,7 @@ public class AdminMainFormController {
 	@FXML
 	private Button add_service_btn;
 	@FXML
-	private Button profile_importBtn,profile_updateBtn;
+	private Button profile_importBtn, profile_updateBtn;
 
 	@FXML
 	private ComboBox<String> filterTypeComboBox;
@@ -214,6 +233,7 @@ public class AdminMainFormController {
 	public void setUsername(String username) {
 		this.username = username;
 		loadAdminProfile();
+		profileDisplayImages();
 	}
 
 	// Simple TableRow class nội bộ (không cần model file riêng)
@@ -281,18 +301,18 @@ public class AdminMainFormController {
 
 		try {
 			Connection conn = Database.connectDB();
-			String sql = "SELECT u.Id AS doctorId, u.Username, u.Name, u.Email, u.Gender, u.Password, u.Avatar"
-					+ "d.Phone, d.Address, d.Is_confirmed,s.Name AS ServiceName " + "FROM DOCTOR d "
-					+ "JOIN USER_ACCOUNT u ON d.Doctor_id = u.Id JOIN SERVICE s ON s.Id = d.Service_id";
+			String sql = "SELECT u.Id AS doctorId, u.Username, u.Name,u.Is_active, u.Email, u.Gender, u.Password, u.Avatar, "
+					+ "d.Phone, d.Address, d.Is_confirmed, s.Name AS ServiceName " + "FROM DOCTOR d "
+					+ "JOIN USER_ACCOUNT u ON d.Doctor_id = u.Id " + "JOIN SERVICE s ON s.Id = d.Service_id";
 
 			PreparedStatement ps = conn.prepareStatement(sql);
 			ResultSet rs = ps.executeQuery();
 
 			while (rs.next()) {
-				list.add(new DoctorData(rs.getString("doctorId"), rs.getString("Username"), rs.getString("Name"),
-						rs.getString("Email"), rs.getString("Gender"), rs.getString("Password"),
-						rs.getBoolean("Is_active"), rs.getString("ServiceName"), rs.getString("Address"),
-						rs.getString("Phone"), rs.getBoolean("Is_confirmed")));
+				list.add(new DoctorData(rs.getString("doctorId"), rs.getString("Username"), rs.getString("Password"),
+						rs.getString("Name"), rs.getString("Email"), rs.getString("Gender"), rs.getBoolean("Is_active"),
+						rs.getString("Phone"), rs.getString("ServiceName"), rs.getString("Address"),
+						rs.getBoolean("Is_confirmed")));
 			}
 
 			// Cột dữ liệu
@@ -304,7 +324,6 @@ public class AdminMainFormController {
 			doctors_col_specialization
 					.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getServiceName()));
 			doctors_col_address.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAddress()));
-
 
 			// Cột hành động
 			doctors_col_action.setCellFactory(col -> new TableCell<>() {
@@ -405,14 +424,15 @@ public class AdminMainFormController {
 		}
 	}
 
-// =============================CRUD RECEPTIONIST=====================================
+	// =============================CRUD
+	// RECEPTIONIST=====================================
 
 	private void loadReceptionistTable() {
 		ObservableList<ReceptionistData> list = FXCollections.observableArrayList();
 
 		try (Connection conn = Database.connectDB()) {
-			String sql = "SELECT u.Id AS receptionist_id, u.Username, u.Password, u.Name, u.Email, u.Gender, "
-					+ "r.Phone, r.Address, r.Is_confirmed "
+			String sql = "SELECT u.Id AS receptionist_id, u.Username, u.Password, u.Name, u.Email, u.Gender, u.Is_active,"
+					+ " r.Phone, r.Address, r.Is_confirmed "
 					+ "FROM RECEPTIONIST r JOIN USER_ACCOUNT u ON r.Receptionist_id = u.Id";
 
 			PreparedStatement ps = conn.prepareStatement(sql);
@@ -527,7 +547,7 @@ public class AdminMainFormController {
 		}
 	}
 
-//=======================CRUD Service==================================
+	// =======================CRUD Service==================================
 
 	private void loadServiceTable() {
 		ObservableList<ServiceData> list = FXCollections.observableArrayList();
@@ -655,39 +675,241 @@ public class AdminMainFormController {
 	BigDecimal examineFees;
 	BigDecimal medicationFees;
 	BigDecimal labTestFees;
-	
+	BigDecimal serviceFees;
+	List<Map<String, String>> drugRevenueList = new ArrayList<>();
+	List<Map<String, String>> serviceRevenueList = new ArrayList<>();
+	List<Map<String, String>> revenueListSortByDate = new ArrayList<>();
+	int i;
+s
 	@FXML
 	private void resetRevenueFilter() {
 		totalRevenue = BigDecimal.ZERO;
 		examineFees = BigDecimal.ZERO;
 		medicationFees = BigDecimal.ZERO;
 		labTestFees = BigDecimal.ZERO;
-		setRevenue();
-	}
-	private void setRevenue() {
+		serviceFees = BigDecimal.ZERO;
 		revenue_startDate.setValue(null);
 		revenue_endDate.setValue(null);
+		setRevenue();
+	}
+
+	private void setRevenue() {
 		revenue_totalRevenue.setText(FormatterUtils.formatCurrencyVND(totalRevenue));
 		revenue_examineFees.setText(FormatterUtils.formatCurrencyVND(examineFees));
 		revenue_medicationFees.setText(FormatterUtils.formatCurrencyVND(medicationFees));
 		revenue_labTestFees.setText(FormatterUtils.formatCurrencyVND(labTestFees));
 	}
-	
-	@FXML
-	private void filterRevenueData() {
 
-		LocalDate startDate = revenue_startDate.getValue();
-		LocalDate endDate = revenue_endDate.getValue();
-
+	private void checkValidDate(LocalDate startDate, LocalDate endDate) {
 		if (startDate == null || endDate == null) {
 			alert.errorMessage("Please select both start date and end date.");
 			return;
 		}
 
-		if (startDate.isAfter(endDate)) {
+		else if (startDate.isAfter(endDate)) {
 			alert.errorMessage("Start date cannot be after end date.");
 			return;
+		} else if (endDate.isAfter(LocalDate.now())) {
+			alert.errorMessage("End date has not come yet.");
+			return;
 		}
+	}
+
+	@FXML
+	private void exportRevenueReport(ActionEvent event) throws IOException {
+		totalRevenue = BigDecimal.ZERO;
+		examineFees = BigDecimal.ZERO;
+		medicationFees = BigDecimal.ZERO;
+		labTestFees = BigDecimal.ZERO;
+		serviceFees = BigDecimal.ZERO;
+		LocalDate startDate = revenue_startDate.getValue();
+		LocalDate endDate = revenue_endDate.getValue();
+		checkValidDate(startDate, endDate);
+
+		handleRevenueDrugReport(startDate, endDate);
+		handleRevenueServiceReport(startDate, endDate);
+		totalRevenue = examineFees.add(medicationFees).add(labTestFees);
+		serviceFees = examineFees.add(labTestFees);
+		handleDateReport(startDate, endDate);
+
+		File sourceFile = new File("Word/REPORT.docx");
+		String destFileName = String.format("Word/REPORT_from_%s_to_%s.docx", startDate.format(formatter).toString(),
+				endDate.format(formatter));
+		Path destPath = Paths.get(destFileName);
+
+		if (Files.exists(destPath)) {
+			Files.delete(destPath); // Nếu tệp đích đã tồn tại, xóa
+		}
+		File destFile = new File(destFileName);
+
+		// Copy file gốc sang file đích
+		Files.copy(sourceFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+		try (XWPFDocument doc = new XWPFDocument(new FileInputStream(destFile))) {
+			for (XWPFParagraph para : doc.getParagraphs()) {
+				StringBuilder fullText = new StringBuilder();
+				List<XWPFRun> runs = para.getRuns();
+
+				for (XWPFRun run : runs) {
+					String text = run.getText(0);
+					if (text != null) {
+						fullText.append(text);
+					}
+				}
+
+				String replacedText = fullText.toString()
+						.replace("{{Start Date}}", startDate.format(formatter))
+						.replace("{{End Date}}", endDate.format(formatter));
+
+				if (!fullText.toString().equals(replacedText)) {
+					for (int i = runs.size() - 1; i >= 0; i--) {
+						para.removeRun(i);
+					}
+					XWPFRun newRun = para.createRun();
+					newRun.setText(replacedText);
+				}
+			}
+			replaceAllPlaceholders(doc, drugRevenueList, serviceRevenueList, revenueListSortByDate, totalRevenue,
+					medicationFees, serviceFees);
+
+			// Ghi lại file đã chỉnh sửa
+			try (FileOutputStream fos = new FileOutputStream(destFile)) {
+				doc.write(fos);
+			}
+
+			// Mở file
+			if (Desktop.isDesktopSupported()) {
+				Desktop.getDesktop().open(destFile);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	public static void replaceAllPlaceholders(XWPFDocument doc, List<Map<String, String>> drugRevenueList,
+			List<Map<String, String>> serviceRevenueList, List<Map<String, String>> revenueListSortByDate,
+			BigDecimal totalRevenue,
+			BigDecimal medicationFees, BigDecimal serviceFees)
+			throws IOException {
+		for (XWPFTable table : doc.getTables()) {
+			for (int i = 0; i < table.getRows().size(); i++) {
+				XWPFTableRow row = table.getRow(i);
+
+				for (XWPFTableCell cell : row.getTableCells()) {
+					try {
+						for (XWPFParagraph para : cell.getParagraphs()) {
+							String text = para.getText();
+							if (text != null) {
+								if (text.contains("{{noDrug}}")) {
+									replaceTablePlaceholderRows(table, "{{noDrug}}",
+											List.of("noDrug", "drugName", "quantity", "DrugPrice", "totalDrug"),
+											drugRevenueList, i);
+								}
+								if (text.contains("{{noService}}")) {
+									replaceTablePlaceholderRows(table, "{{noService}}",
+											List.of("noService", "serviceName", "type", "ServicePrice", "totalRevenue"),
+											serviceRevenueList, i);
+								}
+								if (text.contains("{{noTotal}}")) {
+									replaceTablePlaceholderRows(table, "{{noTotal}}",
+											List.of("date", "totalDrugRevenue", "totalDrugService", "totalRevenue"),
+											revenueListSortByDate, i);
+								}
+								if (text.contains("{{totalDrugRevenue}}")) {
+									text = text.replace("{{totalDrugRevenue}}", medicationFees.toString());
+								}
+								if (text.contains("{{totalDrugRevenue}}")) {
+									text = text.replace("{{totalServiceRevenue}}", serviceFees.toString());
+								}
+								if (text.contains("{{totalDrugRevenue}}")) {
+									text = text.replace("{{grandTotal}}", totalRevenue.toString());
+								}
+							}
+						}
+					} catch (Exception e) {
+						System.err.println("⚠️ Lỗi khi đọc nội dung ô: " + e.getMessage());
+					}
+				}
+			}
+		}
+	}
+
+	private static void replaceTablePlaceholderRows(XWPFTable table, String placeholderKey, List<String> columns,
+			List<Map<String, String>> dataList, int rowIndex) {
+		for (int i = 0; i < table.getRows().size(); i++) {
+			XWPFTableRow row = table.getRow(i);
+			for (XWPFTableCell cell : row.getTableCells()) {
+				String text = cell.getText();
+				if (text != null && text.contains(placeholderKey)) {
+					table.removeRow(i);
+
+					for (Map<String, String> data : dataList) {
+						XWPFTableRow newRow = table.insertNewTableRow(i++);
+						for (String col : columns) {
+							newRow.addNewTableCell().setText(data.getOrDefault(col, ""));
+						}
+					}
+
+					return;
+				}
+			}
+		}
+	}
+
+	private void handleDateReport(LocalDate startDate, LocalDate endDate) {
+
+		try (Connection conn = Database.connectDB()) {
+			String sql = "SELECT DATE(pd.Create_date) AS CreateDate, " + "SUM(d.Price) AS TotalDrugRevenue, "
+					+ "SUM(s.Price) AS TotalServiceRevenue, " + "SUM(d.Price + s.Price) AS GrandTotal "
+					+ "FROM PRESCRIPTION_DETAILS pd " + "JOIN APPOINTMENT p ON p.Create_date = pd.Create_date "
+					+ "JOIN DRUG d ON d.id=pd.Drug_id " + "JOIN DOCTOR doc ON doc.Doctor_id = p.Doctor_id "
+					+ "JOIN SERVICE s ON s.Id = doc.Service_id " + "WHERE DATE(pd.Create_date) BETWEEN ? AND ? "
+					+ "GROUP BY DATE(pd.Create_date) " + "ORDER BY DATE(pd.Create_date) DESC";
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setDate(1, java.sql.Date.valueOf(startDate));
+			ps.setDate(2, java.sql.Date.valueOf(endDate));
+
+			ResultSet rs = ps.executeQuery();
+			i = 1;
+			revenueListSortByDate.clear();
+			while (rs.next()) {
+				String createDate = rs.getString("CreateDate");
+				BigDecimal totalDrugRevenue = rs.getBigDecimal("TotalDrugRevenue");
+				BigDecimal totalServiceRevenue = rs.getBigDecimal("TotalServiceRevenue");
+				BigDecimal grandTotal = rs.getBigDecimal("GrandTotal");
+
+				medicationFees = medicationFees.add(totalDrugRevenue);
+				serviceFees = serviceFees.add(totalServiceRevenue);
+
+				revenueListSortByDate.add(Map.of("noTotal", String.valueOf(i), "CreateDate",
+						FormatterUtils.formatTimestamp(createDate.toString()), "totalDrugRevenue",
+						totalDrugRevenue.toString(), "totalServiceRevenue", totalServiceRevenue.toString(),
+						"grandTotal", grandTotal.toString()));
+
+				i++;
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			Alert error = new Alert(Alert.AlertType.ERROR, "Failed to load revenue report: " + e.getMessage());
+			error.showAndWait();
+		}
+	}
+
+	@FXML
+	private void filterRevenueData() {
+		totalRevenue = BigDecimal.ZERO;
+		examineFees = BigDecimal.ZERO;
+		medicationFees = BigDecimal.ZERO;
+		labTestFees = BigDecimal.ZERO;
+		serviceFees = BigDecimal.ZERO;
+		LocalDate startDate = revenue_startDate.getValue();
+		LocalDate endDate = revenue_endDate.getValue();
+
+		checkValidDate(startDate, endDate);
+
 		handleRevenueDrugReport(startDate, endDate);
 		handleRevenueServiceReport(startDate, endDate);
 		totalRevenue = examineFees.add(medicationFees).add(labTestFees);
@@ -695,17 +917,20 @@ public class AdminMainFormController {
 	}
 
 	private void handleRevenueDrugReport(LocalDate startDate, LocalDate endDate) {
+
 		try (Connection conn = Database.connectDB()) {
-			String sql = "SELECT d.Name AS DrugName, SUM(pd.Quantity) AS quantity, d.Price, SUM(pd.Price) AS TotalRevenue "
-					+ "FROM PRESCRIPTION_DETAILS pd " + "JOIN DRUGS d ON pd.Drug_id = d.Id "
-					+ "WHERE DATE(pd.Create_date) BETWEEN ? AND ? " + "GROUP BY d.Name, d.Price";
+			String sql = "SELECT d.Name AS DrugName, SUM(pd.Quantity) AS quantity, d.Price, SUM(d.Price) AS TotalRevenue "
+					+ "FROM PRESCRIPTION_DETAILS pd " + "JOIN DRUG d ON pd.Drug_id = d.Id "
+					+ "WHERE DATE(pd.Create_date) BETWEEN ? AND ? " + "GROUP BY d.Name, d.Price "
+					+ "ORDER BY DATE(pd.Create_date) DESC";
 			PreparedStatement ps = conn.prepareStatement(sql);
 			ps.setDate(1, java.sql.Date.valueOf(startDate));
 			ps.setDate(2, java.sql.Date.valueOf(endDate));
 
 			ResultSet rs = ps.executeQuery();
 			ObservableList<RevenueDrug> dataList = FXCollections.observableArrayList();
-
+			i = 1;
+			drugRevenueList.clear();
 			while (rs.next()) {
 				String drugName = rs.getString("DrugName");
 				int quantity = rs.getInt("quantity");
@@ -713,6 +938,11 @@ public class AdminMainFormController {
 				BigDecimal totalRevenue = rs.getBigDecimal("TotalRevenue");
 				medicationFees = medicationFees.add(totalRevenue);
 				dataList.add(new RevenueDrug(drugName, quantity, price, totalRevenue));
+
+				drugRevenueList.add(Map.of("noDrug", String.valueOf(i), "drugName", drugName, "quantity",
+						String.valueOf(quantity), "DrugPrice", price.toString(), "totalDrug", totalRevenue.toString()));
+
+				i++;
 			}
 
 			revenue_col_drugName.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDrugName()));
@@ -736,8 +966,8 @@ public class AdminMainFormController {
 		try (Connection conn = Database.connectDB()) {
 			String sql = "SELECT s.Name AS ServiceName, COUNT(*) AS quantity, s.Price,s.Type, SUM(s.Price) AS TotalRevenue "
 					+ "FROM SERVICE s " + "JOIN DOCTOR d ON d.Service_id = s.Id "
-					+ "JOIN APPOINTMENTS p ON p.Doctor_id = d.Doctor_id " + "WHERE DATE(p.Create_date) BETWEEN ? AND ? "
-					+ "GROUP BY s.Name, s.Price";
+					+ "JOIN APPOINTMENT p ON p.Doctor_id = d.Doctor_id " + "WHERE DATE(p.Create_date) BETWEEN ? AND ? "
+					+ "GROUP BY s.Name, s.Price" + " ORDER BY DATE(p.Create_date) DESC";
 
 			PreparedStatement ps = conn.prepareStatement(sql);
 			ps.setDate(1, java.sql.Date.valueOf(startDate));
@@ -745,7 +975,8 @@ public class AdminMainFormController {
 
 			ResultSet rs = ps.executeQuery();
 			ObservableList<RevenueService> dataList = FXCollections.observableArrayList();
-
+			i = 1;
+			serviceRevenueList.clear();
 			while (rs.next()) {
 				String serviceName = rs.getString("ServiceName");
 				int quantity = rs.getInt("quantity");
@@ -754,15 +985,20 @@ public class AdminMainFormController {
 				BigDecimal totalRevenue = rs.getBigDecimal("TotalRevenue");
 
 				switch (type.toLowerCase()) {
-				case "examination":
-					examineFees = examineFees.add(totalRevenue);
-					break;
-				case "test":
-					labTestFees = labTestFees.add(totalRevenue);
-					break;
+					case "examination":
+						examineFees = examineFees.add(totalRevenue);
+						break;
+					case "test":
+						labTestFees = labTestFees.add(totalRevenue);
+						break;
 				}
 
 				dataList.add(new RevenueService(serviceName, type, quantity, price, totalRevenue));
+
+				serviceRevenueList.add(Map.of("noService", String.valueOf(i), "serviceName", serviceName, "type", type,
+						"ServicePrice", price.toString(), "totalRevenue", totalRevenue.toString()));
+
+				i++;
 			}
 
 			revenue_col_serviceName
@@ -786,7 +1022,7 @@ public class AdminMainFormController {
 
 	/* =====================LOAD PROFILE======================================== */
 	private void loadAdminProfile() {
-		String checkUserSQL = "SELECT id, name, username, email, gender, create_date  FROM user_account WHERE username = ?";
+		String checkUserSQL = "SELECT id, name, email,username, gender, create_date  FROM user_account WHERE username = ?";
 		Connection connect = Database.connectDB();
 
 		try {
@@ -796,7 +1032,7 @@ public class AdminMainFormController {
 			ResultSet result = prepare.executeQuery();
 
 			if (!result.next()) {
-				alert.errorMessage("Username does not match data.");
+				alert.errorMessage("Username does not match data." + username);
 				return;
 			}
 			this.currentUserId = result.getString("id"); // Lưu id để update sau
@@ -831,28 +1067,45 @@ public class AdminMainFormController {
 
 	public void profileDisplayImages() {
 
-		String sql = "SELECT * FROM user_acount WHERE username = " + username;
+		String sql = "SELECT Avatar FROM user_account WHERE username = ?";
 		connect = Database.connectDB();
 
 		try {
 			prepare = connect.prepareStatement(sql);
+			prepare.setString(1, username);
 			result = prepare.executeQuery();
-
 			if (result.next()) {
-				// Lấy ảnh nhị phân từ DB
 				InputStream inputStream = result.getBinaryStream("Avatar");
 
 				if (inputStream != null) {
-					// Chuyển InputStream thành Image
-					Image img = new Image(inputStream, 137, 95, false, true);
-					profile_circle.setFill(new ImagePattern(img));
+					// Đọc toàn bộ dữ liệu từ inputStream vào byte[]
+					ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+					byte[] data = new byte[1024];
+					int nRead;
+					while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+						buffer.write(data, 0, nRead);
+					}
+					buffer.flush();
+					byte[] imageBytes = buffer.toByteArray();
+					inputStream.close();
 
-					// Thêm logic nếu cần thêm hình ảnh khác
-					img = new Image(inputStream, 1012, 22, false, true);
-					top_profile.setFill(new ImagePattern(img));
+					// Tạo nhiều InputStream từ cùng một mảng byte
+					InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
+					InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
+
+					Image img1 = new Image(imgStream1, 137, 95, true, true);
+					profile_circle.setFill(new ImagePattern(img1));
+
+					Image img2 = new Image(imgStream2, 1012, 22, true, true);
+
+					top_profile.setFill(new ImagePattern(img2));
+				} else {
+					System.out.println("Ảnh trong DB bị null.");
 				}
 			}
+
 		} catch (Exception e) {
+			System.out.println("Lỗi khi xử lý dữ liệu hình ảnh: " + e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -958,13 +1211,14 @@ public class AdminMainFormController {
 	public class FormatterUtils {
 		public static String formatTimestamp(String createdAt) {
 			try {
-		        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		        SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy");
-		        return outputFormat.format(inputFormat.parse(createdAt));
-		    } catch (Exception e) {
-		        return "";
-		    }
+				SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy");
+				return outputFormat.format(inputFormat.parse(createdAt));
+			} catch (Exception e) {
+				return "";
+			}
 		}
+
 		public static String formatCurrencyVND(BigDecimal amount) {
 			if (amount == null)
 				return "0 VNĐ";
@@ -1020,13 +1274,13 @@ public class AdminMainFormController {
 		} else if (event.getSource() == doctors_btn) {
 			showForm("doctors");
 		} else if (event.getSource() == receptionist_btn) {
-			showForm("receptionist");
+			showForm("receptionists");
 		} else if (event.getSource() == service_btn) {
-			showForm("salary");
+			showForm("service");
 		} else if (event.getSource() == profile_btn) {
 			showForm("profile");
 		} else if (event.getSource() == report_btn) {
-			showForm("revenue");
+			showForm("report");
 		}
 
 	}
@@ -1040,69 +1294,51 @@ public class AdminMainFormController {
 		report_form.setVisible(false);
 
 		switch (formName) {
-		case "dashboard":
-			dashboard_form.setVisible(true);
-			current_form.setText("Dashboard Form");
-			break;
-		case "doctors":
-			doctors_form.setVisible(true);
-			current_form.setText("Doctors Form");
-			loadDoctorTable(); // Add this line
-			break;
-		case "receptionists":
-			receptionist_form.setVisible(true);
-			current_form.setText("Receptionists Form");
-			loadReceptionistTable();
-			break;
-		case "service":
-			service_form.setVisible(true);
-			current_form.setText("Service Form");
-			loadServiceTable();
-			break;
+			case "dashboard":
+				dashboard_form.setVisible(true);
+				current_form.setText("Dashboard Form");
+				break;
+			case "doctors":
+				doctors_form.setVisible(true);
+				current_form.setText("Doctors Form");
+				loadDoctorTable(); // Add this line
+				break;
+			case "receptionists":
+				receptionist_form.setVisible(true);
+				current_form.setText("Receptionists Form");
+				loadReceptionistTable();
+				break;
+			case "service":
+				service_form.setVisible(true);
+				current_form.setText("Service Form");
+				loadServiceTable();
+				break;
 
-		case "profile":
-			profile_form.setVisible(true);
-			current_form.setText("Profile Form");
-			break;
-		case "report":
-			report_form.setVisible(true);
-			current_form.setText("Report Form");
-			resetRevenueFilter();
-			break;
+			case "profile":
+				profile_form.setVisible(true);
+				current_form.setText("Profile Form");
+				break;
+			case "report":
+				report_form.setVisible(true);
+				current_form.setText("Report Form");
+				resetRevenueFilter();
+				break;
 
 		}
 	}
 
 	public void loadComboBox() {
-
 		gender_cb.setItems(FXCollections
 				.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
-
 	}
 
 	@FXML
 	public void initialize() {
 		runTime();
 		loadComboBox();
-//		loadAdminProfile();
-//		profileDisplayImages();
+
 		showForm("dashboard");
 
-	}
-
-	@FXML
-	private void filterRevenueData(ActionEvent event) {
-		// TODO: Viết code xử lý khi nhấn nút lọc revenue ở đây
-	}
-
-	@FXML
-	private void resetRevenueFilter(ActionEvent event) {
-		// TODO: Xử lý reset bộ lọc dữ liệu doanh thu ở đây
-	}
-
-	@FXML
-	private void exportRevenueReport(ActionEvent event) {
-		// TODO: Viết code xuất báo cáo doanh thu ở đây
 	}
 
 }

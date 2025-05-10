@@ -96,13 +96,12 @@ public class EditDoctorFormController {
                 String serviceId = rs.getString("Id");
 
                 // Cập nhật bảng DOCTOR
-                String sqlDoctor = "UPDATE DOCTOR SET Phone = ?, Specialized = ?, Address = ?, Service_id = ? WHERE Doctor_id = ?";
+                String sqlDoctor = "UPDATE DOCTOR SET Phone = ?, Address = ?, Service_id = ? WHERE Doctor_id = ?";
                 PreparedStatement psDoctor = conn.prepareStatement(sqlDoctor);
                 psDoctor.setString(1, txtPhone.getText());
-                psDoctor.setString(2, cmbSpecialization.getValue());
-                psDoctor.setString(3, txtAddress.getText());
-                psDoctor.setString(4, serviceId); 
-                psDoctor.setString(5, doctor.getId());
+                psDoctor.setString(2, txtAddress.getText());
+                psDoctor.setString(3, serviceId); 
+                psDoctor.setString(4, doctor.getId());
                 psDoctor.executeUpdate();
             }
 
