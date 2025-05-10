@@ -26,6 +26,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -680,7 +681,7 @@ public class AdminMainFormController {
 	List<Map<String, String>> serviceRevenueList = new ArrayList<>();
 	List<Map<String, String>> revenueListSortByDate = new ArrayList<>();
 	int i;
-s
+
 	@FXML
 	private void resetRevenueFilter() {
 		totalRevenue = BigDecimal.ZERO;
@@ -757,8 +758,7 @@ s
 					}
 				}
 
-				String replacedText = fullText.toString()
-						.replace("{{Start Date}}", startDate.format(formatter))
+				String replacedText = fullText.toString().replace("{{Start Date}}", startDate.format(formatter))
 						.replace("{{End Date}}", endDate.format(formatter));
 
 				if (!fullText.toString().equals(replacedText)) {
@@ -788,11 +788,44 @@ s
 
 	}
 
+	private static void replaceTablePlaceholderRows(XWPFTable table, String placeholderKey, List<String> columns,
+			List<Map<String, String>> dataList, int rowIndex) {
+		if (dataList == null||dataList.isEmpty()) {
+			dataList = new ArrayList<>();
+			Map<String, String> emptyData = new HashMap<>();
+			
+			for (String column : columns) {
+				emptyData.put(column, "");  
+			}
+			dataList.add(emptyData); 
+		}
+
+		XWPFTableRow row = table.getRow(rowIndex);
+
+		for (XWPFTableCell cell : row.getTableCells()) {
+			String text = cell.getText();
+			if (text != null && text.contains(placeholderKey)) {
+				table.removeRow(rowIndex);
+				for (Map<String, String> data : dataList) {
+					XWPFTableRow newRow = table.insertNewTableRow(rowIndex++);
+					for (String col : columns) {
+						String value = data.get(col);
+						
+						if (value == null || value.trim().isEmpty()) {
+							value = "";
+						}
+						newRow.addNewTableCell().setText(value);
+					}
+					rowIndex++;
+				}
+				return;
+			}
+		}
+	}
+
 	public static void replaceAllPlaceholders(XWPFDocument doc, List<Map<String, String>> drugRevenueList,
 			List<Map<String, String>> serviceRevenueList, List<Map<String, String>> revenueListSortByDate,
-			BigDecimal totalRevenue,
-			BigDecimal medicationFees, BigDecimal serviceFees)
-			throws IOException {
+			BigDecimal totalRevenue, BigDecimal medicationFees, BigDecimal serviceFees) throws IOException {
 		for (XWPFTable table : doc.getTables()) {
 			for (int i = 0; i < table.getRows().size(); i++) {
 				XWPFTableRow row = table.getRow(i);
@@ -801,31 +834,35 @@ s
 					try {
 						for (XWPFParagraph para : cell.getParagraphs()) {
 							String text = para.getText();
+
+							if (text == null)
+								continue;
 							if (text != null) {
+								replaceInParagraph(para, "{{totalDrugRevenue}}",
+										FormatterUtils.formatCurrencyVND(medicationFees));
+								replaceInParagraph(para, "{{totalServiceRevenue}}",
+										FormatterUtils.formatCurrencyVND(serviceFees));
+								replaceInParagraph(para, "{{grandTotal}}",
+										FormatterUtils.formatCurrencyVND(totalRevenue));
 								if (text.contains("{{noDrug}}")) {
 									replaceTablePlaceholderRows(table, "{{noDrug}}",
 											List.of("noDrug", "drugName", "quantity", "DrugPrice", "totalDrug"),
 											drugRevenueList, i);
+									break;
 								}
 								if (text.contains("{{noService}}")) {
 									replaceTablePlaceholderRows(table, "{{noService}}",
-											List.of("noService", "serviceName", "type", "ServicePrice", "totalRevenue"),
+											List.of("noService", "serviceName", "type", "ServicePrice", "totalService"),
 											serviceRevenueList, i);
+									break;
 								}
 								if (text.contains("{{noTotal}}")) {
 									replaceTablePlaceholderRows(table, "{{noTotal}}",
-											List.of("date", "totalDrugRevenue", "totalDrugService", "totalRevenue"),
+											List.of("date", "totalDrug", "totalService", "totalRevenue"),
 											revenueListSortByDate, i);
+									break;
 								}
-								if (text.contains("{{totalDrugRevenue}}")) {
-									text = text.replace("{{totalDrugRevenue}}", medicationFees.toString());
-								}
-								if (text.contains("{{totalDrugRevenue}}")) {
-									text = text.replace("{{totalServiceRevenue}}", serviceFees.toString());
-								}
-								if (text.contains("{{totalDrugRevenue}}")) {
-									text = text.replace("{{grandTotal}}", totalRevenue.toString());
-								}
+
 							}
 						}
 					} catch (Exception e) {
@@ -836,24 +873,13 @@ s
 		}
 	}
 
-	private static void replaceTablePlaceholderRows(XWPFTable table, String placeholderKey, List<String> columns,
-			List<Map<String, String>> dataList, int rowIndex) {
-		for (int i = 0; i < table.getRows().size(); i++) {
-			XWPFTableRow row = table.getRow(i);
-			for (XWPFTableCell cell : row.getTableCells()) {
-				String text = cell.getText();
-				if (text != null && text.contains(placeholderKey)) {
-					table.removeRow(i);
-
-					for (Map<String, String> data : dataList) {
-						XWPFTableRow newRow = table.insertNewTableRow(i++);
-						for (String col : columns) {
-							newRow.addNewTableCell().setText(data.getOrDefault(col, ""));
-						}
-					}
-
-					return;
-				}
+	private static void replaceInParagraph(XWPFParagraph paragraph, String placeholder, String replacement) {
+		for (XWPFRun run : paragraph.getRuns()) {
+			String text = run.getText(0);
+			if (text != null && text.contains(placeholder)) {
+				String replaced = text.replace(placeholder, replacement);
+				run.setText(replaced, 0);
+				return;
 			}
 		}
 	}
@@ -985,18 +1011,18 @@ s
 				BigDecimal totalRevenue = rs.getBigDecimal("TotalRevenue");
 
 				switch (type.toLowerCase()) {
-					case "examination":
-						examineFees = examineFees.add(totalRevenue);
-						break;
-					case "test":
-						labTestFees = labTestFees.add(totalRevenue);
-						break;
+				case "examination":
+					examineFees = examineFees.add(totalRevenue);
+					break;
+				case "test":
+					labTestFees = labTestFees.add(totalRevenue);
+					break;
 				}
 
 				dataList.add(new RevenueService(serviceName, type, quantity, price, totalRevenue));
 
 				serviceRevenueList.add(Map.of("noService", String.valueOf(i), "serviceName", serviceName, "type", type,
-						"ServicePrice", price.toString(), "totalRevenue", totalRevenue.toString()));
+						"ServicePrice", price.toString(), "totalService", totalRevenue.toString()));
 
 				i++;
 			}
@@ -1294,35 +1320,35 @@ s
 		report_form.setVisible(false);
 
 		switch (formName) {
-			case "dashboard":
-				dashboard_form.setVisible(true);
-				current_form.setText("Dashboard Form");
-				break;
-			case "doctors":
-				doctors_form.setVisible(true);
-				current_form.setText("Doctors Form");
-				loadDoctorTable(); // Add this line
-				break;
-			case "receptionists":
-				receptionist_form.setVisible(true);
-				current_form.setText("Receptionists Form");
-				loadReceptionistTable();
-				break;
-			case "service":
-				service_form.setVisible(true);
-				current_form.setText("Service Form");
-				loadServiceTable();
-				break;
+		case "dashboard":
+			dashboard_form.setVisible(true);
+			current_form.setText("Dashboard Form");
+			break;
+		case "doctors":
+			doctors_form.setVisible(true);
+			current_form.setText("Doctors Form");
+			loadDoctorTable(); // Add this line
+			break;
+		case "receptionists":
+			receptionist_form.setVisible(true);
+			current_form.setText("Receptionists Form");
+			loadReceptionistTable();
+			break;
+		case "service":
+			service_form.setVisible(true);
+			current_form.setText("Service Form");
+			loadServiceTable();
+			break;
 
-			case "profile":
-				profile_form.setVisible(true);
-				current_form.setText("Profile Form");
-				break;
-			case "report":
-				report_form.setVisible(true);
-				current_form.setText("Report Form");
-				resetRevenueFilter();
-				break;
+		case "profile":
+			profile_form.setVisible(true);
+			current_form.setText("Profile Form");
+			break;
+		case "report":
+			report_form.setVisible(true);
+			current_form.setText("Report Form");
+			resetRevenueFilter();
+			break;
 
 		}
 	}
