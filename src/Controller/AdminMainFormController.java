@@ -424,7 +424,8 @@ public class AdminMainFormController {
 		}
 	}
 
-// =============================CRUD RECEPTIONIST=====================================
+	// =============================CRUD
+	// RECEPTIONIST=====================================
 
 	private void loadReceptionistTable() {
 		ObservableList<ReceptionistData> list = FXCollections.observableArrayList();
@@ -546,7 +547,7 @@ public class AdminMainFormController {
 		}
 	}
 
-//=======================CRUD Service==================================
+	// =======================CRUD Service==================================
 
 	private void loadServiceTable() {
 		ObservableList<ServiceData> list = FXCollections.observableArrayList();
@@ -679,7 +680,7 @@ public class AdminMainFormController {
 	List<Map<String, String>> serviceRevenueList = new ArrayList<>();
 	List<Map<String, String>> revenueListSortByDate = new ArrayList<>();
 	int i;
-
+s
 	@FXML
 	private void resetRevenueFilter() {
 		totalRevenue = BigDecimal.ZERO;
@@ -728,15 +729,16 @@ public class AdminMainFormController {
 		handleRevenueDrugReport(startDate, endDate);
 		handleRevenueServiceReport(startDate, endDate);
 		totalRevenue = examineFees.add(medicationFees).add(labTestFees);
-		serviceFees=examineFees.add(labTestFees);
+		serviceFees = examineFees.add(labTestFees);
 		handleDateReport(startDate, endDate);
 
 		File sourceFile = new File("Word/REPORT.docx");
-		String destFileName = String.format("Word/REPORT_from_%s_to_%s.docx", startDate.format(formatter).toString(), endDate.format(formatter));
+		String destFileName = String.format("Word/REPORT_from_%s_to_%s.docx", startDate.format(formatter).toString(),
+				endDate.format(formatter));
 		Path destPath = Paths.get(destFileName);
 
 		if (Files.exists(destPath)) {
-		    Files.delete(destPath);  // Nếu tệp đích đã tồn tại, xóa
+			Files.delete(destPath); // Nếu tệp đích đã tồn tại, xóa
 		}
 		File destFile = new File(destFileName);
 
@@ -745,29 +747,30 @@ public class AdminMainFormController {
 
 		try (XWPFDocument doc = new XWPFDocument(new FileInputStream(destFile))) {
 			for (XWPFParagraph para : doc.getParagraphs()) {
-			    StringBuilder fullText = new StringBuilder();
-			    List<XWPFRun> runs = para.getRuns();
+				StringBuilder fullText = new StringBuilder();
+				List<XWPFRun> runs = para.getRuns();
 
-			    for (XWPFRun run : runs) {
-			        String text = run.getText(0);
-			        if (text != null) {
-			            fullText.append(text);
-			        }
-			    }
+				for (XWPFRun run : runs) {
+					String text = run.getText(0);
+					if (text != null) {
+						fullText.append(text);
+					}
+				}
 
-			    String replacedText = fullText.toString()
-			        .replace("{{Start Date}}",startDate.format(formatter))
-			        .replace("{{End Date}}", endDate.format(formatter));
+				String replacedText = fullText.toString()
+						.replace("{{Start Date}}", startDate.format(formatter))
+						.replace("{{End Date}}", endDate.format(formatter));
 
-			    if (!fullText.toString().equals(replacedText)) {
-			        for (int i = runs.size() - 1; i >= 0; i--) {
-			            para.removeRun(i);
-			        }
-			        XWPFRun newRun = para.createRun();
-			        newRun.setText(replacedText);
-			    }
+				if (!fullText.toString().equals(replacedText)) {
+					for (int i = runs.size() - 1; i >= 0; i--) {
+						para.removeRun(i);
+					}
+					XWPFRun newRun = para.createRun();
+					newRun.setText(replacedText);
+				}
 			}
-			replaceAllPlaceholders(doc, drugRevenueList, serviceRevenueList, revenueListSortByDate,totalRevenue,medicationFees,serviceFees);
+			replaceAllPlaceholders(doc, drugRevenueList, serviceRevenueList, revenueListSortByDate, totalRevenue,
+					medicationFees, serviceFees);
 
 			// Ghi lại file đã chỉnh sửa
 			try (FileOutputStream fos = new FileOutputStream(destFile)) {
@@ -786,8 +789,9 @@ public class AdminMainFormController {
 	}
 
 	public static void replaceAllPlaceholders(XWPFDocument doc, List<Map<String, String>> drugRevenueList,
-			List<Map<String, String>> serviceRevenueList, List<Map<String, String>> revenueListSortByDate,BigDecimal totalRevenue,
-			BigDecimal medicationFees,	BigDecimal serviceFees )
+			List<Map<String, String>> serviceRevenueList, List<Map<String, String>> revenueListSortByDate,
+			BigDecimal totalRevenue,
+			BigDecimal medicationFees, BigDecimal serviceFees)
 			throws IOException {
 		for (XWPFTable table : doc.getTables()) {
 			for (int i = 0; i < table.getRows().size(); i++) {
@@ -815,13 +819,13 @@ public class AdminMainFormController {
 								}
 								if (text.contains("{{totalDrugRevenue}}")) {
 									text = text.replace("{{totalDrugRevenue}}", medicationFees.toString());
-			                    }
+								}
 								if (text.contains("{{totalDrugRevenue}}")) {
 									text = text.replace("{{totalServiceRevenue}}", serviceFees.toString());
-			                    }
+								}
 								if (text.contains("{{totalDrugRevenue}}")) {
 									text = text.replace("{{grandTotal}}", totalRevenue.toString());
-			                    }
+								}
 							}
 						}
 					} catch (Exception e) {
@@ -981,12 +985,12 @@ public class AdminMainFormController {
 				BigDecimal totalRevenue = rs.getBigDecimal("TotalRevenue");
 
 				switch (type.toLowerCase()) {
-				case "examination":
-					examineFees = examineFees.add(totalRevenue);
-					break;
-				case "test":
-					labTestFees = labTestFees.add(totalRevenue);
-					break;
+					case "examination":
+						examineFees = examineFees.add(totalRevenue);
+						break;
+					case "test":
+						labTestFees = labTestFees.add(totalRevenue);
+						break;
 				}
 
 				dataList.add(new RevenueService(serviceName, type, quantity, price, totalRevenue));
@@ -1290,35 +1294,35 @@ public class AdminMainFormController {
 		report_form.setVisible(false);
 
 		switch (formName) {
-		case "dashboard":
-			dashboard_form.setVisible(true);
-			current_form.setText("Dashboard Form");
-			break;
-		case "doctors":
-			doctors_form.setVisible(true);
-			current_form.setText("Doctors Form");
-			loadDoctorTable(); // Add this line
-			break;
-		case "receptionists":
-			receptionist_form.setVisible(true);
-			current_form.setText("Receptionists Form");
-			loadReceptionistTable();
-			break;
-		case "service":
-			service_form.setVisible(true);
-			current_form.setText("Service Form");
-			loadServiceTable();
-			break;
+			case "dashboard":
+				dashboard_form.setVisible(true);
+				current_form.setText("Dashboard Form");
+				break;
+			case "doctors":
+				doctors_form.setVisible(true);
+				current_form.setText("Doctors Form");
+				loadDoctorTable(); // Add this line
+				break;
+			case "receptionists":
+				receptionist_form.setVisible(true);
+				current_form.setText("Receptionists Form");
+				loadReceptionistTable();
+				break;
+			case "service":
+				service_form.setVisible(true);
+				current_form.setText("Service Form");
+				loadServiceTable();
+				break;
 
-		case "profile":
-			profile_form.setVisible(true);
-			current_form.setText("Profile Form");
-			break;
-		case "report":
-			report_form.setVisible(true);
-			current_form.setText("Report Form");
-			resetRevenueFilter();
-			break;
+			case "profile":
+				profile_form.setVisible(true);
+				current_form.setText("Profile Form");
+				break;
+			case "report":
+				report_form.setVisible(true);
+				current_form.setText("Report Form");
+				resetRevenueFilter();
+				break;
 
 		}
 	}
