@@ -18,7 +18,7 @@
 <BorderPane style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.EditPatientFormController">
     
     <top>
-        <VBox alignment="CENTER" style="-fx-background-color: #0c8599;">
+        <VBox alignment="CENTER" styleClass="bg-color-2" stylesheets="@../design/ReceptionistMainFormDesign.css">
             <padding>
                 <Insets bottom="15" left="20" right="20" top="15" />
             </padding>
@@ -119,7 +119,7 @@
                 <Insets bottom="15" left="20" right="20" top="15" />
             </padding>
             <Button fx:id="btnCancel" onAction="#handleCancel" prefWidth="100" style="-fx-background-color: #6c757d; -fx-text-fill: white;" text="Cancel" />
-            <Button fx:id="btnSave" onAction="#handleSave" prefWidth="100" style="-fx-background-color: #0c8599; -fx-text-fill: white;" text="Save" />
+            <Button fx:id="btnSave" onAction="#handleSave" prefWidth="100" style="-fx-text-fill: white;" styleClass="bg-color-2" stylesheets="@../design/ReceptionistMainFormDesign.css" text="Save" />
         </HBox>
     </bottom>
     

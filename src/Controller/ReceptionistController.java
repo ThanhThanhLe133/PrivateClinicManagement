@@ -24,8 +24,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -98,6 +100,12 @@ public class ReceptionistController implements Initializable {
 	@FXML private TableColumn<DrugData, String> drug_col_create;
 	@FXML private TableColumn<DrugData, String> drug_col_update;
 	@FXML private TableColumn<DrugData, Void> drug_col_action;
+	
+	@FXML private TextField txtDrugSearch;
+	@FXML private ComboBox<String> cmbDrugSearchBy;
+	@FXML private ComboBox<String> cmbDrugExpiryFilter;
+	@FXML private ComboBox<String> cmbDrugStockFilter;
+	@FXML private ComboBox<String> cmbDrugPriceSort;
 
 	/*=====================CRUD PATIENT========================================*/
 
@@ -639,10 +647,34 @@ public class ReceptionistController implements Initializable {
 	
 	
 	// =======================CRUD Drug==================================
+	private ObservableList<DrugData> drugMasterList = FXCollections.observableArrayList();
+	
+	private void initializeDrugFilters() {
+	    cmbDrugSearchBy.setItems(FXCollections.observableArrayList("Name", "Manufacturer", "Unit"));
+	    cmbDrugSearchBy.setValue("Name");
+
+	    cmbDrugExpiryFilter.setItems(FXCollections.observableArrayList("All", "Valid", "Expired"));
+	    cmbDrugExpiryFilter.setValue("All");
+
+	    cmbDrugStockFilter.setItems(FXCollections.observableArrayList("All", "In Stock", "Out of Stock"));
+	    cmbDrugStockFilter.setValue("All");
+
+	    cmbDrugPriceSort.setItems(FXCollections.observableArrayList("None", "Low to High", "High to Low"));
+	    cmbDrugPriceSort.setValue("None");
+	    
+	    txtDrugSearch.clear();
+	    txtDrugSearch.setPromptText("Enter keyword to search");
+
+	    // Gắn listener để tự động lọc khi người dùng thay đổi
+	    txtDrugSearch.textProperty().addListener((obs, oldVal, newVal) -> applyAdvancedDrugFilter());
+	    cmbDrugSearchBy.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
+	    cmbDrugExpiryFilter.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
+	    cmbDrugStockFilter.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
+	    cmbDrugPriceSort.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
+	}
 	
 	private void loadDrugTable() {
-	    ObservableList<DrugData> list = FXCollections.observableArrayList();
-
+		drugMasterList.clear();
 	    try {
 	        Connection conn = Database.connectDB();
 	        String sql = "SELECT Id, Name, Manufacturer, Expiry_date, Unit, Price, Stock, Create_date, Update_date "
@@ -652,14 +684,16 @@ public class ReceptionistController implements Initializable {
 	        ResultSet rs = ps.executeQuery();
 
 	        while (rs.next()) {
-	        	list.add(new DrugData(
+	        	drugMasterList.add(new DrugData(
 	        		    rs.getString("Id"),
 	        		    rs.getString("Name"),
 	        		    rs.getString("Manufacturer"),
 	        		    rs.getString("Unit"),
 	        		    rs.getBigDecimal("Price"),
 	        		    rs.getInt("Stock"),
-	        		    rs.getDate("Expiry_date").toLocalDate()
+	        		    rs.getDate("Expiry_date").toLocalDate(),
+	        		    rs.getTimestamp("Create_date"),
+	        		    rs.getTimestamp("Update_date")
 	        		));
 	        }
 
@@ -698,7 +732,9 @@ public class ReceptionistController implements Initializable {
 	            }
 	        });
 
-	        drug_tableView.setItems(list);
+	        drug_tableView.setItems(drugMasterList);
+	        initializeDrugFilters();
+	        
 	        conn.close();
 	    } catch (Exception e) {
 	        e.printStackTrace();
@@ -706,6 +742,53 @@ public class ReceptionistController implements Initializable {
 	        alert.setContentText("Error loading drug list!");
 	        alert.showAndWait();
 	    }
+	}
+	
+	private void applyAdvancedDrugFilter() {
+	    String keyword = txtDrugSearch.getText().toLowerCase();
+	    String searchBy = cmbDrugSearchBy.getValue();
+	    String expiryFilter = cmbDrugExpiryFilter.getValue();
+	    String stockFilter = cmbDrugStockFilter.getValue();
+	    String priceSort = cmbDrugPriceSort.getValue();
+
+	    ObservableList<DrugData> filtered = FXCollections.observableArrayList();
+
+	    for (DrugData drug : drugMasterList) {
+	        boolean matchesKeyword = true;
+
+	        switch (searchBy) {
+	            case "Name":
+	                matchesKeyword = drug.getName().toLowerCase().contains(keyword);
+	                break;
+	            case "Manufacturer":
+	                matchesKeyword = drug.getManufacturer().toLowerCase().contains(keyword);
+	                break;
+	            case "Unit":
+	                matchesKeyword = drug.getUnit().toLowerCase().contains(keyword);
+	                break;
+	        }
+
+	        boolean matchesExpiry = expiryFilter.equals("All") ||
+	            (expiryFilter.equals("Valid") && drug.getExpiryDate().isAfter(LocalDate.now())) ||
+	            (expiryFilter.equals("Expired") && !drug.getExpiryDate().isAfter(LocalDate.now()));
+
+	        boolean matchesStock = stockFilter.equals("All") ||
+	            (stockFilter.equals("In Stock") && drug.getStock() > 0) ||
+	            (stockFilter.equals("Out of Stock") && drug.getStock() <= 0);
+
+	        if (matchesKeyword && matchesExpiry && matchesStock) {
+	            filtered.add(drug);
+	        }
+	    }
+
+	    // Sort theo giá
+	    if (priceSort.equals("Low to High")) {
+	        FXCollections.sort(filtered, Comparator.comparing(DrugData::getPrice));
+	    } else if (priceSort.equals("High to Low")) {
+	        FXCollections.sort(filtered, Comparator.comparing(DrugData::getPrice).reversed());
+	    }
+
+	    drug_tableView.setItems(filtered);
 	}
 
 	private void deleteDrug(String drugId) {
@@ -796,7 +879,9 @@ public class ReceptionistController implements Initializable {
 	                rs.getString("Address"),
 	                rs.getString("Diagnosis"),
 	                rs.getBigDecimal("Height"),
-	                rs.getBigDecimal("Weight")
+	                rs.getBigDecimal("Weight"),
+	                rs.getTimestamp("Create_date"),
+        		    rs.getTimestamp("Update_date")
 	            );
 	            patientList.add(patient);
 	        }
@@ -949,7 +1034,7 @@ public class ReceptionistController implements Initializable {
 
 	/* =====================LOAD PROFILE======================================== */
 	private void loadReceptionistProfile() {
-		String checkUserSQL = "SELECT ua.name, ua.username, ua.email, ua.gender, ua.created_at, r.phone, r.address "
+		String checkUserSQL = "SELECT ua.name, ua.username, ua.email, ua.gender, ua.Create_date, r.phone, r.address "
 				+ "FROM user_account ua " + "JOIN receptionist r ON ua.id = r.receptionist_id "
 				+ "WHERE ua.username = ?";
 
@@ -961,7 +1046,11 @@ public class ReceptionistController implements Initializable {
 
 			ResultSet result = prepare.executeQuery();
 
-			if (!result.next() || result.getInt(1) <= 0) {
+//			if (!result.next() || result.getInt(1) <= 0) {
+//				alert.errorMessage("Username does not match data.");
+//				return;
+//			}
+			if (!result.next()) {
 				alert.errorMessage("Username does not match data.");
 				return;
 			}
@@ -971,9 +1060,11 @@ public class ReceptionistController implements Initializable {
 			String phone = result.getString("phone");
 			String address = result.getString("address");
 			String gender = result.getString("gender");
-			String createdAt = result.getString("created_at");
+			String createdAt = result.getString("Create_date");
 
 			// Gán cho các Label
+			name_receptDB.setText(name != null ? name : "UNKNOWN");
+			username_receptDB.setText(username != null ? username : "");
 			name_recept.setText(name != null ? name : "UNKNOWN");
 			username_recept.setText(username != null ? username : "");
 			gender_recept.setText(gender != null ? gender : "");
@@ -1046,7 +1137,7 @@ public class ReceptionistController implements Initializable {
 		String phone = txt_phone_recept.getText();
 		String usernameEdit = txt_username_recept.getText();
 		String address = txt_address_recept.getText();
-		String email = email_recept.getText();
+		String email = txt_email_recept.getText();
 		String gender = (String) gender_cb.getSelectionModel().getSelectedItem();
 
 		if (usernameEdit.isEmpty() || name.isEmpty() || phone.isEmpty() || address.isEmpty()) {
@@ -1065,7 +1156,7 @@ public class ReceptionistController implements Initializable {
 
 		try {
 			// Kiểm tra username đã tồn tại (trừ chính mình)
-			if(username!=usernameEdit) {
+			if (!username.equals(usernameEdit)) {
 				prepare = connect.prepareStatement(checkUsernameSQL);
 				prepare.setString(1, usernameEdit);
 				result = prepare.executeQuery();
@@ -1247,6 +1338,7 @@ public class ReceptionistController implements Initializable {
 		runTime();
 		loadComboBox();
 		
+		initializeDrugFilters();
 		showForm("dashboard");
 
 		//homePatientDisplayData();

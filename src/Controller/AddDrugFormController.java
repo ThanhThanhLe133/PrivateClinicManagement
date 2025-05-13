@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import DAO.Database;
+import Enum.Drug_Unit;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -12,12 +13,14 @@ import java.time.LocalDate;
 
 public class AddDrugFormController {
 
-    @FXML private TextField txtDrugName, txtManufacturer, txtUnit, txtPrice, txtStock;
+    @FXML private TextField txtDrugName, txtManufacturer, txtPrice, txtStock;
     @FXML private DatePicker dtExpiryDate;
     @FXML private Button btnSave, btnCancel;
 
     @FXML private Label lblDrugNameError, lblManufacturerError, lblExpiryDateError,
                         lblUnitError, lblPriceError, lblStockError;
+    
+    @FXML private ComboBox<String> cmbUnit;
 
     @FXML
     private void initialize() {
@@ -33,6 +36,11 @@ public class AddDrugFormController {
                 txtStock.setText(oldVal);
             }
         });
+        
+        // Đưa các giá trị enum vào ComboBox
+        for (Drug_Unit unit : Drug_Unit.values()) {
+            cmbUnit.getItems().add(unit.name()); // hoặc unit.toString() nếu bạn override toString()
+        }
     }
 
     @FXML
@@ -53,11 +61,20 @@ public class AddDrugFormController {
         isValid = validateTextField(txtDrugName, lblDrugNameError, "Drug name is required") && isValid;
         isValid = validateTextField(txtManufacturer, lblManufacturerError, "Manufacturer is required") && isValid;
         isValid = validateDatePicker(dtExpiryDate, lblExpiryDateError, "Expiry date is required") && isValid;
-        isValid = validateTextField(txtUnit, lblUnitError, "Unit is required") && isValid;
+        isValid = validateComboBox(cmbUnit, lblUnitError, "Unit is required") && isValid;
         isValid = validateNumericField(txtPrice, lblPriceError, "Invalid price") && isValid;
         isValid = validateIntegerField(txtStock, lblStockError, "Invalid stock") && isValid;
 
         return isValid;
+    }
+    
+    private boolean validateComboBox(ComboBox<String> comboBox, Label errorLabel, String errorMessage) {
+        if (comboBox.getValue() == null || comboBox.getValue().trim().isEmpty()) {
+            showError(errorLabel, errorMessage);
+            return false;
+        }
+        hideError(errorLabel);
+        return true;
     }
 
     private boolean validateTextField(TextField field, Label errorLabel, String errorMessage) {
@@ -119,7 +136,7 @@ public class AddDrugFormController {
             ps.setString(1, txtDrugName.getText().trim());
             ps.setString(2, txtManufacturer.getText().trim());
             ps.setDate(3, Date.valueOf(dtExpiryDate.getValue()));
-            ps.setString(4, txtUnit.getText().trim());
+            ps.setString(4, cmbUnit.getValue());
             ps.setDouble(5, Double.parseDouble(txtPrice.getText().trim()));
             ps.setInt(6, Integer.parseInt(txtStock.getText().trim()));
 

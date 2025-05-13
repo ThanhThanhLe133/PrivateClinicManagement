@@ -11,8 +11,8 @@ import java.sql.PreparedStatement;
 
 public class EditPatientFormController {
 
-    @FXML private TextField txtPatientName, txtHeight, txtWeight, txtPhone, txtDiagnosis, txtAddress;
-    @FXML private TextField txtEmail;
+    @FXML private TextField txtPatientName, txtEmail, txtHeight, txtWeight,
+                             txtPhone, txtDiagnosis, txtAddress;
     @FXML private ComboBox<String> cmbGender;
     @FXML private Button btnSave, btnCancel;
 
@@ -35,6 +35,8 @@ public class EditPatientFormController {
 
     @FXML
     private void initialize() {
+        cmbGender.getItems().addAll("Male", "Female", "Other");
+
         txtHeight.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*(\\.\\d*)?")) {
                 txtHeight.setText(oldVal);
@@ -45,6 +47,36 @@ public class EditPatientFormController {
             if (!newVal.matches("\\d*(\\.\\d*)?")) {
                 txtWeight.setText(oldVal);
             }
+        });
+
+        // Tự động kiểm tra khi focus rời khỏi trường
+        addFocusValidation();
+    }
+
+    private void addFocusValidation() {
+        txtPatientName.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validatePatientName();
+        });
+        txtEmail.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validateEmail();
+        });
+        txtHeight.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validateHeight();
+        });
+        txtWeight.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validateWeight();
+        });
+        cmbGender.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validateGender();
+        });
+        txtPhone.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validatePhone();
+        });
+        txtDiagnosis.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validateDiagnosis();
+        });
+        txtAddress.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) validateAddress();
         });
     }
 
@@ -61,18 +93,64 @@ public class EditPatientFormController {
     }
 
     private boolean validateAllFields() {
-        boolean isValid = true;
-
-        isValid = validateTextField(txtPatientName, lblPatientNameError, "Patient name is required") && isValid;
-        isValid = validateTextField(txtEmail, lblEmailError, "Email is required") && isValid;
-        isValid = validateNumericField(txtHeight, lblHeightError, "Invalid height") && isValid;
-        isValid = validateNumericField(txtWeight, lblWeightError, "Invalid weight") && isValid;
-        isValid = validateComboBox(cmbGender, lblGenderError, "Gender is required") && isValid;
-        isValid = validateTextField(txtPhone, lblPhoneError, "Phone number is required") && isValid;
-        isValid = validateTextField(txtDiagnosis, lblDiagnosisError, "Diagnosis is required") && isValid;
-        isValid = validateTextField(txtAddress, lblAddressError, "Address is required") && isValid;
-
+        boolean isValid = validatePatientName();
+        isValid = validateEmail() && isValid;
+        isValid = validateHeight() && isValid;
+        isValid = validateWeight() && isValid;
+        isValid = validateGender() && isValid;
+        isValid = validatePhone() && isValid;
+        isValid = validateDiagnosis() && isValid;
+        isValid = validateAddress() && isValid;
         return isValid;
+    }
+
+    private boolean validatePatientName() {
+        return validateTextField(txtPatientName, lblPatientNameError, "Patient name is required");
+    }
+
+    private boolean validateEmail() {
+        String email = txtEmail.getText().trim();
+        if (email.isEmpty() || !email.matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
+            showError(lblEmailError, "Valid email is required");
+            return false;
+        }
+        hideError(lblEmailError);
+        return true;
+    }
+
+    private boolean validateHeight() {
+        return validatePositiveNumber(txtHeight, lblHeightError, "Height must be a positive number");
+    }
+
+    private boolean validateWeight() {
+        return validatePositiveNumber(txtWeight, lblWeightError, "Weight must be a positive number");
+    }
+
+    private boolean validateGender() {
+        if (cmbGender.getValue() == null || cmbGender.getValue().isEmpty()) {
+            showError(lblGenderError, "Gender is required");
+            return false;
+        }
+        hideError(lblGenderError);
+        return true;
+    }
+
+    private boolean validatePhone() {
+        String phone = txtPhone.getText().trim();
+        if (phone.isEmpty() || !phone.matches("\\d{9,15}")) {
+            showError(lblPhoneError, "Valid phone number is required");
+            return false;
+        }
+        hideError(lblPhoneError);
+        return true;
+    }
+
+    private boolean validateDiagnosis() {
+        return validateTextField(txtDiagnosis, lblDiagnosisError, "Diagnosis is required");
+    }
+
+    private boolean validateAddress() {
+        return validateTextField(txtAddress, lblAddressError, "Address is required");
     }
 
     private boolean validateTextField(TextField field, Label errorLabel, String message) {
@@ -84,7 +162,7 @@ public class EditPatientFormController {
         return true;
     }
 
-    private boolean validateNumericField(TextField field, Label errorLabel, String message) {
+    private boolean validatePositiveNumber(TextField field, Label errorLabel, String message) {
         try {
             double value = Double.parseDouble(field.getText().trim());
             if (value <= 0) throw new NumberFormatException();
@@ -94,15 +172,6 @@ public class EditPatientFormController {
             showError(errorLabel, message);
             return false;
         }
-    }
-
-    private boolean validateComboBox(ComboBox<?> comboBox, Label errorLabel, String message) {
-        if (comboBox.getValue() == null) {
-            showError(errorLabel, message);
-            return false;
-        }
-        hideError(errorLabel);
-        return true;
     }
 
     private void showError(Label label, String message) {
@@ -116,7 +185,7 @@ public class EditPatientFormController {
 
     private void updatePatient() {
         try (Connection conn = Database.connectDB()) {
-            String sql = "UPDATE PATIENT SET Name=?, Email=?, Height=?, Weight=?, Gender=?, Phone=?, Diagnosis=?, Address=?, Update_date = ? WHERE Patient_Id=?";
+            String sql = "UPDATE PATIENT SET Name=?, Email=?, Height=?, Weight=?, Gender=?, Phone=?, Diagnosis=?, Address=?, Update_date=? WHERE Patient_Id=?";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, txtPatientName.getText().trim());
             ps.setString(2, txtEmail.getText().trim());
@@ -140,7 +209,10 @@ public class EditPatientFormController {
             ((Stage) btnSave.getScene().getWindow()).close();
         } catch (Exception e) {
             e.printStackTrace();
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Error updating patient: " + e.getMessage());
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Update Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Error updating patient: " + e.getMessage());
             alert.showAndWait();
         }
     }

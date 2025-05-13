@@ -21,7 +21,6 @@ public class ReceptionistData extends UserAccount {
 		this.isConfirmed = isConfirmed;
 	}
 
-	// Getter & Setter cho DOCTOR
 	public String getPhone() {
 		return phone;
 	}

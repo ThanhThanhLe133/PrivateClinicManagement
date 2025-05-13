@@ -38,7 +38,24 @@ public class DrugData {
     	this.price = price;
     	this.stock = stock;
     	this.expiry_date = expiry_date;
+    	this.update_date = new Timestamp(System.currentTimeMillis());
+		this.create_date = new Timestamp(System.currentTimeMillis());
     }
+    
+    public DrugData(String drugId, String name, String manufacturer, String unit,
+		    BigDecimal price, int stock, LocalDate expiry_date, Timestamp create_date, Timestamp update_date)
+	{
+		this.id = drugId;
+		this.name = name;
+		this.manufacturer = manufacturer;
+		this.unit = unit;
+		this.price = price;
+		this.stock = stock;
+		this.expiry_date = expiry_date;
+		this.create_date = create_date;
+		this.update_date = update_date;
+	}
+    
     public String getFormattedPrice() {
 		return formatCurrencyVND(price);
 	}
