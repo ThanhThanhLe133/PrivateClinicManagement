@@ -22,7 +22,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
+<<<<<<< HEAD
+=======
+import java.util.Arrays;
+import java.util.Comparator;
+>>>>>>> ab7dbe2 (xong quản lý thuốc role recept)
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -93,6 +99,12 @@ public class ReceptionistController implements Initializable {
 	@FXML private TableColumn<DrugData, String> drug_col_create;
 	@FXML private TableColumn<DrugData, String> drug_col_update;
 	@FXML private TableColumn<DrugData, Void> drug_col_action;
+	
+	@FXML private TextField txtDrugSearch;
+	@FXML private ComboBox<String> cmbDrugSearchBy;
+	@FXML private ComboBox<String> cmbDrugExpiryFilter;
+	@FXML private ComboBox<String> cmbDrugStockFilter;
+	@FXML private ComboBox<String> cmbDrugPriceSort;
 
 	/*=====================CRUD PATIENT========================================*/
 
@@ -917,10 +929,34 @@ public class ReceptionistController implements Initializable {
 	}
 	
 	// =======================CRUD Drug==================================
+	private ObservableList<DrugData> drugMasterList = FXCollections.observableArrayList();
+	
+	private void initializeDrugFilters() {
+	    cmbDrugSearchBy.setItems(FXCollections.observableArrayList("Name", "Manufacturer", "Unit"));
+	    cmbDrugSearchBy.setValue("Name");
+
+	    cmbDrugExpiryFilter.setItems(FXCollections.observableArrayList("All", "Valid", "Expired"));
+	    cmbDrugExpiryFilter.setValue("All");
+
+	    cmbDrugStockFilter.setItems(FXCollections.observableArrayList("All", "In Stock", "Out of Stock"));
+	    cmbDrugStockFilter.setValue("All");
+
+	    cmbDrugPriceSort.setItems(FXCollections.observableArrayList("None", "Low to High", "High to Low"));
+	    cmbDrugPriceSort.setValue("None");
+	    
+	    txtDrugSearch.clear();
+	    txtDrugSearch.setPromptText("Enter keyword to search");
+
+	    // Gắn listener để tự động lọc khi người dùng thay đổi
+	    txtDrugSearch.textProperty().addListener((obs, oldVal, newVal) -> applyAdvancedDrugFilter());
+	    cmbDrugSearchBy.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
+	    cmbDrugExpiryFilter.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
+	    cmbDrugStockFilter.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
+	    cmbDrugPriceSort.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
+	}
 	
 	private void loadDrugTable() {
-	    ObservableList<DrugData> list = FXCollections.observableArrayList();
-
+		drugMasterList.clear();
 	    try {
 	        Connection conn = Database.connectDB();
 	        String sql = "SELECT Id, Name, Manufacturer, Expiry_date, Unit, Price, Stock, Create_date, Update_date\r\n"
@@ -930,7 +966,7 @@ public class ReceptionistController implements Initializable {
 	        ResultSet rs = ps.executeQuery();
 
 	        while (rs.next()) {
-	        	list.add(new DrugData(
+	        	drugMasterList.add(new DrugData(
 	        		    rs.getString("Id"),
 	        		    rs.getString("Name"),
 	        		    rs.getString("Manufacturer"),
@@ -978,7 +1014,9 @@ public class ReceptionistController implements Initializable {
 	            }
 	        });
 
-	        drug_tableView.setItems(list);
+	        drug_tableView.setItems(drugMasterList);
+	        initializeDrugFilters();
+	        
 	        conn.close();
 	    } catch (Exception e) {
 	        e.printStackTrace();
@@ -986,6 +1024,53 @@ public class ReceptionistController implements Initializable {
 	        alert.setContentText("Error loading drug list!");
 	        alert.showAndWait();
 	    }
+	}
+	
+	private void applyAdvancedDrugFilter() {
+	    String keyword = txtDrugSearch.getText().toLowerCase();
+	    String searchBy = cmbDrugSearchBy.getValue();
+	    String expiryFilter = cmbDrugExpiryFilter.getValue();
+	    String stockFilter = cmbDrugStockFilter.getValue();
+	    String priceSort = cmbDrugPriceSort.getValue();
+
+	    ObservableList<DrugData> filtered = FXCollections.observableArrayList();
+
+	    for (DrugData drug : drugMasterList) {
+	        boolean matchesKeyword = true;
+
+	        switch (searchBy) {
+	            case "Name":
+	                matchesKeyword = drug.getName().toLowerCase().contains(keyword);
+	                break;
+	            case "Manufacturer":
+	                matchesKeyword = drug.getManufacturer().toLowerCase().contains(keyword);
+	                break;
+	            case "Unit":
+	                matchesKeyword = drug.getUnit().toLowerCase().contains(keyword);
+	                break;
+	        }
+
+	        boolean matchesExpiry = expiryFilter.equals("All") ||
+	            (expiryFilter.equals("Valid") && drug.getExpiryDate().isAfter(LocalDate.now())) ||
+	            (expiryFilter.equals("Expired") && !drug.getExpiryDate().isAfter(LocalDate.now()));
+
+	        boolean matchesStock = stockFilter.equals("All") ||
+	            (stockFilter.equals("In Stock") && drug.getStock() > 0) ||
+	            (stockFilter.equals("Out of Stock") && drug.getStock() <= 0);
+
+	        if (matchesKeyword && matchesExpiry && matchesStock) {
+	            filtered.add(drug);
+	        }
+	    }
+
+	    // Sort theo giá
+	    if (priceSort.equals("Low to High")) {
+	        FXCollections.sort(filtered, Comparator.comparing(DrugData::getPrice));
+	    } else if (priceSort.equals("High to Low")) {
+	        FXCollections.sort(filtered, Comparator.comparing(DrugData::getPrice).reversed());
+	    }
+
+	    drug_tableView.setItems(filtered);
 	}
 
 	private void deleteDrug(String drugId) {
@@ -1078,7 +1163,11 @@ public class ReceptionistController implements Initializable {
 	                rs.getBigDecimal("Height"),
 	                rs.getBigDecimal("Weight"),
 	                rs.getTimestamp("Create_date"),
+<<<<<<< HEAD
 	                rs.getTimestamp("Update_date")
+=======
+        		    rs.getTimestamp("Update_date")
+>>>>>>> ab7dbe2 (xong quản lý thuốc role recept)
 	            );
 	            patientList.add(patient);
 	        }
@@ -1229,5 +1318,328 @@ public class ReceptionistController implements Initializable {
 	    }
 	}
 
+<<<<<<< HEAD
 	
+=======
+	/* =====================LOAD PROFILE======================================== */
+	private void loadReceptionistProfile() {
+		String checkUserSQL = "SELECT ua.name, ua.username, ua.email, ua.gender, ua.Create_date, r.phone, r.address "
+				+ "FROM user_account ua " + "JOIN receptionist r ON ua.id = r.receptionist_id "
+				+ "WHERE ua.username = ?";
+
+		Connection connect = Database.connectDB();
+
+		try {
+			PreparedStatement prepare = connect.prepareStatement(checkUserSQL);
+			prepare.setString(1, username);
+
+			ResultSet result = prepare.executeQuery();
+
+//			if (!result.next() || result.getInt(1) <= 0) {
+//				alert.errorMessage("Username does not match data.");
+//				return;
+//			}
+			if (!result.next()) {
+				alert.errorMessage("Username does not match data.");
+				return;
+			}
+			String name = result.getString("name");
+			String username = result.getString("username");
+			String email = result.getString("email");
+			String phone = result.getString("phone");
+			String address = result.getString("address");
+			String gender = result.getString("gender");
+			String createdAt = result.getString("Create_date");
+
+			// Gán cho các Label
+			name_receptDB.setText(name != null ? name : "UNKNOWN");
+			username_receptDB.setText(username != null ? username : "");
+			name_recept.setText(name != null ? name : "UNKNOWN");
+			username_recept.setText(username != null ? username : "");
+			gender_recept.setText(gender != null ? gender : "");
+			phone_recept.setText(phone != null ? phone : "");
+			email_recept.setText(email != null ? email : "");
+			createdDate_recept.setText(createdAt != null ? createdAt : "");
+
+			top_username.setText(name != null ? name : "UNKNOWN");
+
+			txt_name_recept.setText(name != null ? name : "");
+			txt_username_recept.setText(username != null ? username : "");
+			txt_email_recept.setText(email != null ? email : "");
+			txt_phone_recept.setText(phone != null ? phone : "");
+			gender_cb.setValue(gender != null ? gender : "");
+			txt_address_recept.setText(address != null ? address : "");
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void profileDisplayImages() {
+
+		String sql = "SELECT Avatar FROM user_account WHERE username = ?";
+		connect = Database.connectDB();
+
+		try {
+			prepare = connect.prepareStatement(sql);
+			prepare.setString(1, username);
+			result = prepare.executeQuery();
+			if (result.next()) {
+			    InputStream inputStream = result.getBinaryStream("Avatar");
+
+			    if (inputStream != null) {
+			        // Đọc toàn bộ dữ liệu từ inputStream vào byte[]
+			        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+			        byte[] data = new byte[1024];
+			        int nRead;
+			        while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+			            buffer.write(data, 0, nRead);
+			        }
+			        buffer.flush();
+			        byte[] imageBytes = buffer.toByteArray();
+			        inputStream.close();
+
+			        // Tạo nhiều InputStream từ cùng một mảng byte
+			        InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
+			        InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
+
+			        Image img1 = new Image(imgStream1, 137, 95, true, true);
+			        profile_circle.setFill(new ImagePattern(img1));
+
+			        Image img2 = new Image(imgStream2, 1012, 22, true, true);
+
+			        top_profile.setFill(new ImagePattern(img2));
+			    } else {
+			        System.out.println("Ảnh trong DB bị null.");
+			    }
+			}
+
+		} catch (Exception e) {
+			  System.out.println("Lỗi khi xử lý dữ liệu hình ảnh: " + e.getMessage());
+			e.printStackTrace();
+		}
+	}
+	
+	/* =====================EDIT PROFILE======================================== */
+	public void profileUpdateBtn() {
+		String name = txt_name_recept.getText();
+		String phone = txt_phone_recept.getText();
+		String usernameEdit = txt_username_recept.getText();
+		String address = txt_address_recept.getText();
+		String email = txt_email_recept.getText();
+		String gender = (String) gender_cb.getSelectionModel().getSelectedItem();
+
+		if (usernameEdit.isEmpty() || name.isEmpty() || phone.isEmpty() || address.isEmpty()) {
+			alert.errorMessage("Please fill in all the fields.");
+			return;
+		}
+		if (gender == null || gender.isEmpty()) {
+			alert.errorMessage("Please select a gender.");
+			return;
+		}
+		String checkUsernameSQL = "SELECT * FROM user_account WHERE username = ?";
+		String updateUserSQL = "UPDATE user_account SET name = ?, username = ?, gender = ? WHERE email = ?";
+		String updateReceptionistSQL = "UPDATE receptionist SET phone = ?, address = ? WHERE receptionist_id = (SELECT id FROM user_account WHERE email = ?)";
+
+		connect = Database.connectDB();
+
+		try {
+			// Kiểm tra username đã tồn tại (trừ chính mình)
+			if (!username.equals(usernameEdit)) {
+				prepare = connect.prepareStatement(checkUsernameSQL);
+				prepare.setString(1, usernameEdit);
+				result = prepare.executeQuery();
+
+				if (result.next()) {
+					alert.errorMessage("Username \"" + usernameEdit + "\" already exists!");
+					return;
+				}
+			}
+			
+			// Cập nhật user_account
+			prepare = connect.prepareStatement(updateUserSQL);
+			prepare.setString(1, name);
+			prepare.setString(2, usernameEdit);
+			prepare.setString(3, gender);
+			prepare.setString(4, email);
+			int rowsUserUpdated = prepare.executeUpdate();
+
+			// Cập nhật receptionist
+			prepare = connect.prepareStatement(updateReceptionistSQL);
+			prepare.setString(1, phone);
+			prepare.setString(2, address);
+			prepare.setString(3, email);
+			int rowsReceptionistUpdated = prepare.executeUpdate();
+
+			if (rowsUserUpdated > 0 || rowsReceptionistUpdated > 0) {
+				alert.successMessage("Profile updated successfully.");
+				loadReceptionistProfile();
+			} else {
+				alert.errorMessage("No user found.");
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			alert.errorMessage("Error updating profile: " + e.getMessage());
+		}
+	}
+	
+	@FXML
+	private void profileImportBtn(ActionEvent event) {
+		FileChooser open = new FileChooser();
+		open.getExtensionFilters().add(new ExtensionFilter("Open Image", "*jpg", "*jpeg", "*png"));
+
+		File file = open.showOpenDialog(profile_importBtn.getScene().getWindow());
+
+		if (file != null) {
+			Data.path = file.getAbsolutePath();
+
+			// Hiển thị ảnh lên UI
+			image = new Image(file.toURI().toString(), 137, 95, false, true);
+			profile_circle.setFill(new ImagePattern(image));
+
+			// Lưu ảnh vào DB
+			try {
+				connect = Database.connectDB();
+				String updateAvatarSQL = "UPDATE user_account SET avatar = ? WHERE email = ?";
+
+				FileInputStream input = new FileInputStream(file);
+				prepare = connect.prepareStatement(updateAvatarSQL);
+				prepare.setBinaryStream(1, input, (int) file.length());
+				prepare.setString(2, email_recept.getText());
+
+				int rows = prepare.executeUpdate();
+				if (rows > 0) {
+					alert.successMessage("Avatar updated successfully.");
+				} else {
+					alert.errorMessage("Failed to update avatar.");
+				}
+				profileDisplayImages();
+			} catch (Exception e) {
+				e.printStackTrace();
+				alert.errorMessage("Error uploading avatar: " + e.getMessage());
+			}
+		}
+	}
+	
+	/* =====================FORMAT AND INTIALIZE======================================== */
+	@FXML
+	private void switchForm(ActionEvent event) {
+
+		if (event.getSource() == dashboard_btn) {
+			showForm("dashboard");
+		} else if (event.getSource() == patients_btn) {
+			showForm("patients");
+		} else if (event.getSource() == drugs_btn) {
+			showForm("drugs");
+		} else if (event.getSource() == appointments_btn) {
+			showForm("appointments");
+		} else if (event.getSource() == profile_btn) {
+			showForm("profile");
+		} 
+	}
+
+	private void showForm(String formName) {
+		home_form.setVisible(false);
+		drugs_form.setVisible(false);
+		patients_form.setVisible(false);
+		appointments_form.setVisible(false);
+		profile_form.setVisible(false);
+
+		switch (formName) {
+			case "dashboard":
+				home_form.setVisible(true);
+				current_form.setText("Home Form");
+				break;
+			case "drugs":
+				drugs_form.setVisible(true);
+				current_form.setText("Drugs Form");
+				 loadDrugTable(); 
+				break;
+			case "patients":
+				patients_form.setVisible(true);
+				current_form.setText("Patients Form");
+				 loadPatientTable(); 
+				break;
+			case "appointments":
+				appointments_form.setVisible(true);
+				current_form.setText("Appointments Form");
+				break;
+
+			case "profile":
+				profile_form.setVisible(true);
+				current_form.setText("Profile Form");
+				break;
+		}
+	}
+	
+	
+	public void loadComboBox() {
+		gender_cb.setItems(FXCollections
+				.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
+	}
+	
+	
+	public void runTime() {
+
+		new Thread() {
+
+			public void run() {
+				SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
+				while (true) {
+					try {
+
+						Thread.sleep(1000); // 1000 ms = 1s
+
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+					Platform.runLater(() -> {
+						date_time.setText(format.format(new Date()));
+					});
+				}
+			}
+		}.start();
+	}
+	
+	@FXML
+	void logoutBtn(ActionEvent event) {
+
+		try {
+			if (alert.confirmationMessage("Are you sure you want to logout?")) {
+				Parent root = FXMLLoader.load(getClass().getResource("/View/Login.fxml"));
+				Stage stage = new Stage();
+				stage.setScene(new Scene(root));
+				stage.setTitle("Login");
+				stage.show();
+
+				logout_btn.getScene().getWindow().hide();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void initialize(URL location, ResourceBundle resources) {
+		runTime();
+		loadComboBox();
+		
+		initializeDrugFilters();
+		showForm("dashboard");
+
+		//homePatientDisplayData();
+		//homeAppointmentDisplayData();
+		//homeDoctorInfoDisplay();
+
+		// doctorShowCard();
+
+		//appointmentAppointmentInfoDisplay();
+		//appointmentDoctor();
+
+	}
+
+>>>>>>> ab7dbe2 (xong quản lý thuốc role recept)
 }

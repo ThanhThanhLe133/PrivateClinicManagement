@@ -23,9 +23,13 @@ public class ReceptionistData {
 		this.phone = phone;
 		this.address = address;
 	}
+<<<<<<< HEAD
 	public String getReceptionistId() {
 		return receptionistId;
 	}
+=======
+
+>>>>>>> ab7dbe2 (xong quản lý thuốc role recept)
 	public String getPhone() {
 		return phone;
 	}

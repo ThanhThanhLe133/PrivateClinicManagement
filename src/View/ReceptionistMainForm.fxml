@@ -20,6 +20,7 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.shape.Line?>
@@ -128,7 +129,7 @@
                <center>
                   <AnchorPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                      <children>
-                        <AnchorPane fx:id="home_form" prefHeight="560.0" prefWidth="886.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <AnchorPane fx:id="home_form" prefHeight="560.0" prefWidth="886.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
                               <AnchorPane layoutX="13.0" layoutY="14.0" prefHeight="156.0" prefWidth="860.0" stylesheets="@../design/ReceptionistMainFormDesign.css" AnchorPane.leftAnchor="13.0" AnchorPane.rightAnchor="13.0" AnchorPane.topAnchor="14.0">
                                  <styleClass>
@@ -310,12 +311,28 @@
                                     <String fx:value="radius" />
                                  </styleClass>
                                  <children>
-                                    <Label layoutX="14.0" layoutY="14.0" styleClass="header-1" stylesheets="@../design/ReceptionistMainFormDesign.css" text="Drugs">
+                                    <HBox alignment="CENTER_LEFT" layoutX="79.0" layoutY="17.0" prefHeight="25.0" prefWidth="640.0" spacing="10" AnchorPane.leftAnchor="79.0" AnchorPane.rightAnchor="149.0">
+                                       <children>
+                                           <Label text="Search by:" />
+    											<ComboBox fx:id="cmbDrugSearchBy" prefWidth="150" />
+    											<TextField fx:id="txtDrugSearch" promptText="Enter keyword..." />
+
+    											<Label text="Expiry:" />
+    											<ComboBox fx:id="cmbDrugExpiryFilter" prefWidth="120" />
+
+    											<Label text="Stock:" />
+    											<ComboBox fx:id="cmbDrugStockFilter" prefWidth="100" />
+
+    											<Label text="Price:" />
+    											<ComboBox fx:id="cmbDrugPriceSort" prefWidth="100" />
+                                       </children>
+                                    </HBox>
+                                    <Label layoutX="14.0" layoutY="14.0" styleClass="header-2" stylesheets="@../design/ReceptionistMainFormDesign.css" text="Drugs">
                                        <font>
                                           <Font size="18.0" />
                                        </font>
                                     </Label>
-                                    <Button fx:id="addDrugBtn" layoutX="750.0" layoutY="14.0" mnemonicParsing="false" onAction="#openAddDrugForm" prefHeight="30.0" prefWidth="120.0" styleClass="btn-3" text="Add Drug">
+                                    <Button fx:id="addDrugBtn" layoutX="750.0" layoutY="14.0" mnemonicParsing="false" onAction="#openAddDrugForm" prefHeight="30.0" prefWidth="120.0" styleClass="btn-3" text="Add Drug" AnchorPane.rightAnchor="20.0">
                                        <stylesheets>
                                           <URL value="@../design/ReceptionistMainFormDesign.css" />
                                           <URL value="@../design/PageDesign.css" />
@@ -492,7 +509,7 @@
                                           <Font size="18.0" />
                                        </font>
                                     </Label>
-                                    <Button fx:id="addPatientBtn" layoutX="750.0" layoutY="14.0" mnemonicParsing="false" onAction="#openAddPatientForm" prefHeight="30.0" prefWidth="120.0" styleClass="btn-3" text="Add Patient">
+                                    <Button fx:id="addPatientBtn" layoutX="750.0" layoutY="14.0" mnemonicParsing="false" onAction="#openAddPatientForm" prefHeight="30.0" prefWidth="120.0" styleClass="btn-3" text="Add Patient" AnchorPane.rightAnchor="20.0">
                                        <stylesheets>
                                           <URL value="@../design/ReceptionistMainFormDesign.css" />
                                           <URL value="@../design/PageDesign.css" />
@@ -595,13 +612,19 @@
                                           <Font size="15.0" />
                                        </font>
                                     </Label>
-                                    <TextArea fx:id="profile_address" layoutX="176.0" layoutY="222.0" prefHeight="101.0" prefWidth="306.0" styleClass="textfield-2" stylesheets="@../design/ReceptionistMainFormDesign.css" />
+                                    <TextArea fx:id="txt_address_recept" layoutX="176.0" layoutY="222.0" prefHeight="101.0" prefWidth="306.0" styleClass="textfield-2" stylesheets="@../design/ReceptionistMainFormDesign.css" />
                                     <Label layoutX="100.0" layoutY="145.0" text="Username:">
                                        <font>
                                           <Font size="15.0" />
                                        </font>
                                     </Label>
-                                    <TextField fx:id="txt_username_recept" layoutX="176.0" layoutY="143.0" prefHeight="25.0" prefWidth="306.0" styleClass="textfield-1" stylesheets="@../design/PageDesign.css" />
+                                    <TextField fx:id="txt_username_recept" layoutX="177.0" layoutY="143.0" prefHeight="25.0" prefWidth="306.0" styleClass="textfield-1" stylesheets="@../design/PageDesign.css" />
+                                    <Label layoutX="126.0" layoutY="343.0" text="Email:">
+                                       <font>
+                                          <Font size="15.0" />
+                                       </font>
+                                    </Label>
+                                    <TextField fx:id="txt_email_recept" layoutX="177.0" layoutY="341.0" prefHeight="25.0" prefWidth="307.0" styleClass="textfield-2" stylesheets="@../design/ReceptionistMainFormDesign.css" AnchorPane.leftAnchor="175.0" AnchorPane.rightAnchor="85.0" AnchorPane.topAnchor="341.0" />
                                  </children>
                               </AnchorPane>
                               <Label layoutX="50.0" layoutY="292.0" text="Username:">

@@ -31,9 +31,41 @@ public class DrugData {
     	this.price = price;
     	this.stock = stock;
     	this.expiry_date = expiry_date;
+<<<<<<< HEAD
     	this.create_date = Timestamp.valueOf(LocalDateTime.now());
     	this.update_date = Timestamp.valueOf(LocalDateTime.now());
     }
+=======
+    	this.update_date = new Timestamp(System.currentTimeMillis());
+		this.create_date = new Timestamp(System.currentTimeMillis());
+    }
+    
+    public DrugData(String drugId, String name, String manufacturer, String unit,
+		    BigDecimal price, int stock, LocalDate expiry_date, Timestamp create_date, Timestamp update_date)
+	{
+		this.id = drugId;
+		this.name = name;
+		this.manufacturer = manufacturer;
+		this.unit = unit;
+		this.price = price;
+		this.stock = stock;
+		this.expiry_date = expiry_date;
+		this.create_date = create_date;
+		this.update_date = update_date;
+	}
+    
+    public String getFormattedPrice() {
+		return formatCurrencyVND(price);
+	}
+
+
+	public static String formatCurrencyVND(BigDecimal amount) {
+		if (amount == null)
+			return "0 VNĐ";
+		NumberFormat formatter = NumberFormat.getInstance(new Locale("vi", "VN"));
+		return formatter.format(amount) + " VNĐ";
+	}
+>>>>>>> ab7dbe2 (xong quản lý thuốc role recept)
     
     public DrugData(String drugId, String name, String manufacturer, String unit,
     	    BigDecimal price, int stock, LocalDate expiry_date,

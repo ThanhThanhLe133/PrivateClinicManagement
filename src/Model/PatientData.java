@@ -109,7 +109,29 @@ public class PatientData {
 		this.diagnosis = diagnosis;
 		this.height = height;
 		this.weight = weight;
+<<<<<<< HEAD
 		this.createDate = createDate;
 		this.updateDate = updateDate;
+=======
+		this.createDate = new Timestamp(System.currentTimeMillis());
+		this.updateDate = new Timestamp(System.currentTimeMillis());
+>>>>>>> ab7dbe2 (xong quản lý thuốc role recept)
 	}   
+	
+	public PatientData(String patientId, String name, String email, String gender, String phone, String address,
+			String diagnosis, BigDecimal height, BigDecimal weight, Timestamp createDate, Timestamp updateDate) 
+	{
+		this.patientId = patientId;
+		this.name = name;
+		this.email = email;
+		this.gender = gender;
+		this.phone = phone;
+		this.address = address;
+		this.diagnosis = diagnosis;
+		this.height = height;
+		this.weight = weight;
+		this.createDate = createDate;
+		this.updateDate = updateDate;
+	}
 }
+

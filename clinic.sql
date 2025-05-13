@@ -108,6 +108,24 @@ CREATE TABLE PRESCRIPTION_DETAILS (
     FOREIGN KEY (Drug_id) REFERENCES DRUG(Id)
 );
 
+<<<<<<< HEAD
+=======
+-- Insert mẫu service
+SET @Service_id := UUID();
+INSERT INTO SERVICE (Id, Name, Price, Type)
+VALUES 
+    (UUID(), 'General Psychological Checkup', 300000.00, 'Examination'),
+    (UUID(), 'Personal Psychological Counseling', 350000.00, 'Examination'),
+    (UUID(), 'School Psychological Counseling', 250000.00, 'Examination'),
+    (UUID(), 'Cognitive Behavioral Therapy (CBT)', 500000.00, 'Examination'),
+    (UUID(), 'Electrocardiogram (ECG)', 200000.00, 'Test'),
+    (UUID(), 'Basic Blood Test', 150000.00, 'Test'),
+    (UUID(), 'General Health Checkup', 400000.00, 'Examination'),
+    (@Service_id, 'Customized Health Checkup', 450000.00, 'Examination'),
+    (UUID(), 'MRI Scan', 1500000.00, 'Test'),
+    (UUID(), 'Psychological Assessment', 600000.00, 'Test');
+
+>>>>>>> ab7dbe2 (xong quản lý thuốc role recept)
 -- INSERT mẫu ADMIN
 SET @Admin_id := UUID();
 
@@ -149,7 +167,11 @@ INSERT INTO DOCTOR (
 ) VALUES (
     @doctor_id,
     '0912345678',
+<<<<<<< HEAD
     'Neurology',
+=======
+    @Service_id,
+>>>>>>> ab7dbe2 (xong quản lý thuốc role recept)
     '12 Medical Lane, District 1'
 );
 
@@ -203,7 +225,7 @@ VALUES
   'Paracetamol 500mg',
   'ABC Pharma Co., Ltd',
   '2026-12-31',
-  'Tablet',
+  'Tablet',  -- Viên nén
   150000.00,
   100,
   NOW(),
@@ -214,7 +236,7 @@ VALUES
   'Amoxicillin 250mg',
   'XYZ Healthcare Inc.',
   '2025-10-15',
-  'Capsule',
+  'Capsule',  -- Viên nang
   250000.00,
   50,
   NOW(),
@@ -223,13 +245,13 @@ VALUES
 
 INSERT INTO DRUG (Id, Name, Manufacturer, Expiry_date, Unit, Price, Stock, Create_date, Update_date)
 VALUES
-(UUID(), 'Ibuprofen', 'ABC Health', '2027-05-20', 'Bottle', 75.00, 200, '2025-05-07 13:00:00', '2025-05-07 13:00:00'),
-(UUID(), 'Aspirin', 'GHI Pharma', '2028-01-15', 'Bottle', 60.00, 120, '2025-05-07 15:00:00', '2025-05-07 15:00:00'),
-(UUID(), 'Vitamin C', 'JKL Health', '2025-12-31', 'Box', 25.00, 250, '2025-05-07 16:00:00', '2025-05-07 16:00:00');
+(UUID(), 'Ibuprofen', 'ABC Health', '2027-05-20', 'Bottle', 75.00, 200, '2025-05-07 13:00:00', '2025-05-07 13:00:00'),  -- Dạng siro
+(UUID(), 'Aspirin', 'GHI Pharma', '2028-01-15', 'Strip', 60.00, 120, '2025-05-07 15:00:00', '2025-05-07 15:00:00'),    -- Theo vỉ
+(UUID(), 'Vitamin C', 'JKL Health', '2025-12-31', 'Box', 25.00, 250, '2025-05-07 16:00:00', '2025-05-07 16:00:00');    -- Hộp chứa viên
 
 INSERT INTO PATIENT (Patient_id, Name, Email, Gender, Phone, Address, Diagnosis, Height, Weight, Create_date, Update_date) VALUES
-(UUID(), 'John Smith', 'john.smith@example.com', 'Male', '555-1234', '123 Main St, New York, NY', 'Common cold', 180.25, 75.50, '2024-05-01 08:00:00', '2024-05-01 08:00:00'),
-(UUID(), 'Emily Johnson', 'emily.johnson@example.com', 'Female', '555-5678', '456 Park Ave, Los Angeles, CA', 'Stomach ulcer', 165.00, 60.20, '2024-05-02 09:30:00', '2024-05-02 09:30:00'),
-(UUID(), 'Michael Brown', 'michael.brown@example.com', 'Male', '555-9101', '789 Broadway, Chicago, IL', 'Hypertension', 172.75, 82.40, '2024-05-03 10:45:00', '2024-05-03 10:45:00'),
-(UUID(), 'Sarah Davis', 'sarah.davis@example.com', 'Female', '555-1213', '321 Ocean Dr, Miami, FL', 'Diabetes', 160.50, 68.75, '2024-05-04 14:00:00', '2024-05-04 14:00:00'),
-(UUID(), 'David Wilson', 'david.wilson@example.com', 'Male', '555-1415', '654 River Rd, Seattle, WA', 'Sore throat', 177.60, 70.10, '2024-05-05 16:15:00', '2024-05-05 16:15:00');
+(UUID(), 'John Smith', 'john.smith@example.com', 'Male', '5551234567', '123 Main St, New York, NY', 'Common cold', 180.25, 75.50, '2024-05-01 08:00:00', '2024-05-01 08:00:00'),
+(UUID(), 'Emily Johnson', 'emily.johnson@example.com', 'Female', '5555678901', '456 Park Ave, Los Angeles, CA', 'Stomach ulcer', 165.00, 60.20, '2024-05-02 09:30:00', '2024-05-02 09:30:00'),
+(UUID(), 'Michael Brown', 'michael.brown@example.com', 'Male', '5559101123', '789 Broadway, Chicago, IL', 'Hypertension', 172.75, 82.40, '2024-05-03 10:45:00', '2024-05-03 10:45:00'),
+(UUID(), 'Sarah Davis', 'sarah.davis@example.com', 'Female', '5551213141', '321 Ocean Dr, Miami, FL', 'Diabetes', 160.50, 68.75, '2024-05-04 14:00:00', '2024-05-04 14:00:00'),
+(UUID(), 'David Wilson', 'david.wilson@example.com', 'Male', '5551415161', '654 River Rd, Seattle, WA', 'Sore throat', 177.60, 70.10, '2024-05-05 16:15:00', '2024-05-05 16:15:00');
