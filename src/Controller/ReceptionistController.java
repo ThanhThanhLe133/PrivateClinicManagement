@@ -123,6 +123,10 @@ public class ReceptionistController implements Initializable {
 	@FXML private TableColumn<PatientData, Timestamp> patients_col_update;
 	@FXML private TableColumn<PatientData, Void> patients_col_action;
 
+	@FXML private ComboBox<String> cmbPatientSearchBy;
+	@FXML private TextField txtPatientSearch;
+	@FXML private ComboBox<String> cmbPatientGenderFilter;
+	
 	@FXML
 	private AnchorPane main_form;
 
@@ -859,9 +863,59 @@ public class ReceptionistController implements Initializable {
 	}
 	
 	// =======================CRUD Patient==================================
-	public void loadPatientTable() {
-	    ObservableList<PatientData> patientList = FXCollections.observableArrayList();
+private ObservableList<PatientData> patientMasterList = FXCollections.observableArrayList();
+	
+	private void initializePatientFilters() {
+	    cmbPatientSearchBy.setItems(FXCollections.observableArrayList(
+	        "Name", "Email", "Phone", "Address", "Diagnosis", "Height", "Weight"
+	    ));
+	    cmbPatientSearchBy.setValue("Name");
+	    
+	    txtPatientSearch.clear();
 
+	    cmbPatientGenderFilter.setItems(FXCollections.observableArrayList("All", "Male", "Female", "Other"));
+	    cmbPatientGenderFilter.setValue("All");
+
+	    // Gắn listener
+	    txtPatientSearch.textProperty().addListener((obs, oldVal, newVal) -> applyPatientFilters());
+	    cmbPatientSearchBy.valueProperty().addListener((obs, o, n) -> applyPatientFilters());
+	    cmbPatientGenderFilter.valueProperty().addListener((obs, o, n) -> applyPatientFilters());
+	}
+	
+	private void applyPatientFilters() {
+	    String keyword = txtPatientSearch.getText().toLowerCase();
+	    String searchBy = cmbPatientSearchBy.getValue();
+	    String selectedGender = cmbPatientGenderFilter.getValue();
+
+	    ObservableList<PatientData> filtered = FXCollections.observableArrayList();
+
+	    for (PatientData p : patientMasterList) {
+	        // 1. Tìm kiếm theo trường
+	        String fieldValue = switch (searchBy) {
+	            case "Name"      -> p.getName();
+	            case "Email"     -> p.getEmail();
+	            case "Phone"     -> p.getPhone();
+	            case "Address"   -> p.getAddress();
+	            case "Diagnosis" -> p.getDiagnosis();
+	            case "Height"    -> p.getHeight().toPlainString();
+	            case "Weight"    -> p.getWeight().toPlainString();
+	            default          -> "";
+	        };
+
+	        boolean matchesKeyword = fieldValue != null && fieldValue.toLowerCase().contains(keyword);
+	        boolean matchesGender = selectedGender.equals("All") || p.getGender().equalsIgnoreCase(selectedGender);
+
+	        if (matchesKeyword && matchesGender) {
+	            filtered.add(p);
+	        }
+	    }
+
+	    patients_tableView.setItems(filtered);
+	}
+	
+	public void loadPatientTable() {
+	    patientMasterList.clear();
+	    		
 	    String sql = "SELECT Patient_id, Name, Email, Gender, Phone, Address, Diagnosis, Height, Weight, Create_date, Update_date FROM PATIENT";
 
 	    try {
@@ -883,7 +937,7 @@ public class ReceptionistController implements Initializable {
 	                rs.getTimestamp("Create_date"),
         		    rs.getTimestamp("Update_date")
 	            );
-	            patientList.add(patient);
+	            patientMasterList.add(patient);
 	        }
 
 	        // Gán dữ liệu cho TableView
@@ -903,7 +957,8 @@ public class ReceptionistController implements Initializable {
 	        patients_col_action.setCellFactory(col -> new TableCell<>() {
 	            private final Button editBtn = new Button("Update");
 	            private final Button deleteBtn = new Button("Delete");
-	            private final HBox hbox = new HBox(5, editBtn, deleteBtn);
+	            private final Button detailBtn = new Button("Detail");
+	            private final HBox hbox = new HBox(5, editBtn, deleteBtn, detailBtn);
 	            {
 	                editBtn.setOnAction(e -> {
 	                    PatientData patient = getTableView().getItems().get(getIndex());
@@ -914,6 +969,10 @@ public class ReceptionistController implements Initializable {
 	                    PatientData patient = getTableView().getItems().get(getIndex());
 	                    deletePatient(patient.getPatientId());
 	                });
+	                detailBtn.setOnAction(e -> {
+	                    PatientData patient = getTableView().getItems().get(getIndex());
+	                    handleViewPatientDetail(patient.getPatientId());
+	                });
 	            }
 
 	            @Override
@@ -923,7 +982,7 @@ public class ReceptionistController implements Initializable {
 	            }
 	        });
 
-	        patients_tableView.setItems(patientList);
+	        patients_tableView.setItems(patientMasterList);
 	        conn.close();
 	        
 //	        // Thêm nút cập nhật và xóa vào mỗi dòng
@@ -962,6 +1021,50 @@ public class ReceptionistController implements Initializable {
 	        e.printStackTrace();
 	        Alert alert = new Alert(Alert.AlertType.ERROR);
 	        alert.setContentText("Error loading patient list!");
+	        alert.showAndWait();
+	    }
+	}
+	
+	private void handleViewPatientDetail(String patientId) {
+	    try (Connection conn = Database.connectDB()) {
+	        String sql = "SELECT * FROM PATIENT WHERE Patient_id = ?";
+	        PreparedStatement ps = conn.prepareStatement(sql);
+	        ps.setString(1, patientId);
+	        ResultSet rs = ps.executeQuery();
+
+	        if (rs.next()) {
+	            PatientData patient = new PatientData(
+	                rs.getString("Patient_id"),
+	                rs.getString("Name"),
+	                rs.getString("Email"),
+	                rs.getString("Gender"),
+	                rs.getString("Phone"),
+	                rs.getString("Address"),
+	                rs.getString("Diagnosis"),
+	                rs.getBigDecimal("Height"),
+	                rs.getBigDecimal("Weight"),
+	                rs.getTimestamp("Create_date"),
+	                rs.getTimestamp("Update_date")
+	            );
+
+	            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/PatientDetailView.fxml"));
+	            Parent root = loader.load();
+
+	            PatientDetailController controller = loader.getController();
+	            controller.setPatientData(patient); // truyền dữ liệu vào controller
+
+	            Stage stage = new Stage();
+	            stage.setTitle("Patient Detail");
+	            stage.setScene(new Scene(root));
+	            stage.show();
+	        } else {
+	            Alert alert = new Alert(Alert.AlertType.ERROR, "Patient not found.");
+	            alert.showAndWait();
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        Alert alert = new Alert(Alert.AlertType.ERROR, "Error loading patient detail: " + e.getMessage());
 	        alert.showAndWait();
 	    }
 	}
@@ -1339,6 +1442,7 @@ public class ReceptionistController implements Initializable {
 		loadComboBox();
 		
 		initializeDrugFilters();
+		initializePatientFilters();
 		showForm("dashboard");
 
 		//homePatientDisplayData();

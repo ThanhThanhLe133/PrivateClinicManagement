@@ -313,17 +313,17 @@
                                  <children>
                                     <HBox alignment="CENTER_LEFT" layoutX="79.0" layoutY="17.0" prefHeight="25.0" prefWidth="640.0" spacing="10" AnchorPane.leftAnchor="79.0" AnchorPane.rightAnchor="149.0">
                                        <children>
-                                           <Label text="Search by:" />
+                                           <Label prefHeight="17.0" prefWidth="55.0" text="Search by:" />
     											<ComboBox fx:id="cmbDrugSearchBy" prefWidth="150" />
     											<TextField fx:id="txtDrugSearch" promptText="Enter keyword..." />
 
-    											<Label text="Expiry:" />
-    											<ComboBox fx:id="cmbDrugExpiryFilter" prefWidth="120" />
+    											<Label prefHeight="17.0" prefWidth="45.0" text="Expiry:" />
+    											<ComboBox fx:id="cmbDrugExpiryFilter" prefHeight="25.0" prefWidth="84.0" />
 
-    											<Label text="Stock:" />
+    											<Label prefHeight="17.0" prefWidth="44.0" text="Stock:" />
     											<ComboBox fx:id="cmbDrugStockFilter" prefWidth="100" />
 
-    											<Label text="Price:" />
+    											<Label prefHeight="17.0" prefWidth="40.0" text="Price:" />
     											<ComboBox fx:id="cmbDrugPriceSort" prefWidth="100" />
                                        </children>
                                     </HBox>
@@ -504,6 +504,15 @@
                                     <String fx:value="radius" />
                                  </styleClass>
                                  <children>
+                                 	<HBox alignment="CENTER_LEFT" layoutX="96.0" layoutY="17.0" prefHeight="25.0" prefWidth="599.0" spacing="10" AnchorPane.leftAnchor="96.0" AnchorPane.rightAnchor="173.0">
+                                       <children>
+                                          <Label text="Search by:" />
+                                          <ComboBox fx:id="cmbPatientSearchBy" prefHeight="25.0" prefWidth="161.0" />
+                                          <TextField fx:id="txtPatientSearch" prefHeight="25.0" prefWidth="206.0" promptText="Enter keyword..." />
+                                          <Label text="Gender:" />
+										  <ComboBox fx:id="cmbPatientGenderFilter" prefHeight="25.0" prefWidth="96.0" />
+                                       </children>
+                                    </HBox>
                                     <Label layoutX="14.0" layoutY="14.0" styleClass="header-1" stylesheets="@../design/ReceptionistMainFormDesign.css" text="Patients">
                                        <font>
                                           <Font size="18.0" />
@@ -527,7 +536,7 @@
                                           <TableColumn fx:id="patients_col_weight" prefWidth="65.0" text="Weight" />
                                           <TableColumn fx:id="patients_col_create" prefWidth="95.0" text="Create date" />
                                           <TableColumn fx:id="patients_col_update" prefWidth="95.0" text="Update date" />
-                                          <TableColumn fx:id="patients_col_action" prefWidth="105.0" text="Actions" />
+                                          <TableColumn fx:id="patients_col_action" prefWidth="165.0" text="Actions" />
                                       </columns>
                                        <columnResizePolicy>
                                           <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/23.0.1"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="Controller.PatientDetailController"
+            style="-fx-background-color: white;">
+    
+    <top>
+        <VBox alignment="CENTER" styleClass="bg-color-2" stylesheets="@../design/ReceptionistMainFormDesign.css">
+            <padding><Insets top="15" bottom="15" left="20" right="20"/></padding>
+            <Label text="Patient Detail" textFill="WHITE">
+                <font><Font name="System Bold" size="18"/></font>
+            </Label>
+        </VBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+            <VBox spacing="20">
+                <padding>
+        			<Insets top="25" bottom="25" left="25" right="25"/>
+    			</padding>
+                <!-- Thông tin bệnh nhân -->
+                <GridPane hgap="15" vgap="12">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="120" prefWidth="150" />
+                        <ColumnConstraints minWidth="200" hgrow="ALWAYS" />
+                    </columnConstraints>
+
+                    <Label text="Name:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <Label fx:id="lblName" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                    <Label text="Email:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <Label fx:id="lblEmail" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                    <Label text="Gender:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                    <Label fx:id="lblGender" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                    <Label text="Phone:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                    <Label fx:id="lblPhone" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                    <Label text="Diagnosis:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                    <Label fx:id="lblDiagnosis" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+                    <Label text="Height (cm):" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                    <Label fx:id="lblHeight" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+                    <Label text="Weight (kg):" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                    <Label fx:id="lblWeight" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+
+                    <Label text="Address:" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+                    <Label fx:id="lblAddress" wrapText="true" GridPane.rowIndex="7" GridPane.columnIndex="1"/>
+                </GridPane>
+
+                <!-- Lịch sử khám -->
+                <VBox spacing="10">
+                    <Label text="Appointment History" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
+                    <TableView fx:id="appointmentTable" prefHeight="250">
+                        <columns>
+                            <TableColumn fx:id="colTime" text="Time" prefWidth="100"/>
+                            <TableColumn fx:id="colDoctor" text="Doctor" prefWidth="150"/>
+                            <TableColumn fx:id="colStatus" text="Status" prefWidth="100"/>
+                            <TableColumn fx:id="colReason" text="Cancel Reason" prefWidth="250"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+
+    <effect>
+        <DropShadow color="#00000033" radius="5"/>
+    </effect>
+</BorderPane>
