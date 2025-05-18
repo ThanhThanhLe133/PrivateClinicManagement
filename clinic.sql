@@ -285,3 +285,26 @@ INSERT INTO APPOINTMENT (
 ) VALUES (
     UUID(), '2025-05-14 15:00:00', 'Unfinish', NULL, @doctor_id, @patient_id, NOW(), NOW()
 );
+
+INSERT INTO DOCTOR (Doctor_id, Phone, Service_id, Address, Is_confirmed)
+VALUES 
+('88669f0e-300b-11f0-bbf2-581122815a3a', '0912345678', 
+    (SELECT Id FROM SERVICE WHERE Name = 'General Psychological Checkup' LIMIT 1), 
+    '12 Medical Lane, District 1', TRUE);
+    
+INSERT INTO APPOINTMENT (Id, Time, Status, Cancel_reason, Doctor_id, Patient_id, Create_date, Update_date)
+VALUES 
+(UUID(), '2025-05-10 09:00:00', 'Coming', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
+    (SELECT Patient_id FROM PATIENT WHERE Name = 'John Smith' LIMIT 1), NOW(), NOW()),
+
+(UUID(), '2025-05-11 14:00:00', 'Finish', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
+    (SELECT Patient_id FROM PATIENT WHERE Name = 'Emily Johnson' LIMIT 1), NOW(), NOW()),
+
+(UUID(), '2025-05-12 11:00:00', 'Cancel', 'Patient unavailable', '88669f0e-300b-11f0-bbf2-581122815a3a', 
+    (SELECT Patient_id FROM PATIENT WHERE Name = 'Michael Brown' LIMIT 1), NOW(), NOW()),
+
+(UUID(), '2025-05-13 16:30:00', 'Coming', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
+    (SELECT Patient_id FROM PATIENT WHERE Name = 'Sarah Davis' LIMIT 1), NOW(), NOW()),
+
+(UUID(), '2025-05-14 10:45:00', 'Finish', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
+    (SELECT Patient_id FROM PATIENT WHERE Name = 'David Wilson' LIMIT 1), NOW(), NOW());
