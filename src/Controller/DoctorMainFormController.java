@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URL;
@@ -61,9 +62,11 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
+import Enum.AppointmentStatus;
 
 /**
  *
@@ -71,6 +74,8 @@ import javafx.util.StringConverter;
  */
 public class DoctorMainFormController implements Initializable {
 
+	@FXML private Button appointment_prescriptionBtn;
+	
 	@FXML
 	private AnchorPane main_form;
 
@@ -561,6 +566,46 @@ public class DoctorMainFormController implements Initializable {
 		patients_PI_mobileNumber.setText("");
 		patients_PI_address.setText("");
 	}
+	
+	public void appointmentPrescriptionBtn() {
+	    // Get the selected appointment
+	    DoctorAppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
+	    if (selectedAppointment == null) {
+	        alert.errorMessage("Please select an appointment first.");
+	        return;
+	    }
+	    if (selectedAppointment.getStatus().equals(AppointmentStatus.Cancel.toString())) {
+	        alert.errorMessage("Cannot create prescription for cancelled appointment.");
+	        return;
+	    }
+	    
+	    try {
+	        // Load the PrescriptionDetail.fxml form
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/PrescriptionDetail.fxml"));
+	        Parent root = loader.load();
+
+	        // Get the controller and pass the selected appointment data
+	        PrescriptionDetialController controller = loader.getController();
+	        //controller.setAppointmentData(selectedAppointment.getId(), selectedAppointment.getPatientId(), doctor_id);
+
+	        // Show the form in a modal window
+	        Stage stage = new Stage();
+	        stage.initModality(Modality.APPLICATION_MODAL);
+	        stage.setTitle("Prescription Details");
+	        stage.setScene(new Scene(root));
+
+	        // Refresh data after the form is closed
+	        stage.setOnHidden(e -> {
+	            dashboardDisplayNumPrescriptions(); // Refresh prescription count
+	            dashboardLoadAppointmentData(); // Refresh appointment data
+	        });
+	        stage.showAndWait();
+
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	        alert.errorMessage("Error opening prescription form: " + e.getMessage());
+	    }
+	}
 
 	public void appointmentInsertBtn() {
 		String time = FormatterUtils.toSQLDate(appointment_time.getText() + " " + appointment_date.getEditor().getText());
@@ -910,6 +955,33 @@ public class DoctorMainFormController implements Initializable {
 			profile_form.setVisible(true);
 		}
 	}
+	
+//	private void showForm(String formName) {
+//		dashboard_form.setVisible(false);
+//		patients_form.setVisible(false);
+//		appointments_form.setVisible(false);
+//		profile_form.setVisible(false);
+//
+//		switch (formName) {
+//			case "dashboard":
+//				dashboard_form.setVisible(true);
+//				current_form.setText("Home Form");
+//				break;
+//			case "patients":
+//				patients_form.setVisible(true);
+//				current_form.setText("Patients Form");
+//				break;
+//			case "appointments":
+//				appointments_form.setVisible(true);
+//				current_form.setText("Appointments Form");
+//				break;
+//
+//			case "profile":
+//				profile_form.setVisible(true);
+//				current_form.setText("Profile Form");
+//				break;
+//		}
+//	}
 
 	public void logoutBtn() {
 
@@ -1037,13 +1109,14 @@ public class DoctorMainFormController implements Initializable {
 	public void initialize(URL location, ResourceBundle resources) {
 		System.out.println("DoctorMainFormController initialized" + username);
 		
-		dashboard_form.setVisible(false);
+		dashboard_form.setVisible(true);
 		patients_form.setVisible(false);
 		appointments_form.setVisible(false);
-		profile_form.setVisible(true);
+		profile_form.setVisible(false);
 
 		loadComboBox();
 		runTime();
+		load();
 
 		dashboad_col_appointmentID.setCellValueFactory(new PropertyValueFactory<>("id"));
 		dashboad_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -1062,8 +1135,11 @@ public class DoctorMainFormController implements Initializable {
 		appointments_col_contactNumber.setCellValueFactory(new PropertyValueFactory<>("contactNumber"));
 		appointments_col_reason.setCellValueFactory(new PropertyValueFactory<>("reason"));
 		appointments_tableView.setItems(appoinmentListData);
-
-		// appointment_gender.setItems(FXCollections.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
+		//appointment_patientID.setItems(FXCollections.observableArrayList();
+		appointment_gender.setItems(FXCollections.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
+		appointment_status.setItems(FXCollections.observableArrayList(Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
+		appointment_patientID.setItems(patientIds);
+		
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 		appointment_date.setConverter(new StringConverter<LocalDate>() {
 			@Override
@@ -1076,6 +1152,18 @@ public class DoctorMainFormController implements Initializable {
 				return (string != null && !string.isEmpty()) ? LocalDate.parse(string, formatter) : null;
 			}
 		});
+	}
+
+	public void setDoctorId(String doctor_id) {
+		this.doctor_id = doctor_id;
+		loadDoctorProfile();
+		profileDisplayImages();
+	}
+	
+	public void setUsername(String username) {
+		this.username = username;
+		loadDoctorProfile();
+		profileDisplayImages();
 	}
 
 	ObservableList<String> patientIds = FXCollections.observableArrayList();
@@ -1093,7 +1181,8 @@ public class DoctorMainFormController implements Initializable {
 		dashboardDisplayAppointments();
 		dashboardLoadAppointmentData();
 
-		appointment_status.setItems(FXCollections.observableArrayList("Coming", "Finish", "Cancel"));
+		appointment_gender.setItems(FXCollections.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
+		appointment_status.setItems(FXCollections.observableArrayList(Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
 		appointment_name.setEditable(false);
 		appointment_mobileNumber.setEditable(false);
 

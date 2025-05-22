@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.PrescriptionDatialController">
+    
+    <top>
+        <VBox alignment="CENTER" styleClass="bg-color-2" stylesheets="@../design/DoctorMainFormDesign.css">
+            <padding><Insets bottom="15" left="20" right="20" top="15" /></padding>
+            <Label text="Prescription" textFill="WHITE">
+                <font><Font name="System Bold" size="18" /></font>
+            </Label>
+        </VBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+            <VBox prefHeight="552.0" prefWidth="652.0" spacing="20">
+                <padding>
+        			<Insets bottom="25" left="25" right="25" top="25" />
+    			</padding>
+                <!-- Thông tin bệnh nhân -->
+                <GridPane hgap="15" vgap="12">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="120" prefWidth="150" />
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="200" />
+                    </columnConstraints>
+
+                    <Label text="ID:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                    <Label fx:id="lblID" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                    <Label text="Patient Name:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                    <Label fx:id="lbPatientName" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                    <Label text="Doctor Name:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                    <Label fx:id="lblDoctorName" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+                    <Label text="Total Amount:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                    <Label fx:id="lblTotalAmount" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+                    <Label text="Diagnosis:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+                    <Label fx:id="lblDiagnosis" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+
+                    <Label text="Advice:" GridPane.columnIndex="0" GridPane.rowIndex="5" />
+               <TextField fx:id="txtAdvice" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+
+                    <Label text="Created Date:" GridPane.columnIndex="0" GridPane.rowIndex="6" />
+                    <Label fx:id="lblCreatedDate" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+
+                    <Label text="Last Modified:" GridPane.columnIndex="0" GridPane.rowIndex="7" />
+                    <Label fx:id="lblUpdatedDate" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="7" />
+               <rowConstraints>
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+               </rowConstraints>
+                </GridPane>
+
+                <!-- Lịch sử khám -->
+                <VBox spacing="10">
+                    <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Prescription Detail:" />
+                    <TableView fx:id="prescriptionTable" prefHeight="235.0" prefWidth="602.0">
+                        <columns>
+                            <TableColumn fx:id="colDrugId" minWidth="0.0" prefWidth="85.0" text="Drug ID" />
+                            <TableColumn fx:id="colDrugName" prefWidth="121.5" text="Drug Name" />
+                            <TableColumn fx:id="colQuantity" prefWidth="63.5" text="Quantity" />
+                            <TableColumn fx:id="colInstruction" minWidth="0.0" prefWidth="175.0" text="Instruction" />
+                     <TableColumn fx:id="colAction" prefWidth="156.0" text="Action" />
+                        </columns>
+                    </TableView>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+
+    <effect>
+        <DropShadow color="#00000033" radius="5" />
+    </effect>
+   <bottom>
+      <AnchorPane prefHeight="42.0" prefWidth="654.0" BorderPane.alignment="CENTER">
+         <children>
+            <Button fx:id="prescription_adddrugbtn" layoutX="275.0" layoutY="5.0" mnemonicParsing="false" prefHeight="41.0" prefWidth="104.0" styleClass="btn-2" stylesheets="@../design/DoctorMainFormDesign.css" text="Add Drug" AnchorPane.bottomAnchor="4.0" AnchorPane.leftAnchor="275.0" AnchorPane.rightAnchor="275.0" AnchorPane.topAnchor="5.0" />
+         </children>
+      </AnchorPane>
+   </bottom>
+</BorderPane>

@@ -286,11 +286,32 @@ INSERT INTO APPOINTMENT (
     UUID(), '2025-05-14 15:00:00', 'Unfinish', NULL, @doctor_id, @patient_id, NOW(), NOW()
 );
 
+-- Thêm bản ghi vào USER_ACCOUNT trước
+INSERT INTO USER_ACCOUNT (
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
+) VALUES (
+    '88669f0e-300b-11f0-bbf2-581122815a3a',
+    'dr.fake',
+    'password123',
+    'fake.doctor@example.com',
+    'Fake Doctor',
+    NULL,
+    'Male',
+    'DOCTOR',
+    TRUE
+);
+
+-- Sau đó mới chèn vào DOCTOR
 INSERT INTO DOCTOR (Doctor_id, Phone, Service_id, Address, Is_confirmed)
 VALUES 
-('88669f0e-300b-11f0-bbf2-581122815a3a', '0912345678', 
-    (SELECT Id FROM SERVICE WHERE Name = 'General Psychological Checkup' LIMIT 1), 
-    '12 Medical Lane, District 1', TRUE);
+(
+    '88669f0e-300b-11f0-bbf2-581122815a3a',
+    '0912345678',
+    (SELECT Id FROM SERVICE WHERE Name = 'General Psychological Checkup' LIMIT 1),
+    '12 Medical Lane, District 1',
+    TRUE
+);
+
     
 INSERT INTO APPOINTMENT (Id, Time, Status, Cancel_reason, Doctor_id, Patient_id, Create_date, Update_date)
 VALUES 
