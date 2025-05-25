@@ -127,7 +127,7 @@
                                                       <String fx:value="radius" />
                                                    </styleClass>
                                                    <children>
-                                                      <FontAwesomeIcon fill="WHITE" glyphName="PILLS" layoutX="14.0" layoutY="78.0" size="5em" />
+                                                      <FontAwesomeIcon fill="WHITE" glyphName="USERS" layoutX="14.0" layoutY="78.0" size="5em" />
                                                       <Label fx:id="dashboard_IP" alignment="CENTER_RIGHT" layoutX="92.0" layoutY="17.0" prefHeight="17.0" prefWidth="134.0" text="0" textFill="WHITE">
                                                          <font>
                                                             <Font size="14.0" />
