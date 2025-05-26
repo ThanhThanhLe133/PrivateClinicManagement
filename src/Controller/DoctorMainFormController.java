@@ -1107,16 +1107,16 @@ public class DoctorMainFormController implements Initializable {
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		System.out.println("DoctorMainFormController initialized" + username);
+		System.out.println("DoctorMainFormController initialized " + username);
 		
-		dashboard_form.setVisible(true);
+		dashboard_form.setVisible(false);
 		patients_form.setVisible(false);
 		appointments_form.setVisible(false);
-		profile_form.setVisible(false);
+		profile_form.setVisible(true);
 
 		loadComboBox();
 		runTime();
-		load();
+	
 
 		dashboad_col_appointmentID.setCellValueFactory(new PropertyValueFactory<>("id"));
 		dashboad_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
