@@ -578,6 +578,10 @@ public class DoctorMainFormController implements Initializable {
 	        alert.errorMessage("Cannot create prescription for cancelled appointment.");
 	        return;
 	    }
+	    if (selectedAppointment.getStatus().equals(AppointmentStatus.Coming.toString())) {
+	        alert.errorMessage("Cannot create prescription for upcoming appointment.");
+	        return;
+	    }
 	    
 	    try {
 	        // Load the PrescriptionDetail.fxml form
@@ -585,13 +589,14 @@ public class DoctorMainFormController implements Initializable {
 	        Parent root = loader.load();
 
 	        // Get the controller and pass the selected appointment data
-	        PrescriptionDetialController controller = loader.getController();
-	        //controller.setAppointmentData(selectedAppointment.getId(), selectedAppointment.getPatientId(), doctor_id);
+	        PrescriptionDetailController controller = loader.getController();
+	        controller.setAppointmentData(selectedAppointment.getId(), selectedAppointment.getPatientId(), doctor_id);
 
 	        // Show the form in a modal window
 	        Stage stage = new Stage();
 	        stage.initModality(Modality.APPLICATION_MODAL);
 	        stage.setTitle("Prescription Details");
+	        stage.setResizable(false);
 	        stage.setScene(new Scene(root));
 
 	        // Refresh data after the form is closed

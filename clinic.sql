@@ -73,7 +73,7 @@ CREATE TABLE PATIENT (
 CREATE TABLE APPOINTMENT (
     Id CHAR(36) PRIMARY KEY NOT NULL,
     Time DATETIME NOT NULL,
-    Status VARCHAR(50) NOT NULL,  -- Finish, Cancel, Coming
+    Status VARCHAR(50) NOT NULL,  -- Finish, Coming, Cancel
     Cancel_reason TEXT,
     Doctor_id CHAR(36) NOT NULL,
     Patient_id CHAR(36) NOT NULL,
@@ -101,11 +101,13 @@ CREATE TABLE PRESCRIPTION (
     Id CHAR(36) PRIMARY KEY NOT NULL,
     Patient_id CHAR(36) NOT NULL,
     Doctor_id CHAR(36) NOT NULL,
+    Appointment_id CHAR(36) NOT NULL,
     TotalAmount DECIMAL(20,2) NOT NULL, 
     diagnose TEXT,
     advice TEXT,
     FOREIGN KEY (Patient_id) REFERENCES PATIENT(patient_Id),
     FOREIGN KEY (Doctor_id) REFERENCES DOCTOR(doctor_Id),
+    FOREIGN KEY (Appointment_id) REFERENCES APPOINTMENT(Id),
     Create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -121,6 +123,23 @@ CREATE TABLE PRESCRIPTION_DETAILS (
     Create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+DELIMITER //
+
+CREATE TRIGGER trg_update_prescription_diagnose_after_patient_update
+AFTER UPDATE ON PATIENT
+FOR EACH ROW
+BEGIN
+    -- Nếu trường Diagnosis thay đổi
+    IF NEW.Diagnosis <> OLD.Diagnosis THEN
+        UPDATE PRESCRIPTION
+        SET diagnose = NEW.Diagnosis
+        WHERE Patient_id = NEW.Patient_id;
+    END IF;
+END;
+//
+
+DELIMITER ;
 
 -- Insert mẫu service
 SET @Service_id := UUID();
@@ -283,7 +302,7 @@ INSERT INTO APPOINTMENT (
 INSERT INTO APPOINTMENT (
     Id, Time, Status, Cancel_reason, Doctor_id, Patient_id, Create_date, Update_date
 ) VALUES (
-    UUID(), '2025-05-14 15:00:00', 'Unfinish', NULL, @doctor_id, @patient_id, NOW(), NOW()
+    UUID(), '2025-05-14 15:00:00', 'Coming', NULL, @doctor_id, @patient_id, NOW(), NOW()
 );
 
 -- Thêm bản ghi vào USER_ACCOUNT trước
@@ -315,17 +334,17 @@ VALUES
     
 INSERT INTO APPOINTMENT (Id, Time, Status, Cancel_reason, Doctor_id, Patient_id, Create_date, Update_date)
 VALUES 
-(UUID(), '2025-05-10 09:00:00', 'Coming', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
+(UUID(), '2025-05-10 09:00:00', 'InProgress', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
     (SELECT Patient_id FROM PATIENT WHERE Name = 'John Smith' LIMIT 1), NOW(), NOW()),
 
-(UUID(), '2025-05-11 14:00:00', 'Finish', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
+(UUID(), '2025-05-11 14:00:00', 'Finished', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
     (SELECT Patient_id FROM PATIENT WHERE Name = 'Emily Johnson' LIMIT 1), NOW(), NOW()),
 
-(UUID(), '2025-05-12 11:00:00', 'Cancel', 'Patient unavailable', '88669f0e-300b-11f0-bbf2-581122815a3a', 
+(UUID(), '2025-05-12 11:00:00', 'Cancelled', 'Patient unavailable', '88669f0e-300b-11f0-bbf2-581122815a3a', 
     (SELECT Patient_id FROM PATIENT WHERE Name = 'Michael Brown' LIMIT 1), NOW(), NOW()),
 
-(UUID(), '2025-05-13 16:30:00', 'Coming', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
+(UUID(), '2025-05-13 16:30:00', 'InProgress', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
     (SELECT Patient_id FROM PATIENT WHERE Name = 'Sarah Davis' LIMIT 1), NOW(), NOW()),
 
-(UUID(), '2025-05-14 10:45:00', 'Finish', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
+(UUID(), '2025-05-14 10:45:00', 'Finished', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
     (SELECT Patient_id FROM PATIENT WHERE Name = 'David Wilson' LIMIT 1), NOW(), NOW());
