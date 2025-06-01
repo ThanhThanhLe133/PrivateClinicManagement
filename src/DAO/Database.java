@@ -60,17 +60,23 @@ public class Database {
     public static Connection connectDB() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            String url = "jdbc:mysql://localhost:3060/clinic?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh";
+//            String url = "jdbc:mysql://localhost:3060/clinic?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh";
             // dùng cái này nếu không cài env
 //            String user = "root";
 //            String password = "";
-            
+        
             
          // dùng cái này để bảo mật
-            String user = System.getenv("DB_USER");
-            String password = System.getenv("DB_PASS");
-            Connection connect = DriverManager.getConnection(url, user, password);
+//            String user = System.getenv("DB_USER");
+//            String password = System.getenv("DB_PASS");
+//            Connection connect = DriverManager.getConnection(url, user, password);
+//            return connect;
+            
+            //thanhthanh url cấm xoá
+            String url = "jdbc:mysql://localhost:3306/clinic?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh";
+            Connection connect = DriverManager.getConnection(url, "root", "");
             return connect;
+
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -56,6 +56,7 @@ CREATE TABLE RECEPTIONIST (
 -- Bảng Patient
 CREATE TABLE PATIENT (
     Patient_id CHAR(36) PRIMARY KEY NOT NULL DEFAULT (UUID()),
+    Date_of_birth DATE,
     Name VARCHAR(50) NOT NULL,
     Email VARCHAR(50) NOT NULL,
     Gender VARCHAR(10) NOT NULL,
@@ -69,7 +70,6 @@ CREATE TABLE PATIENT (
 );
 
 
--- BẢNG appointment
 CREATE TABLE APPOINTMENT (
     Id CHAR(36) PRIMARY KEY NOT NULL,
     Time DATETIME NOT NULL,
@@ -77,12 +77,30 @@ CREATE TABLE APPOINTMENT (
     Cancel_reason TEXT,
     Doctor_id CHAR(36) NOT NULL,
     Patient_id CHAR(36) NOT NULL,
+    Urgency_level INT DEFAULT 1,
+    Is_followup BOOLEAN DEFAULT FALSE,  -- true nếu là tái khám
+    Priority_score INT,
+
+    -- Khóa ngoại
     FOREIGN KEY (Doctor_id) REFERENCES DOCTOR(Doctor_id),
     FOREIGN KEY (Patient_id) REFERENCES PATIENT(Patient_id),
+
+    -- Thời gian tạo và cập nhật
     Create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+CREATE TABLE AVAILABLE_SLOT (
+    Id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    Doctor_id CHAR(36) NOT NULL,
+    Slot_time TIME NOT NULL,
+    Slot_date DATE NOT NULL,
+    Duration_minutes INT DEFAULT 15,
+    Is_booked BOOLEAN DEFAULT FALSE,
+    Appointment_id CHAR(36), 
+    FOREIGN KEY (Doctor_id) REFERENCES DOCTOR(Doctor_id),
+    FOREIGN KEY (Appointment_id) REFERENCES APPOINTMENT(Id) ON DELETE SET NULL
+);
 
 
 CREATE TABLE DRUG (
@@ -105,6 +123,7 @@ CREATE TABLE PRESCRIPTION (
     TotalAmount DECIMAL(20,2) NOT NULL, 
     diagnose TEXT,
     advice TEXT,
+    status VARCHAR(50) NOT NULL DEFAULT 'Created', -- 'khi in tính tiền thì sẽ pa
     FOREIGN KEY (Patient_id) REFERENCES PATIENT(patient_Id),
     FOREIGN KEY (Doctor_id) REFERENCES DOCTOR(doctor_Id),
     FOREIGN KEY (Appointment_id) REFERENCES APPOINTMENT(Id),
@@ -124,37 +143,280 @@ CREATE TABLE PRESCRIPTION_DETAILS (
     Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-DELIMITER //
+DELIMITER $$
 
 CREATE TRIGGER trg_update_prescription_diagnose_after_patient_update
 AFTER UPDATE ON PATIENT
 FOR EACH ROW
 BEGIN
-    -- Nếu trường Diagnosis thay đổi
-    IF NEW.Diagnosis <> OLD.Diagnosis THEN
+    -- Nếu trường Diagnosis thay đổi và không NULL
+    IF NEW.Diagnosis IS NOT NULL AND NEW.Diagnosis <> OLD.Diagnosis THEN
         UPDATE PRESCRIPTION
         SET diagnose = NEW.Diagnosis
         WHERE Patient_id = NEW.Patient_id;
     END IF;
-END;
-//
+END$$
 
 DELIMITER ;
 
--- Insert mẫu service
-SET @Service_id := UUID();
-INSERT INTO SERVICE (Id, Name, Price, Type)
-VALUES 
-    (UUID(), 'General Psychological Checkup', 300000.00, 'Examination'),
-    (UUID(), 'Personal Psychological Counseling', 350000.00, 'Examination'),
-    (UUID(), 'School Psychological Counseling', 250000.00, 'Examination'),
-    (UUID(), 'Cognitive Behavioral Therapy (CBT)', 500000.00, 'Examination'),
-    (UUID(), 'Electrocardiogram (ECG)', 200000.00, 'Test'),
-    (UUID(), 'Basic Blood Test', 150000.00, 'Test'),
-    (UUID(), 'General Health Checkup', 400000.00, 'Examination'),
-    (@Service_id, 'Customized Health Checkup', 450000.00, 'Examination'),
-    (UUID(), 'MRI Scan', 1500000.00, 'Test'),
-    (UUID(), 'Psychological Assessment', 600000.00, 'Test');
+
+
+-- Tạo từng Service riêng, lấy Id ra biến
+SET @Service1_id := UUID();
+INSERT INTO SERVICE (Id, Name, Price, Type) VALUES 
+(@Service1_id, 'General Psychological Checkup', 300000.00, 'Examination');
+
+SET @Service2_id := UUID();
+INSERT INTO SERVICE (Id, Name, Price, Type) VALUES 
+(@Service2_id, 'Personal Psychological Counseling', 350000.00, 'Examination');
+
+SET @Service3_id := UUID();
+INSERT INTO SERVICE (Id, Name, Price, Type) VALUES 
+(@Service3_id, 'School Psychological Counseling', 250000.00, 'Examination');
+
+SET @Service4_id := UUID();
+INSERT INTO SERVICE (Id, Name, Price, Type) VALUES 
+(@Service4_id, 'Cognitive Behavioral Therapy (CBT)', 500000.00, 'Examination');
+
+SET @Service5_id := UUID();
+INSERT INTO SERVICE (Id, Name, Price, Type) VALUES 
+(@Service5_id, 'Electrocardiogram (ECG)', 200000.00, 'Test');
+
+SET @Service6_id := UUID();
+INSERT INTO SERVICE (Id, Name, Price, Type) VALUES 
+(@Service6_id, 'Basic Blood Test', 150000.00, 'Test');
+
+SET @Service7_id := UUID();
+INSERT INTO SERVICE (Id, Name, Price, Type) VALUES 
+(@Service7_id, 'General Health Checkup', 400000.00, 'Examination');
+
+SET @Service8_id := UUID();
+INSERT INTO SERVICE (Id, Name, Price, Type) VALUES 
+(@Service8_id, 'MRI Scan', 1500000.00, 'Test');
+
+SET @Service9_id := UUID();
+INSERT INTO SERVICE (Id, Name, Price, Type) VALUES 
+(@Service9_id, 'Psychological Assessment', 600000.00, 'Test');
+
+-- Tạo doctor và user cho từng service
+
+-- Doctor 1
+SET @doctor1_id := UUID();
+INSERT INTO USER_ACCOUNT (
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
+) VALUES (
+    @doctor1_id,
+    'dr.smith',
+    'doctor123',
+    'dr.smith@example.com',
+    'Dr. John Smith',
+    NULL,
+    'Male',
+    'DOCTOR',
+    TRUE
+);
+INSERT INTO DOCTOR (
+    doctor_id, Phone, Service_id, Address
+) VALUES (
+    @doctor1_id,
+    '0912345678',
+    @Service1_id,
+    '12 Medical Lane, District 1'
+);
+
+-- Doctor 2
+SET @doctor2_id := UUID();
+INSERT INTO USER_ACCOUNT (
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
+) VALUES (
+    @doctor2_id,
+    'dr.jane',
+    'doctor123',
+    'dr.jane@example.com',
+    'Dr. Jane Doe',
+    NULL,
+    'Female',
+    'DOCTOR',
+    TRUE
+);
+INSERT INTO DOCTOR (
+    doctor_id, Phone, Service_id, Address
+) VALUES (
+    @doctor2_id,
+    '0987654321',
+    @Service2_id,
+    '34 Wellness Street, District 2'
+);
+
+-- Doctor 3
+SET @doctor3_id := UUID();
+INSERT INTO USER_ACCOUNT (
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
+) VALUES (
+    @doctor3_id,
+    'dr.michael',
+    'doctor123',
+    'dr.michael@example.com',
+    'Dr. Michael Nguyen',
+    NULL,
+    'Male',
+    'DOCTOR',
+    TRUE
+);
+INSERT INTO DOCTOR (
+    doctor_id, Phone, Service_id, Address
+) VALUES (
+    @doctor3_id,
+    '0911122233',
+    @Service3_id,
+    '56 Psychology Avenue, District 3'
+);
+
+-- Doctor 4
+SET @doctor4_id := UUID();
+INSERT INTO USER_ACCOUNT (
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
+) VALUES (
+    @doctor4_id,
+    'dr.emily',
+    'doctor123',
+    'dr.emily@example.com',
+    'Dr. Emily Tran',
+    NULL,
+    'Female',
+    'DOCTOR',
+    TRUE
+);
+INSERT INTO DOCTOR (
+    doctor_id, Phone, Service_id, Address
+) VALUES (
+    @doctor4_id,
+    '0933344455',
+    @Service4_id,
+    '78 CBT Road, District 4'
+);
+
+-- Doctor 5
+SET @doctor5_id := UUID();
+INSERT INTO USER_ACCOUNT (
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
+) VALUES (
+    @doctor5_id,
+    'dr.henry',
+    'doctor123',
+    'dr.henry@example.com',
+    'Dr. Henry Le',
+    NULL,
+    'Male',
+    'DOCTOR',
+    TRUE
+);
+INSERT INTO DOCTOR (
+    doctor_id, Phone, Service_id, Address
+) VALUES (
+    @doctor5_id,
+    '0966677788',
+    @Service5_id,
+    '90 ECG Street, District 5'
+);
+
+-- Doctor 6
+SET @doctor6_id := UUID();
+INSERT INTO USER_ACCOUNT (
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
+) VALUES (
+    @doctor6_id,
+    'dr.lisa',
+    'doctor123',
+    'dr.lisa@example.com',
+    'Dr. Lisa Pham',
+    NULL,
+    'Female',
+    'DOCTOR',
+    TRUE
+);
+INSERT INTO DOCTOR (
+    doctor_id, Phone, Service_id, Address
+) VALUES (
+    @doctor6_id,
+    '0978899001',
+    @Service6_id,
+    '101 Blood Test Blvd, District 6'
+);
+
+-- Doctor 7
+SET @doctor7_id := UUID();
+INSERT INTO USER_ACCOUNT (
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
+) VALUES (
+    @doctor7_id,
+    'dr.david',
+    'doctor123',
+    'dr.david@example.com',
+    'Dr. David Hoang',
+    NULL,
+    'Male',
+    'DOCTOR',
+    TRUE
+);
+INSERT INTO DOCTOR (
+    doctor_id, Phone, Service_id, Address
+) VALUES (
+    @doctor7_id,
+    '0944556677',
+    @Service7_id,
+    '123 Health Plaza, District 7'
+);
+
+-- Doctor 8
+SET @doctor8_id := UUID();
+INSERT INTO USER_ACCOUNT (
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
+) VALUES (
+    @doctor8_id,
+    'dr.sophia',
+    'doctor123',
+    'dr.sophia@example.com',
+    'Dr. Sophia Vu',
+    NULL,
+    'Female',
+    'DOCTOR',
+    TRUE
+);
+INSERT INTO DOCTOR (
+    doctor_id, Phone, Service_id, Address
+) VALUES (
+    @doctor8_id,
+    '0922334455',
+    @Service8_id,
+    '150 MRI Center, District 8'
+);
+
+-- Doctor 9
+SET @doctor9_id := UUID();
+INSERT INTO USER_ACCOUNT (
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
+) VALUES (
+    @doctor9_id,
+    'dr.alex',
+    'doctor123',
+    'dr.alex@example.com',
+    'Dr. Alex Dang',
+    NULL,
+    'Male',
+    'DOCTOR',
+    TRUE
+);
+INSERT INTO DOCTOR (
+    doctor_id, Phone, Service_id, Address
+) VALUES (
+    @doctor9_id,
+    '0933445566',
+    @Service9_id,
+    '180 Assessment Ave, District 9'
+);
+
+
 
 -- INSERT mẫu ADMIN
 SET @Admin_id := UUID();
@@ -175,31 +437,6 @@ INSERT INTO USER_ACCOUNT (
 
 INSERT INTO ADMIN (Admin_id) VALUES (@Admin_id);
 
--- INSERT mẫu DOCTOR (NHỚ LẤY ID BÊN SERVICE ĐỂ GÁN VÀO DOCTOR)
-SET @doctor_id := UUID();
-
-INSERT INTO USER_ACCOUNT (
-    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
-) VALUES (
-    @doctor_id,
-    'dr.smith',
-    'doctor123',
-    'dr.smith@example.com',
-    'Dr. John Smith',
-    NULL,
-    'Male',
-    'DOCTOR',
-    TRUE
-);
-
-INSERT INTO DOCTOR (
-    doctor_id, Phone, Service_id, Address
-) VALUES (
-    @doctor_id,
-    '0912345678',
-    @Service_id,
-    '12 Medical Lane, District 1'
-);
 
 -- INSERT mẫu RECEPTIONIST
 SET @recept_id := UUID();
@@ -277,32 +514,44 @@ VALUES
 
 SET @patient_id := UUID();
 
-INSERT INTO PATIENT (Patient_id, Name, Email, Gender, Phone, Address, Diagnosis, Height, Weight, Create_date, Update_date) VALUES
-(@patient_id, 'John Smith', 'john.smith@example.com', 'Male', '5551234567', '123 Main St, New York, NY', 'Common cold', 180.25, 75.50, '2024-05-01 08:00:00', '2024-05-01 08:00:00'),
-(UUID(), 'Emily Johnson', 'emily.johnson@example.com', 'Female', '5555678901', '456 Park Ave, Los Angeles, CA', 'Stomach ulcer', 165.00, 60.20, '2024-05-02 09:30:00', '2024-05-02 09:30:00'),
-(UUID(), 'Michael Brown', 'michael.brown@example.com', 'Male', '5559101123', '789 Broadway, Chicago, IL', 'Hypertension', 172.75, 82.40, '2024-05-03 10:45:00', '2024-05-03 10:45:00'),
-(UUID(), 'Sarah Davis', 'sarah.davis@example.com', 'Female', '5551213141', '321 Ocean Dr, Miami, FL', 'Diabetes', 160.50, 68.75, '2024-05-04 14:00:00', '2024-05-04 14:00:00'),
-(UUID(), 'David Wilson', 'david.wilson@example.com', 'Male', '5551415161', '654 River Rd, Seattle, WA', 'Sore throat', 177.60, 70.10, '2024-05-05 16:15:00', '2024-05-05 16:15:00');
+INSERT INTO PATIENT 
+(Patient_id, Date_of_birth, Name, Email, Gender, Phone, Address, Diagnosis, Height, Weight, Create_date, Update_date) 
+VALUES
+(@patient_id, '1980-04-15', 'John Smith', 'john.smith@example.com', 'Male', '5551234567', '123 Main St, New York, NY', 'Common cold', 180.25, 75.50, '2024-05-01 08:00:00', '2024-05-01 08:00:00'),
+(UUID(), '1990-07-22', 'Emily Johnson', 'emily.johnson@example.com', 'Female', '5555678901', '456 Park Ave, Los Angeles, CA', 'Stomach ulcer', 165.00, 60.20, '2024-05-02 09:30:00', '2024-05-02 09:30:00'),
+(UUID(), '1975-12-05', 'Michael Brown', 'michael.brown@example.com', 'Male', '5559101123', '789 Broadway, Chicago, IL', 'Hypertension', 172.75, 82.40, '2024-05-03 10:45:00', '2024-05-03 10:45:00'),
+(UUID(), '1988-03-18', 'Sarah Davis', 'sarah.davis@example.com', 'Female', '5551213141', '321 Ocean Dr, Miami, FL', 'Diabetes', 160.50, 68.75, '2024-05-04 14:00:00', '2024-05-04 14:00:00'),
+(UUID(), '1995-09-10', 'David Wilson', 'david.wilson@example.com', 'Male', '5551415161', '654 River Rd, Seattle, WA', 'Sore throat', 177.60, 70.10, '2024-05-05 16:15:00', '2024-05-05 16:15:00');
 
--- Cuộc hẹn 1: đã hoàn thành
+
+-- Cuộc hẹn 1: hoàn thành
 INSERT INTO APPOINTMENT (
-    Id, Time, Status, Cancel_reason, Doctor_id, Patient_id, Create_date, Update_date
+    Id, Time, Status, Cancel_reason, Doctor_id, Patient_id,
+    Urgency_level, Is_followup, Priority_score,
+    Create_date, Update_date
 ) VALUES (
-    UUID(), '2025-05-10 09:00:00', 'Finish', NULL, @doctor_id, @patient_id, NOW(), NOW()
+    UUID(), '2025-05-10 09:00:00', 'Finished', NULL, @doctor1_id , @patient_id,
+    1, FALSE, 6, NOW(), NOW()
 );
 
--- Cuộc hẹn 2: đã hủy, có lý do
+-- Cuộc hẹn 2: hủy với lý do
 INSERT INTO APPOINTMENT (
-    Id, Time, Status, Cancel_reason, Doctor_id, Patient_id, Create_date, Update_date
+    Id, Time, Status, Cancel_reason, Doctor_id, Patient_id,
+    Urgency_level, Is_followup, Priority_score,
+    Create_date, Update_date
 ) VALUES (
-    UUID(), '2025-05-11 10:30:00', 'Cancel', 'Patient had a family emergency', @doctor_id, @patient_id, NOW(), NOW()
+    UUID(), '2025-05-11 10:30:00', 'Cancelled', 'Patient had a family emergency', @doctor2_id, @patient_id,
+    3, FALSE, 3, NOW(), NOW()
 );
 
--- Cuộc hẹn 3: chưa hoàn thành
+-- Cuộc hẹn 3: sắp tới
 INSERT INTO APPOINTMENT (
-    Id, Time, Status, Cancel_reason, Doctor_id, Patient_id, Create_date, Update_date
+    Id, Time, Status, Cancel_reason, Doctor_id, Patient_id,
+    Urgency_level, Is_followup, Priority_score,
+    Create_date, Update_date
 ) VALUES (
-    UUID(), '2025-05-14 15:00:00', 'Coming', NULL, @doctor_id, @patient_id, NOW(), NOW()
+    UUID(), '2025-05-14 15:00:00', 'Coming', NULL, @doctor3_id, @patient_id,
+    1, TRUE, 9, NOW(), NOW()
 );
 
 -- Thêm bản ghi vào USER_ACCOUNT trước
@@ -332,19 +581,98 @@ VALUES
 );
 
     
-INSERT INTO APPOINTMENT (Id, Time, Status, Cancel_reason, Doctor_id, Patient_id, Create_date, Update_date)
-VALUES 
-(UUID(), '2025-05-10 09:00:00', 'InProgress', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
-    (SELECT Patient_id FROM PATIENT WHERE Name = 'John Smith' LIMIT 1), NOW(), NOW()),
+INSERT INTO APPOINTMENT (
+    Id, Time, Status, Cancel_reason, Doctor_id, Patient_id,
+    Urgency_level, Is_followup, Priority_score,
+    Create_date, Update_date
+)
+VALUES
+(UUID(), '2025-05-10 09:00:00', 'Coming', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
+ (SELECT Patient_id FROM PATIENT WHERE Name = 'John Smith' LIMIT 1), 1, FALSE, 10, NOW(), NOW()),
 
-(UUID(), '2025-05-11 14:00:00', 'Finished', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
-    (SELECT Patient_id FROM PATIENT WHERE Name = 'Emily Johnson' LIMIT 1), NOW(), NOW()),
+(UUID(), '2025-05-11 14:00:00', 'Finished', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
+ (SELECT Patient_id FROM PATIENT WHERE Name = 'Emily Johnson' LIMIT 1), 2, FALSE, 8, NOW(), NOW()),
 
-(UUID(), '2025-05-12 11:00:00', 'Cancelled', 'Patient unavailable', '88669f0e-300b-11f0-bbf2-581122815a3a', 
-    (SELECT Patient_id FROM PATIENT WHERE Name = 'Michael Brown' LIMIT 1), NOW(), NOW()),
+(UUID(), '2025-05-12 11:00:00', 'Cancelled', 'Patient unavailable', '88669f0e-300b-11f0-bbf2-581122815a3a',
+ (SELECT Patient_id FROM PATIENT WHERE Name = 'Michael Brown' LIMIT 1), 3, FALSE, 5, NOW(), NOW()),
 
-(UUID(), '2025-05-13 16:30:00', 'InProgress', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
-    (SELECT Patient_id FROM PATIENT WHERE Name = 'Sarah Davis' LIMIT 1), NOW(), NOW()),
+(UUID(), '2025-05-13 16:30:00', 'Coming', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
+ (SELECT Patient_id FROM PATIENT WHERE Name = 'Sarah Davis' LIMIT 1), 1, TRUE, 9, NOW(), NOW()),
 
-(UUID(), '2025-05-14 10:45:00', 'Finished', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a', 
-    (SELECT Patient_id FROM PATIENT WHERE Name = 'David Wilson' LIMIT 1), NOW(), NOW());
+(UUID(), '2025-05-14 10:45:00', 'Finished', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
+ (SELECT Patient_id FROM PATIENT WHERE Name = 'David Wilson' LIMIT 1), 2, FALSE, 7, NOW(), NOW());
+
+
+
+
+-- Thêm các slot mỗi ngày
+
+SET GLOBAL event_scheduler = ON;
+
+
+-- Tạo Stored Procedure
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS GenerateDailySlots $$
+CREATE PROCEDURE GenerateDailySlots()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE doc_id CHAR(36);
+    DECLARE start_time TIME;
+    DECLARE slot_date DATE;
+
+    DECLARE cur CURSOR FOR SELECT Doctor_id FROM DOCTOR;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    SET slot_date = CURDATE();
+
+    OPEN cur;
+
+    read_loop: LOOP
+        FETCH cur INTO doc_id;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SET start_time = '08:00:00';
+
+        WHILE start_time < '16:00:00' DO
+            INSERT INTO AVAILABLE_SLOT (Id, Doctor_id, Slot_time, Slot_date, Duration_minutes, Is_booked)
+            SELECT UUID(), doc_id, start_time, slot_date, 15, FALSE
+            FROM DUAL
+            WHERE NOT EXISTS (
+                SELECT 1 FROM AVAILABLE_SLOT 
+                WHERE Doctor_id = doc_id 
+                  AND Slot_time = start_time 
+                  AND Slot_date = slot_date
+            );
+            SET start_time = ADDTIME(start_time, '00:15:00');
+        END WHILE;
+
+    END LOOP;
+
+    CLOSE cur;
+END $$
+
+DELIMITER ;
+
+-- GỌI LẦN ĐẦU TIÊN NGAY
+CALL GenerateDailySlots();
+
+-- Tạo EVENT chạy tự động lúc 00:00 mỗi ngày
+DELIMITER $$
+DROP EVENT IF EXISTS add_daily_slots $$
+CREATE EVENT add_daily_slots
+ON SCHEDULE EVERY 1 DAY
+STARTS CURRENT_TIMESTAMP
+ON COMPLETION PRESERVE
+DO
+BEGIN
+    CALL GenerateDailySlots();
+END $$
+
+DELIMITER ;
+
+ALTER EVENT add_daily_slots
+ON SCHEDULE EVERY 1 DAY
+STARTS CURRENT_TIMESTAMP;

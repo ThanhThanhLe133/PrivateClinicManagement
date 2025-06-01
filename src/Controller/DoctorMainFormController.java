@@ -612,47 +612,6 @@ public class DoctorMainFormController implements Initializable {
 	    }
 	}
 
-	public void appointmentInsertBtn() {
-		String time = FormatterUtils.toSQLDate(appointment_time.getText() + " " + appointment_date.getEditor().getText());
-		System.out.println("Time: " + time);
-		String status = appointment_status.getSelectionModel().getSelectedItem();
-		System.out.println("Status: " + status);
-		String cancelReason = appointment_cancelReason.getText();
-		String patientID = appointment_patientID.getSelectionModel().getSelectedItem();
-		System.out.println("Patient ID: " + patientID);
-
-		if (time.isEmpty() || status.isEmpty() || patientID.isEmpty()) {
-			alert.errorMessage("Please fill all blank fields");
-			return;
-		}
-
-		System.out.println("Insert appointment: " + time + ", " + status + ", " + cancelReason + ", " + patientID);
-
-		String sql = "INSERT INTO appointment (id, time, status, cancel_reason, patient_id, doctor_id) VALUES (UUID(), ?, ?, ?, ?, ?)";
-		connect = Database.connectDB();
-		try {
-			prepare = connect.prepareStatement(sql);
-			prepare.setString(1, time);
-			prepare.setString(2, status);
-			prepare.setString(3, cancelReason);
-			prepare.setString(4, patientID);
-			prepare.setString(5, doctor_id);
-
-			int rowsInserted = prepare.executeUpdate();
-			if (rowsInserted > 0) {
-				alert.successMessage("Appointment added successfully.");
-				appointmentClearBtn();
-				loadAppointmentData();
-				dashboardLoadAppointmentData();
-			} else {
-				alert.errorMessage("Failed to add appointment.");
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-			alert.errorMessage("Error adding appointment: " + e.getMessage());
-		}
-	}
-
 	public void appointmentUpdateBtn() {
 		String appointmentID = appointment_appointmentID.getText();
 		System.out.println("Appointment ID: " + appointmentID);
@@ -1328,11 +1287,6 @@ public class DoctorMainFormController implements Initializable {
 			System.out.println("No appointment selected");
 			return;
 		}
-
-		System.out.println("Selected index: " + index);
-		System.out.println("Selected appointment: " + appointmentData);
-		System.out.println("\tCreated date: " + appointmentData.getCreatedDate());
-		System.out.println("\tLast modified date: " + appointmentData.getLastModifiedDate());
 
 		appointment_appointmentID.setText(appointmentData.getId());
 		appointment_name.setText(appointmentData.getName());

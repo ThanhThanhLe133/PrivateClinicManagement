@@ -14,6 +14,9 @@ module myModule {
 	requires jakarta.mail;
 	requires org.apache.poi.ooxml;
 	requires java.desktop;
+	requires java.net.http;
+	requires com.fasterxml.jackson.databind;
+	requires com.fasterxml.jackson.core;
 
 	opens application to javafx.fxml, javafx.graphics;
 	opens Alert to javafx.fxml;

@@ -197,5 +197,25 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="Lib/fontawesomefx-8.2.jar"/>
+	<classpathentry kind="lib" path="Lib/jackson-databind-2.13.5.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="Lib/jackson-annotations-2.13.5.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="Lib/jackson-core-2.13.5.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="Lib/jackson-jaxrs-json-provider-2.13.5.jar">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

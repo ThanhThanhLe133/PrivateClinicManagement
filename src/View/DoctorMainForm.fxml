@@ -7,6 +7,7 @@
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ButtonBar?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
@@ -402,7 +403,7 @@
                                     </TableView>
                                  </children>
                               </AnchorPane>
-                              <AnchorPane layoutX="9.0" layoutY="325.0" prefHeight="308.0" prefWidth="868.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="-8.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0">
+                              <AnchorPane layoutX="9.0" layoutY="325.0" prefHeight="308.0" prefWidth="868.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="-8.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="259.20000000000005">
                                  <styleClass>
                                     <String fx:value="white-bg" />
                                     <String fx:value="shadow" />
@@ -440,12 +441,14 @@
 
 <Label layoutX="450.0" layoutY="201.0" prefHeight="17.0" prefWidth="100.0" text="Last Modified:" AnchorPane.rightAnchor="318.0" />
 <Label fx:id="appointment_updatedDate" layoutX="550.0" layoutY="201.0" prefHeight="17.0" prefWidth="220.0" styleClass="textfield-2" AnchorPane.rightAnchor="98.0" />
-
-<Button fx:id="appointment_insertBtn" layoutX="179.0" layoutY="250.0" mnemonicParsing="false" onAction="#appointmentInsertBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Insert" AnchorPane.leftAnchor="145.0" />
-<Button fx:id="appointment_updateBtn" layoutX="298.0" layoutY="250.0" mnemonicParsing="false" onAction="#appointmentUpdateBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Update" AnchorPane.leftAnchor="265.0" />
-<Button fx:id="appointment_clearBtn" layoutX="463.0" layoutY="250.0" mnemonicParsing="false" onAction="#appointmentClearBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Clear" AnchorPane.rightAnchor="270.0" />
-<Button fx:id="appointment_deleteBtn" layoutX="582.0" layoutY="250.0" mnemonicParsing="false" onAction="#appointmentDeleteBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Delete" AnchorPane.rightAnchor="150.0" />
-                                    <Button fx:id="appointment_prescriptionBtn" layoutX="384.0" layoutY="250.0" mnemonicParsing="false" onAction="#appointmentPrescriptionBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Prescription" AnchorPane.leftAnchor="384.0" AnchorPane.rightAnchor="384.0" />
+                                    <ButtonBar layoutX="208.0" layoutY="252.0">
+                                       <buttons>
+      <Button fx:id="appointment_updateBtn" mnemonicParsing="false" onAction="#appointmentUpdateBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Update" />
+                                          <Button fx:id="appointment_prescriptionBtn" mnemonicParsing="false" onAction="#appointmentPrescriptionBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Prescription" />
+      <Button fx:id="appointment_clearBtn" mnemonicParsing="false" onAction="#appointmentClearBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Clear" />
+      <Button fx:id="appointment_deleteBtn" mnemonicParsing="false" onAction="#appointmentDeleteBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Delete" />
+                                       </buttons>
+                                    </ButtonBar>
                                  </children>
                               </AnchorPane>
                            </children>

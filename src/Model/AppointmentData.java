@@ -7,6 +7,8 @@ package Model;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.UUID;
 
 import Enum.AppointmentStatus;
@@ -22,8 +24,13 @@ public class AppointmentData {
 	private String status;
 	private String cancelReason;
 	private String doctorId;
+	private String doctorName;
 	private String patientId;
+	private String patientName;
 	private String serviceId;
+	private String serviceName;
+	private String contactNumber;
+	private String prescriptionStatus;
 	private Timestamp createDate;
 	private Timestamp updateDate;
 
@@ -46,6 +53,25 @@ public class AppointmentData {
 		this.doctorId = doctorId;
 		this.patientId = patientId;
 		this.serviceId = serviceId;
+	}
+
+	public AppointmentData(String id, Timestamp time, String status, String cancelReason, String doctorId,
+			String patientId, String serviceId, String serviceName, String prescriptionStatus, Timestamp createdDate, Timestamp updateDate,
+			String patientName, String doctorName,String contactNumber) {
+		this.id = id;
+		this.time = time;
+		this.status = status;
+		this.cancelReason = cancelReason;
+		this.doctorId = doctorId;
+		this.patientId = patientId;
+		this.serviceId = serviceId;
+		this.prescriptionStatus = prescriptionStatus;
+		this.createDate = createdDate;
+		this.updateDate = updateDate;
+		this.setServiceName(serviceName);
+		this.setPatientName(patientName);
+		this.setDoctorName(doctorName);
+		this.setContactNumber(contactNumber);
 	}
 
 	// Getter và Setter
@@ -120,6 +146,53 @@ public class AppointmentData {
 
 	public void setUpdateDate(Timestamp updateDate) {
 		this.updateDate = updateDate;
+	}
+
+	public String getPrescriptionStatus() {
+		return prescriptionStatus;
+	}
+
+	public void setPrescriptionStatus(String prescriptionStatus) {
+		this.prescriptionStatus = prescriptionStatus;
+	}
+
+	public String getDoctorName() {
+		return doctorName;
+	}
+
+	public void setDoctorName(String doctorName) {
+		this.doctorName = doctorName;
+	}
+
+	public String getPatientName() {
+		return patientName;
+	}
+
+	public void setPatientName(String patientName) {
+		this.patientName = patientName;
+	}
+
+	public String getContactNumber() {
+		return contactNumber;
+	}
+
+	public void setContactNumber(String contactNumber) {
+		this.contactNumber = contactNumber;
+	}
+
+	public String getServiceName() {
+		return serviceName;
+	}
+
+	public void setServiceName(String serviceName) {
+		this.serviceName = serviceName;
+	}
+	public LocalDate getLocalDate() {
+	    return time != null ? time.toLocalDateTime().toLocalDate() : null;
+	}
+
+	public LocalTime getLocalTime() {
+	    return time != null ? time.toLocalDateTime().toLocalTime() : null;
 	}
 
 }

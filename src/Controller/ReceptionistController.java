@@ -5,6 +5,7 @@
  */
 package Controller;
 
+import java.awt.Checkbox;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -23,25 +24,43 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import Alert.AlertMessage;
+import Controller.DoctorMainFormController.DashBoardAppointmentData;
+import Controller.DoctorMainFormController.DoctorAppointmentData;
+import Controller.DoctorMainFormController.FormatterUtils;
 import DAO.Database;
+import Enum.AppointmentStatus;
 import Enum.Gender;
+import Enum.UrgencyLevel;
 import Model.AppointmentData;
+import Model.AppointmentSuggester;
 import Model.Data;
 import Model.DoctorData;
 import Model.PatientData;
 import Model.ReceptionistData;
+import Model.ServiceData;
 import Model.ReceptionistData;
 import Model.DrugData;
 import javafx.application.Platform;
@@ -53,15 +72,19 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -72,7 +95,9 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
@@ -86,47 +111,79 @@ import javafx.stage.StageStyle;
  * @author WINDOWS 10
  */
 public class ReceptionistController implements Initializable {
-	
-	/*=====================CRUD DRUG========================================*/
 
-	@FXML private TableView<DrugData> drug_tableView;
-	@FXML private TableColumn<DrugData, String> drug_col_id;
-	@FXML private TableColumn<DrugData, String> drug_col_name;
-	@FXML private TableColumn<DrugData, String> drug_col_manufacturer;
-	@FXML private TableColumn<DrugData, String> drug_col_expiry;
-	@FXML private TableColumn<DrugData, String> drug_col_unit;
-	@FXML private TableColumn<DrugData, String> drug_col_price;
-	@FXML private TableColumn<DrugData, String> drug_col_stock;
-	@FXML private TableColumn<DrugData, String> drug_col_create;
-	@FXML private TableColumn<DrugData, String> drug_col_update;
-	@FXML private TableColumn<DrugData, Void> drug_col_action;
-	
-	@FXML private TextField txtDrugSearch;
-	@FXML private ComboBox<String> cmbDrugSearchBy;
-	@FXML private ComboBox<String> cmbDrugExpiryFilter;
-	@FXML private ComboBox<String> cmbDrugStockFilter;
-	@FXML private ComboBox<String> cmbDrugPriceSort;
+	/* =====================CRUD DRUG======================================== */
 
-	/*=====================CRUD PATIENT========================================*/
+	@FXML
+	private TableView<DrugData> drug_tableView;
+	@FXML
+	private TableColumn<DrugData, String> drug_col_id;
+	@FXML
+	private TableColumn<DrugData, String> drug_col_name;
+	@FXML
+	private TableColumn<DrugData, String> drug_col_manufacturer;
+	@FXML
+	private TableColumn<DrugData, String> drug_col_expiry;
+	@FXML
+	private TableColumn<DrugData, String> drug_col_unit;
+	@FXML
+	private TableColumn<DrugData, String> drug_col_price;
+	@FXML
+	private TableColumn<DrugData, String> drug_col_stock;
+	@FXML
+	private TableColumn<DrugData, String> drug_col_create;
+	@FXML
+	private TableColumn<DrugData, String> drug_col_update;
+	@FXML
+	private TableColumn<DrugData, Void> drug_col_action;
 
-	@FXML private TableView<PatientData> patients_tableView;
-	@FXML private TableColumn<PatientData, String> patients_col_patientID;
-	@FXML private TableColumn<PatientData, String> patients_col_name;
-	@FXML private TableColumn<PatientData, String> patients_col_email;
-	@FXML private TableColumn<PatientData, String> patients_col_gender;
-	@FXML private TableColumn<PatientData, String> patients_col_phone;
-	@FXML private TableColumn<PatientData, String> patients_col_address;
-	@FXML private TableColumn<PatientData, String> patients_col_diagnosis;
-	@FXML private TableColumn<PatientData, BigDecimal> patients_col_height;
-	@FXML private TableColumn<PatientData, BigDecimal> patients_col_weight;
-	@FXML private TableColumn<PatientData, Timestamp> patients_col_create;
-	@FXML private TableColumn<PatientData, Timestamp> patients_col_update;
-	@FXML private TableColumn<PatientData, Void> patients_col_action;
+	@FXML
+	private TextField txtDrugSearch;
+	@FXML
+	private ComboBox<String> cmbDrugSearchBy;
+	@FXML
+	private ComboBox<String> cmbDrugExpiryFilter;
+	@FXML
+	private ComboBox<String> cmbDrugStockFilter;
+	@FXML
+	private ComboBox<String> cmbDrugPriceSort;
 
-	@FXML private ComboBox<String> cmbPatientSearchBy;
-	@FXML private TextField txtPatientSearch;
-	@FXML private ComboBox<String> cmbPatientGenderFilter;
-	
+	/* =====================CRUD PATIENT======================================== */
+
+	@FXML
+	private TableView<PatientData> patients_tableView;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_patientID;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_name;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_email;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_gender;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_phone;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_address;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_diagnosis;
+	@FXML
+	private TableColumn<PatientData, BigDecimal> patients_col_height;
+	@FXML
+	private TableColumn<PatientData, BigDecimal> patients_col_weight;
+	@FXML
+	private TableColumn<PatientData, Timestamp> patients_col_create;
+	@FXML
+	private TableColumn<PatientData, Timestamp> patients_col_update;
+	@FXML
+	private TableColumn<PatientData, Void> patients_col_action;
+
+	@FXML
+	private ComboBox<String> cmbPatientSearchBy;
+	@FXML
+	private TextField txtPatientSearch;
+	@FXML
+	private ComboBox<String> cmbPatientGenderFilter;
+
 	@FXML
 	private AnchorPane main_form;
 
@@ -150,13 +207,14 @@ public class ReceptionistController implements Initializable {
 
 	@FXML
 	private Button patients_btn;
-	
+
 	@FXML
 	private Button drugs_btn;
 
 	@FXML
 	private Button appointments_btn;
-
+	@FXML
+	private Button appointments_manage_btn;
 	@FXML
 	private Button profile_btn;
 
@@ -210,46 +268,110 @@ public class ReceptionistController implements Initializable {
 
 	@FXML
 	private AnchorPane appointments_form;
-
 	@FXML
-	private Label appointment_ad_name;
-
+	private AnchorPane choose_service_form;
 	@FXML
-	private Label appointment_ad_mobileNumber;
-
-	@FXML
-	private Label appointment_ad_gender;
-
-	@FXML
-	private Label appointment_ad_address;
-
-	@FXML
-	private Label appointment_ad_description;
-
-	@FXML
-	private Label appointment_ad_doctorName;
-
-	@FXML
-	private Label appointment_ad_specialization;
-
-	@FXML
-	private Label appointment_ad_schedule;
-
-	@FXML
-	private Button appointment_d_confirmBtn;
-
+	private VBox vboxContainer;
 	@FXML
 	private TextArea appointment_d_description;
 
 	@FXML
-	private ComboBox<String> appointment_d_doctor;
+	private ComboBox<DoctorData> cb_doctor;
+	@FXML
+	private ComboBox<ServiceData> cb_service;
+	@FXML
+	private ComboBox<PatientData> cb_patient;
+	@FXML
+	private ComboBox<UrgencyLevel> cb_urgency;
+	@FXML
+	private DatePicker select_time;
+	@FXML
+	private CheckBox checkbox_followUp;
+	@FXML
+	private Label lb_patient_name;
+	@FXML
+	private Label lb_patient_gender;
+	@FXML
+	private Label lb_patient_age;
+	@FXML
+	private Label lb_patient_address;
+	@FXML
+	private Label lb_price_service, lb_check;
+	@FXML
+	private TextArea txt_suggest;
+	@FXML
+	private TextArea txt_details;
+	@FXML
+	private Pane btn_pane;
+	@FXML
+	private Button btn_remove;
+	@FXML
+	private Button btn_add;
+	@FXML
+	private Button btn_create;
+	@FXML
+	private Button bnt_suggest;
+	@FXML
+	private Button btn_check;
+
+	@SuppressWarnings("rawtypes")
+	@FXML
+	private Spinner<Integer> spHour, spMinute, spHour1, spMinute1;
+	@FXML
+	private Button btn_clear_suggest;
+
+	// appointment manage
+	@FXML
+	private AnchorPane appointments_manage_form;
+	@FXML
+	private TableView<AppointmentData> appointments_tableView;
+	@FXML
+	private TableColumn<AppointmentData, String> appointments_col_service;
+	@FXML
+	private TableColumn<AppointmentData, String> appointments_col_time;
+	@FXML
+	private TableColumn<AppointmentData, String> appointments_col_status;
+	@FXML
+	private TableColumn<AppointmentData, String> appointments_col_name, appointments_col_doctor;
+	@FXML
+	private TableColumn<AppointmentData, String> appointments_col_contactNumber, appointments_col_prescription;
+	@FXML
+	private TableColumn<AppointmentData, String> appointments_col_reason;
+	ObservableList<AppointmentData> appoinmentListData = FXCollections.observableArrayList();
 
 	@FXML
-	private DatePicker appointment_d_schedule;
+	private TextField appointment_serviceName;
+	@FXML
+	private TextField appointment_mobileNumber;
+	@FXML
+	private ComboBox<PatientData> appointment_patient;
+	@FXML
+	private ComboBox<DoctorData> appointment_doctor;
+	@FXML
+	private ComboBox<String> appointment_status;
+	@FXML
+	private TextArea appointment_cancelReason;
+	@FXML
+	private DatePicker appointment_date;
+	@FXML
+	private TextField appointment_time;
+	@FXML
+	private Label appointment_createdDate;
+	@FXML
+	private Label appointment_updatedDate;
 
 	@FXML
-	private Button appointment_d_clearBtn;
-	
+	private Button appointment_insertBtn;
+
+	@FXML
+	private Button appointment_updateBtn;
+
+	@FXML
+	private Button appointment_clearBtn;
+
+	@FXML
+	private Button appointment_deleteBtn;
+
 	@FXML
 	private AnchorPane drugs_form;
 
@@ -299,692 +421,327 @@ public class ReceptionistController implements Initializable {
 		profileDisplayImages();
 	}
 
-
-	
-//
-//	// public ObservableList<PatientData> homePatientGetData() {
-//	//
-//	// ObservableList<PatientData> listData = FXCollections.observableArrayList();
-//	//
-//	// String sql = "SELECT * FROM patient WHERE date_delete IS NULL AND patientId
-//	// = " + Data.patientId;
-//	// connect = Database.connectDB();
-//	//
-//	// try {
-//	// prepare = connect.prepareStatement(sql);
-//	// result = prepare.executeQuery();
-//	//
-//	// PatientData pData;
-//	// while (result.next()) {
-//	//// PatientsData(Integer id, Integer patientID, String description
-//	//// , String diagnosis, String treatment, Date date)
-//	// pData = new PatientData(result.getInt("id"),
-//	// result.getInt("patientId"),
-//	// result.getString("description"),
-//	// result.getString("diagnosis"),
-//	// result.getString("treatment"), result.getDate("date"));
-//	//
-//	// listData.add(pData);
-//	// }
-//	// } catch (Exception e) {
-//	// e.printStackTrace();
-//	// }
-//	// return listData;
-//	// }
-//
-//	public ObservableList<PatientData> homePatientListData;
-//
-//	// public void homePatientDisplayData() {
-//	// homePatientListData = homePatientGetData();
-//	//
-//	// home_patient_col_description.setCellValueFactory(new
-//	// PropertyValueFactory<>("description"));
-//	// home_patient_col_diagnosis.setCellValueFactory(new
-//	// PropertyValueFactory<>("diagnosis"));
-//	// home_patient_col_treatment.setCellValueFactory(new
-//	// PropertyValueFactory<>("treatment"));
-//	// home_patient_col_dateIn.setCellValueFactory(new
-//	// PropertyValueFactory<>("date"));
-//	//
-//	// home_patient_tableView.setItems(homePatientListData);
-//	// }
-//
-//	public ObservableList<AppointmentData> homeAppointmentGetData() {
-//
-//		ObservableList<AppointmentData> listData = FXCollections.observableArrayList();
-//
-//		String sql = "SELECT * FROM appointment WHERE date_delete IS NULL AND patientId = " + Data.patientId;
-//
-//		connect = Database.connectDB();
-//
-//		try {
-//			prepare = connect.prepareStatement(sql);
-//			result = prepare.executeQuery();
-//
-//			AppointmentData aData;
-//			while (result.next()) {
-//				// AppointmentData(Integer appointmentID, String description,
-//				// String diagnosis, String treatment, String doctorID, Date schedule)
-//				aData = new AppointmentData(result.getInt("appointment_id"), result.getString("description"),
-//						result.getString("diagnosis"), result.getString("treatment"), result.getString("doctor"),
-//						result.getDate("schedule"));
-//
-//				listData.add(aData);
-//			}
-//
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-//		return listData;
-//	}
-//
-//	public ObservableList<AppointmentData> homeAppointmentListData;
-//
-//	public void homeAppointmentDisplayData() {
-//		homeAppointmentListData = homeAppointmentGetData();
-//
-//		home_appointment_col_appointmenID.setCellValueFactory(new PropertyValueFactory<>("appointmentID"));
-//		home_appointment_col_description.setCellValueFactory(new PropertyValueFactory<>("description"));
-//		home_appointment_col_diagnosis.setCellValueFactory(new PropertyValueFactory<>("diagnosis"));
-//		home_appointment_col_treatment.setCellValueFactory(new PropertyValueFactory<>("treatment"));
-//		home_appointment_col_doctor.setCellValueFactory(new PropertyValueFactory<>("doctor"));
-//		home_appointment_col_schedule.setCellValueFactory(new PropertyValueFactory<>("schedule"));
-//
-//		home_appointment_tableView.setItems(homeAppointmentListData);
-//	}
-//
-//	public void homeDoctorInfoDisplay() {
-//
-//		String sql = "SELECT * FROM patient WHERE patientId = " + Data.patientId;
-//
-//		connect = Database.connectDB();
-//
-//		String tempDoctorID = "";
-//		try {
-//			prepare = connect.prepareStatement(sql);
-//			result = prepare.executeQuery();
-//
-//			if (result.next()) {
-//				tempDoctorID = result.getString("doctor");
-//			}
-//
-//			String checkDoctor = "SELECT * FROM doctor WHERE doctor_id = '" + tempDoctorID + "'";
-//
-//			statement = connect.createStatement();
-//			result = statement.executeQuery(checkDoctor);
-//
-//			if (result.next()) {
-//				home_doctor_name.setText(result.getString("full_name"));
-//				home_doctor_specialization.setText(result.getString("specialized"));
-//				home_doctor_email.setText(result.getString("email"));
-//				home_doctor_mobileNumber.setText(result.getString("mobile_number"));
-//
-//				String path = result.getString("image");
-//
-//				if (path != null) {
-//					path = path.replace("\\", "\\\\");
-//
-//					image = new Image("File:" + path, 138, 82, false, true);
-//					home_doctor_circle.setFill(new ImagePattern(image));
-//				}
-//
-//			}
-//
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-//
-//	}
-//
-//	// private ObservableList<DoctorData> doctorList =
-//	// FXCollections.observableArrayList();
-//
-//	// public ObservableList<DoctorData> doctorGetData() {
-//	//
-//	// String sql = "SELECT * FROM doctor WHERE status = 'Active'";
-//	//
-//	// connect = Database.connectDB();
-//	//
-//	// ObservableList<DoctorData> listData = FXCollections.observableArrayList();
-//	//
-//	// try {
-//	// prepare = connect.prepareStatement(sql);
-//	// result = prepare.executeQuery();
-//	//
-//	// DoctorData dData;
-//	//
-//	// while (result.next()) {
-//	//// DoctorData(Integer id, String doctorID, String fullName, String
-//	// specialized, String email)
-//	// dData = new DoctorData(result.getInt("id"),
-//	// result.getString("doctor_id"),
-//	// result.getString("full_name"),
-//	// result.getString("specialized"),
-//	// result.getString("email"),
-//	// result.getString("image"));
-//	//
-//	// listData.add(dData);
-//	// }
-//	//
-//	// } catch (Exception e) {
-//	// e.printStackTrace();
-//	// }
-//	// return listData;
-//	// }
-//
-//	// public void doctorShowCard() {
-//	// doctorList.clear();
-//	// doctorList.addAll(doctorGetData());
-//	//
-//	// doctors_gridPane.getChildren().clear();
-//	// doctors_gridPane.getColumnConstraints().clear();
-//	// doctors_gridPane.getRowConstraints().clear();
-//	//
-//	// int row = 0, column = 0;
-//	//
-//	// for (int q = 0; q < doctorList.size(); q++) {
-//	// try {
-//	// FXMLLoader loader = new FXMLLoader();
-//	// loader.setLocation(getClass().getResource("DoctorCard.fxml"));
-//	// StackPane stack = loader.load();
-//	//
-//	// DoctorCardController dController = loader.getController();
-//	// dController.setData(doctorList.get(q));
-//	//
-//	// if (column == 3) {
-//	// column = 0;
-//	// row++;
-//	// }
-//	//
-//	// doctors_gridPane.add(stack, column++, row);
-//	//
-//	// GridPane.setMargin(stack, new Insets(15));
-//	//
-//	// } catch (Exception e) {
-//	// e.printStackTrace();
-//	// }
-//	// }
-//	//
-//	// }
-//
-//	public void appointmentAppointmentInfoDisplay() {
-//
-//		String sql = "SELECT * FROM patient WHERE patientId = " + Data.patientId;
-//
-//		connect = Database.connectDB();
-//
-//		try {
-//			prepare = connect.prepareStatement(sql);
-//			result = prepare.executeQuery();
-//
-//			if (result.next()) {
-//				appointment_ad_name.setText(result.getString("full_name"));
-//				appointment_ad_mobileNumber.setText(result.getString("mobile_number"));
-//				appointment_ad_gender.setText(result.getString("gender"));
-//				appointment_ad_address.setText(result.getString("address"));
-//			}
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-//
-//	}
-//
-//	public void appointmentConfirmBtn() {
-//
-//		if (appointment_d_description.getText().isEmpty() || appointment_d_schedule.getValue() == null
-//				|| appointment_d_doctor.getSelectionModel().isEmpty()) {
-//			alert.errorMessage("Please fill all blank fields");
-//		} else {
-//
-//			appointment_ad_description.setText(appointment_d_description.getText());
-//			appointment_ad_doctorName.setText(appointment_d_doctor.getSelectionModel().getSelectedItem());
-//
-//			String sql = "SELECT * FROM doctor WHERE doctor_id = '"
-//					+ appointment_d_doctor.getSelectionModel().getSelectedItem() + "'";
-//
-//			connect = Database.connectDB();
-//			String tempSpecialized = "";
-//			try {
-//				prepare = connect.prepareStatement(sql);
-//				result = prepare.executeQuery();
-//
-//				if (result.next()) {
-//					tempSpecialized = result.getString("specialized");
-//				}
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-//
-//			appointment_ad_specialization.setText(tempSpecialized);
-//			appointment_ad_schedule.setText(String.valueOf(appointment_d_schedule.getValue()));
-//		}
-//
-//	}
-//
-//	public void appointmentDoctor() {
-//		String sql = "SELECT * FROM doctor WHERE delete_date IS NULL";
-//		connect = Database.connectDB();
-//
-//		try {
-//			prepare = connect.prepareStatement(sql);
-//			result = prepare.executeQuery();
-//
-//			ObservableList listData = FXCollections.observableArrayList();
-//			while (result.next()) {
-//				listData.add(result.getString("doctor_id"));
-//			}
-//
-//			appointment_d_doctor.setItems(listData);
-//
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-//	}
-//
-//	public void appointmentClearBtn() {
-//		appointment_d_doctor.getSelectionModel().clearSelection();
-//		appointment_d_description.clear();
-//		appointment_d_schedule.setValue(null);
-//
-//		appointment_ad_description.setText("");
-//		appointment_ad_doctorName.setText("");
-//		appointment_ad_specialization.setText("");
-//		appointment_ad_schedule.setText("");
-//	}
-//
-//	public void appointmentBookBtn() {
-//		connect = Database.connectDB();
-//
-//		if (appointment_ad_description.getText().isEmpty() || appointment_d_doctor.getSelectionModel().isEmpty()
-//				|| appointment_ad_specialization.getText().isEmpty() || appointment_ad_schedule.getText().isEmpty()) {
-//			alert.errorMessage("Invalid");
-//		} else {
-//			String selectData = "SELECT MAX(appointment_id) FROM appointment";
-//
-//			int tempAppID = 0;
-//
-//			try {
-//				statement = connect.createStatement();
-//				result = statement.executeQuery(selectData);
-//
-//				if (result.next()) {
-//					tempAppID = result.getInt("MAX(appointment_id)") + 1;
-//				}
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-//
-//			String insertData = "INSERT INTO appointment (appointment_id, patientId, name, gender"
-//					+ ", description, mobile_number, address, date" + ", doctor, specialized, schedule, status) "
-//					+ "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
-//			Date date = new Date();
-//			java.sql.Date sqlDate = new java.sql.Date(date.getTime());
-//			try {
-//				if (alert.confirmationMessage("Are you sure you want to book?")) {
-//					prepare = connect.prepareStatement(insertData);
-//					prepare.setString(1, String.valueOf(tempAppID));
-//					prepare.setString(2, String.valueOf(Data.patientId));
-//					prepare.setString(3, appointment_ad_name.getText());
-//					prepare.setString(4, appointment_ad_gender.getText());
-//					prepare.setString(5, appointment_ad_description.getText());
-//					prepare.setString(6, appointment_ad_mobileNumber.getText());
-//					prepare.setString(7, appointment_ad_address.getText());
-//					prepare.setString(8, String.valueOf(appointment_d_schedule.getValue()));
-//					prepare.setString(9, appointment_d_doctor.getSelectionModel().getSelectedItem());
-//					prepare.setString(10, appointment_ad_specialization.getText());
-//					prepare.setString(11, appointment_ad_schedule.getText());
-//					prepare.setString(12, "Active");
-//
-//					prepare.executeUpdate();
-//
-//					alert.successMessage("Successful !");
-//
-//					appointmentClearBtn();
-//				} else {
-//					alert.errorMessage("Cancelled.");
-//				}
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-//		}
-//	}
-	
-	
 	// =======================CRUD Drug==================================
 	private ObservableList<DrugData> drugMasterList = FXCollections.observableArrayList();
-	
+
 	private void initializeDrugFilters() {
-	    cmbDrugSearchBy.setItems(FXCollections.observableArrayList("Name", "Manufacturer", "Unit"));
-	    cmbDrugSearchBy.setValue("Name");
+		cmbDrugSearchBy.setItems(FXCollections.observableArrayList("Name", "Manufacturer", "Unit"));
+		cmbDrugSearchBy.setValue("Name");
 
-	    cmbDrugExpiryFilter.setItems(FXCollections.observableArrayList("All", "Valid", "Expired"));
-	    cmbDrugExpiryFilter.setValue("All");
+		cmbDrugExpiryFilter.setItems(FXCollections.observableArrayList("All", "Valid", "Expired"));
+		cmbDrugExpiryFilter.setValue("All");
 
-	    cmbDrugStockFilter.setItems(FXCollections.observableArrayList("All", "In Stock", "Out of Stock"));
-	    cmbDrugStockFilter.setValue("All");
+		cmbDrugStockFilter.setItems(FXCollections.observableArrayList("All", "In Stock", "Out of Stock"));
+		cmbDrugStockFilter.setValue("All");
 
-	    cmbDrugPriceSort.setItems(FXCollections.observableArrayList("None", "Low to High", "High to Low"));
-	    cmbDrugPriceSort.setValue("None");
-	    
-	    txtDrugSearch.clear();
-	    txtDrugSearch.setPromptText("Enter keyword to search");
+		cmbDrugPriceSort.setItems(FXCollections.observableArrayList("None", "Low to High", "High to Low"));
+		cmbDrugPriceSort.setValue("None");
 
-	    // Gắn listener để tự động lọc khi người dùng thay đổi
-	    txtDrugSearch.textProperty().addListener((obs, oldVal, newVal) -> applyAdvancedDrugFilter());
-	    cmbDrugSearchBy.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
-	    cmbDrugExpiryFilter.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
-	    cmbDrugStockFilter.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
-	    cmbDrugPriceSort.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
+		txtDrugSearch.clear();
+		txtDrugSearch.setPromptText("Enter keyword to search");
+
+		// Gắn listener để tự động lọc khi người dùng thay đổi
+		txtDrugSearch.textProperty().addListener((obs, oldVal, newVal) -> applyAdvancedDrugFilter());
+		cmbDrugSearchBy.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
+		cmbDrugExpiryFilter.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
+		cmbDrugStockFilter.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
+		cmbDrugPriceSort.valueProperty().addListener((obs, o, n) -> applyAdvancedDrugFilter());
 	}
-	
+
 	private void loadDrugTable() {
 		drugMasterList.clear();
-	    try {
-	        Connection conn = Database.connectDB();
-	        String sql = "SELECT Id, Name, Manufacturer, Expiry_date, Unit, Price, Stock, Create_date, Update_date "
-	        		+ "FROM DRUG ";
+		try {
+			Connection conn = Database.connectDB();
+			String sql = "SELECT Id, Name, Manufacturer, Expiry_date, Unit, Price, Stock, Create_date, Update_date "
+					+ "FROM DRUG ";
 
-	        PreparedStatement ps = conn.prepareStatement(sql);
-	        ResultSet rs = ps.executeQuery();
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ResultSet rs = ps.executeQuery();
 
-	        while (rs.next()) {
-	        	drugMasterList.add(new DrugData(
-	        		    rs.getString("Id"),
-	        		    rs.getString("Name"),
-	        		    rs.getString("Manufacturer"),
-	        		    rs.getString("Unit"),
-	        		    rs.getBigDecimal("Price"),
-	        		    rs.getInt("Stock"),
-	        		    rs.getDate("Expiry_date").toLocalDate(),
-	        		    rs.getTimestamp("Create_date"),
-	        		    rs.getTimestamp("Update_date")
-	        		));
-	        }
+			while (rs.next()) {
+				drugMasterList.add(new DrugData(rs.getString("Id"), rs.getString("Name"), rs.getString("Manufacturer"),
+						rs.getString("Unit"), rs.getBigDecimal("Price"), rs.getInt("Stock"),
+						rs.getDate("Expiry_date").toLocalDate(), rs.getTimestamp("Create_date"),
+						rs.getTimestamp("Update_date")));
+			}
 
-	        // Cột dữ liệu
-	        drug_col_id.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDrugId()));
-	        drug_col_name.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
-	        drug_col_manufacturer.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getManufacturer()));
-	        drug_col_expiry.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getExpiryDate().toString()));
-	        drug_col_unit.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getUnit()));
-	        drug_col_price.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getPrice().toString()));
-	        drug_col_stock.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(data.getValue().getStock())));
-	        drug_col_create.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCreateDate().toString()));
-	        drug_col_update.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getUpdateDate().toString()));
-	      
-	     // Cột hành động
-	        drug_col_action.setCellFactory(col -> new TableCell<>() {
-	            private final Button editBtn = new Button("Update");
-	            private final Button deleteBtn = new Button("Delete");
-	            private final HBox hbox = new HBox(5, editBtn, deleteBtn);
-	            {
-	                editBtn.setOnAction(e -> {
-	                    DrugData drug = getTableView().getItems().get(getIndex());
-	                    openEditDrugForm(drug);
-	                });
+			// Cột dữ liệu
+			drug_col_id.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDrugId()));
+			drug_col_name.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
+			drug_col_manufacturer
+					.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getManufacturer()));
+			drug_col_expiry
+					.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getExpiryDate().toString()));
+			drug_col_unit.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getUnit()));
+			drug_col_price.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getPrice().toString()));
+			drug_col_stock
+					.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(data.getValue().getStock())));
+			drug_col_create
+					.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCreateDate().toString()));
+			drug_col_update
+					.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getUpdateDate().toString()));
 
-	                deleteBtn.setOnAction(e -> {
-	                    DrugData drug = getTableView().getItems().get(getIndex());
-	                    deleteDrug(drug.getDrugId());
-	                });
-	            }
+			// Cột hành động
+			drug_col_action.setCellFactory(col -> new TableCell<>() {
+				private final Button editBtn = new Button("Update");
+				private final Button deleteBtn = new Button("Delete");
+				private final HBox hbox = new HBox(5, editBtn, deleteBtn);
+				{
+					editBtn.setOnAction(e -> {
+						DrugData drug = getTableView().getItems().get(getIndex());
+						openEditDrugForm(drug);
+					});
 
-	            @Override
-	            protected void updateItem(Void item, boolean empty) {
-	                super.updateItem(item, empty);
-	                setGraphic(empty ? null : hbox);
-	            }
-	        });
+					deleteBtn.setOnAction(e -> {
+						DrugData drug = getTableView().getItems().get(getIndex());
+						deleteDrug(drug.getDrugId());
+					});
+				}
 
-	        drug_tableView.setItems(drugMasterList);
-	        initializeDrugFilters();
-	        
-	        conn.close();
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        Alert alert = new Alert(Alert.AlertType.ERROR);
-	        alert.setContentText("Error loading drug list!");
-	        alert.showAndWait();
-	    }
+				@Override
+				protected void updateItem(Void item, boolean empty) {
+					super.updateItem(item, empty);
+					setGraphic(empty ? null : hbox);
+				}
+			});
+
+			drug_tableView.setItems(drugMasterList);
+			initializeDrugFilters();
+
+			conn.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+			Alert alert = new Alert(Alert.AlertType.ERROR);
+			alert.setContentText("Error loading drug list!");
+			alert.showAndWait();
+		}
 	}
-	
+
 	private void applyAdvancedDrugFilter() {
-	    String keyword = txtDrugSearch.getText().toLowerCase();
-	    String searchBy = cmbDrugSearchBy.getValue();
-	    String expiryFilter = cmbDrugExpiryFilter.getValue();
-	    String stockFilter = cmbDrugStockFilter.getValue();
-	    String priceSort = cmbDrugPriceSort.getValue();
+		String keyword = txtDrugSearch.getText().toLowerCase();
+		String searchBy = cmbDrugSearchBy.getValue();
+		String expiryFilter = cmbDrugExpiryFilter.getValue();
+		String stockFilter = cmbDrugStockFilter.getValue();
+		String priceSort = cmbDrugPriceSort.getValue();
 
-	    ObservableList<DrugData> filtered = FXCollections.observableArrayList();
+		ObservableList<DrugData> filtered = FXCollections.observableArrayList();
 
-	    for (DrugData drug : drugMasterList) {
-	        boolean matchesKeyword = true;
+		for (DrugData drug : drugMasterList) {
+			boolean matchesKeyword = true;
 
-	        switch (searchBy) {
-	            case "Name":
-	                matchesKeyword = drug.getName().toLowerCase().contains(keyword);
-	                break;
-	            case "Manufacturer":
-	                matchesKeyword = drug.getManufacturer().toLowerCase().contains(keyword);
-	                break;
-	            case "Unit":
-	                matchesKeyword = drug.getUnit().toLowerCase().contains(keyword);
-	                break;
-	        }
+			switch (searchBy) {
+			case "Name":
+				matchesKeyword = drug.getName().toLowerCase().contains(keyword);
+				break;
+			case "Manufacturer":
+				matchesKeyword = drug.getManufacturer().toLowerCase().contains(keyword);
+				break;
+			case "Unit":
+				matchesKeyword = drug.getUnit().toLowerCase().contains(keyword);
+				break;
+			}
 
-	        boolean matchesExpiry = expiryFilter.equals("All") ||
-	            (expiryFilter.equals("Valid") && drug.getExpiryDate().isAfter(LocalDate.now())) ||
-	            (expiryFilter.equals("Expired") && !drug.getExpiryDate().isAfter(LocalDate.now()));
+			boolean matchesExpiry = expiryFilter.equals("All")
+					|| (expiryFilter.equals("Valid") && drug.getExpiryDate().isAfter(LocalDate.now()))
+					|| (expiryFilter.equals("Expired") && !drug.getExpiryDate().isAfter(LocalDate.now()));
 
-	        boolean matchesStock = stockFilter.equals("All") ||
-	            (stockFilter.equals("In Stock") && drug.getStock() > 0) ||
-	            (stockFilter.equals("Out of Stock") && drug.getStock() <= 0);
+			boolean matchesStock = stockFilter.equals("All") || (stockFilter.equals("In Stock") && drug.getStock() > 0)
+					|| (stockFilter.equals("Out of Stock") && drug.getStock() <= 0);
 
-	        if (matchesKeyword && matchesExpiry && matchesStock) {
-	            filtered.add(drug);
-	        }
-	    }
+			if (matchesKeyword && matchesExpiry && matchesStock) {
+				filtered.add(drug);
+			}
+		}
 
-	    // Sort theo giá
-	    if (priceSort.equals("Low to High")) {
-	        FXCollections.sort(filtered, Comparator.comparing(DrugData::getPrice));
-	    } else if (priceSort.equals("High to Low")) {
-	        FXCollections.sort(filtered, Comparator.comparing(DrugData::getPrice).reversed());
-	    }
+		// Sort theo giá
+		if (priceSort.equals("Low to High")) {
+			FXCollections.sort(filtered, Comparator.comparing(DrugData::getPrice));
+		} else if (priceSort.equals("High to Low")) {
+			FXCollections.sort(filtered, Comparator.comparing(DrugData::getPrice).reversed());
+		}
 
-	    drug_tableView.setItems(filtered);
+		drug_tableView.setItems(filtered);
 	}
 
 	private void deleteDrug(String drugId) {
-	    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-	    alert.setTitle("Delete Confirmation");
-	    alert.setHeaderText("Are you sure you want to delete this drug?");
-	    alert.setContentText("This action cannot be undone.");
+		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+		alert.setTitle("Delete Confirmation");
+		alert.setHeaderText("Are you sure you want to delete this drug?");
+		alert.setContentText("This action cannot be undone.");
 
-	    Optional<ButtonType> result = alert.showAndWait();
-	    if (result.isPresent() && result.get() == ButtonType.OK) {
-	        try {
-	            Connection conn = Database.connectDB();
+		Optional<ButtonType> result = alert.showAndWait();
+		if (result.isPresent() && result.get() == ButtonType.OK) {
+			try {
+				Connection conn = Database.connectDB();
 
-	            String sql = "DELETE FROM DRUG WHERE Id = ?";
-	            PreparedStatement ps = conn.prepareStatement(sql);
-	            ps.setString(1, drugId);
-	            ps.executeUpdate();
+				String sql = "DELETE FROM DRUG WHERE Id = ?";
+				PreparedStatement ps = conn.prepareStatement(sql);
+				ps.setString(1, drugId);
+				ps.executeUpdate();
 
-	            conn.close();
-	            loadDrugTable(); // Refresh lại bảng sau khi xoá
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
-	    }
+				conn.close();
+				loadDrugTable(); // Refresh lại bảng sau khi xoá
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private void openEditDrugForm(DrugData drug) {
-	    try {
-	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/EditDrugForm.fxml"));
-	        Parent root = loader.load();
+		try {
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/EditDrugForm.fxml"));
+			Parent root = loader.load();
 
-	        EditDrugFormController controller = loader.getController();
-	        controller.setDrugData(drug); // Truyền dữ liệu sang form chỉnh sửa
+			EditDrugFormController controller = loader.getController();
+			controller.setDrugData(drug); // Truyền dữ liệu sang form chỉnh sửa
 
-	        Stage stage = new Stage();
-	        stage.initModality(Modality.APPLICATION_MODAL);
-	        stage.initStyle(StageStyle.UNDECORATED);
-	        stage.setTitle("Update Drug");
-	        stage.setScene(new Scene(root));
+			Stage stage = new Stage();
+			stage.initModality(Modality.APPLICATION_MODAL);
+			stage.initStyle(StageStyle.UNDECORATED);
+			stage.setTitle("Update Drug");
+			stage.setScene(new Scene(root));
 
-	        stage.setOnHidden(e -> loadDrugTable()); // Tải lại bảng khi form đóng
-	        stage.showAndWait();
+			stage.setOnHidden(e -> loadDrugTable()); // Tải lại bảng khi form đóng
+			stage.showAndWait();
 
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	        System.err.println("ERROR : " + e.getMessage());
-	    }
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("ERROR : " + e.getMessage());
+		}
 	}
-
 
 	@FXML
 	private void openAddDrugForm() {
-	    try {
-	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/AddDrugForm.fxml"));
-	        Parent root = loader.load();
+		try {
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/AddDrugForm.fxml"));
+			Parent root = loader.load();
 
-	        Stage stage = new Stage();
-	        stage.initModality(Modality.APPLICATION_MODAL);
-	        stage.setTitle("Add New Drug");
-	        stage.setScene(new Scene(root));
+			Stage stage = new Stage();
+			stage.initModality(Modality.APPLICATION_MODAL);
+			stage.setTitle("Add New Drug");
+			stage.setScene(new Scene(root));
 
-	        stage.setOnHidden(e -> loadDrugTable()); // Refresh lại bảng khi thêm thuốc
-	        stage.showAndWait();
+			stage.setOnHidden(e -> loadDrugTable()); // Refresh lại bảng khi thêm thuốc
+			stage.showAndWait();
 
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	    }
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
-	
+
 	// =======================CRUD Patient==================================
-private ObservableList<PatientData> patientMasterList = FXCollections.observableArrayList();
-	
+	private ObservableList<PatientData> patientMasterList = FXCollections.observableArrayList();
+
 	private void initializePatientFilters() {
-	    cmbPatientSearchBy.setItems(FXCollections.observableArrayList(
-	        "Name", "Email", "Phone", "Address", "Diagnosis", "Height", "Weight"
-	    ));
-	    cmbPatientSearchBy.setValue("Name");
-	    
-	    txtPatientSearch.clear();
+		cmbPatientSearchBy.setItems(FXCollections.observableArrayList("Name", "Email", "Phone", "Address", "Diagnosis",
+				"Height", "Weight"));
+		cmbPatientSearchBy.setValue("Name");
 
-	    cmbPatientGenderFilter.setItems(FXCollections.observableArrayList("All", "Male", "Female", "Other"));
-	    cmbPatientGenderFilter.setValue("All");
+		txtPatientSearch.clear();
 
-	    // Gắn listener
-	    txtPatientSearch.textProperty().addListener((obs, oldVal, newVal) -> applyPatientFilters());
-	    cmbPatientSearchBy.valueProperty().addListener((obs, o, n) -> applyPatientFilters());
-	    cmbPatientGenderFilter.valueProperty().addListener((obs, o, n) -> applyPatientFilters());
+		cmbPatientGenderFilter.setItems(FXCollections.observableArrayList("All", "Male", "Female", "Other"));
+		cmbPatientGenderFilter.setValue("All");
+
+		// Gắn listener
+		txtPatientSearch.textProperty().addListener((obs, oldVal, newVal) -> applyPatientFilters());
+		cmbPatientSearchBy.valueProperty().addListener((obs, o, n) -> applyPatientFilters());
+		cmbPatientGenderFilter.valueProperty().addListener((obs, o, n) -> applyPatientFilters());
 	}
-	
+
 	private void applyPatientFilters() {
-	    String keyword = txtPatientSearch.getText().toLowerCase();
-	    String searchBy = cmbPatientSearchBy.getValue();
-	    String selectedGender = cmbPatientGenderFilter.getValue();
+		String keyword = txtPatientSearch.getText().toLowerCase();
+		String searchBy = cmbPatientSearchBy.getValue();
+		String selectedGender = cmbPatientGenderFilter.getValue();
 
-	    ObservableList<PatientData> filtered = FXCollections.observableArrayList();
+		ObservableList<PatientData> filtered = FXCollections.observableArrayList();
 
-	    for (PatientData p : patientMasterList) {
-	        // 1. Tìm kiếm theo trường
-	        String fieldValue = switch (searchBy) {
-	            case "Name"      -> p.getName();
-	            case "Email"     -> p.getEmail();
-	            case "Phone"     -> p.getPhone();
-	            case "Address"   -> p.getAddress();
-	            case "Diagnosis" -> p.getDiagnosis();
-	            case "Height"    -> p.getHeight().toPlainString();
-	            case "Weight"    -> p.getWeight().toPlainString();
-	            default          -> "";
-	        };
+		for (PatientData p : patientMasterList) {
+			// 1. Tìm kiếm theo trường
+			String fieldValue = switch (searchBy) {
+			case "Name" -> p.getName();
+			case "Email" -> p.getEmail();
+			case "Phone" -> p.getPhone();
+			case "Address" -> p.getAddress();
+			case "Diagnosis" -> p.getDiagnosis();
+			case "Height" -> p.getHeight().toPlainString();
+			case "Weight" -> p.getWeight().toPlainString();
+			default -> "";
+			};
 
-	        boolean matchesKeyword = fieldValue != null && fieldValue.toLowerCase().contains(keyword);
-	        boolean matchesGender = selectedGender.equals("All") || p.getGender().equalsIgnoreCase(selectedGender);
+			boolean matchesKeyword = fieldValue != null && fieldValue.toLowerCase().contains(keyword);
+			boolean matchesGender = selectedGender.equals("All") || p.getGender().equalsIgnoreCase(selectedGender);
 
-	        if (matchesKeyword && matchesGender) {
-	            filtered.add(p);
-	        }
-	    }
+			if (matchesKeyword && matchesGender) {
+				filtered.add(p);
+			}
+		}
 
-	    patients_tableView.setItems(filtered);
+		patients_tableView.setItems(filtered);
 	}
-	
+
 	public void loadPatientTable() {
-	    patientMasterList.clear();
-	    		
-	    String sql = "SELECT Patient_id, Name, Email, Gender, Phone, Address, Diagnosis, Height, Weight, Create_date, Update_date FROM PATIENT";
+		patientMasterList.clear();
 
-	    try {
-	    	 Connection conn = Database.connectDB();
-	         PreparedStatement ps = conn.prepareStatement(sql);
-	         ResultSet rs = ps.executeQuery();
+		String sql = "SELECT Patient_id, Name, Email, Gender, Phone, Address, Diagnosis, Height, Weight, Create_date, Update_date FROM PATIENT";
 
-	        while (rs.next()) {
-	            PatientData patient = new PatientData(
-	                rs.getString("Patient_Id"),
-	                rs.getString("Name"),
-	                rs.getString("Email"),
-	                rs.getString("Gender"),
-	                rs.getString("Phone"),
-	                rs.getString("Address"),
-	                rs.getString("Diagnosis"),
-	                rs.getBigDecimal("Height"),
-	                rs.getBigDecimal("Weight"),
-	                rs.getTimestamp("Create_date"),
-        		    rs.getTimestamp("Update_date")
-	            );
-	            patientMasterList.add(patient);
-	        }
+		try {
+			Connection conn = Database.connectDB();
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ResultSet rs = ps.executeQuery();
 
-	        // Gán dữ liệu cho TableView
-	        patients_col_patientID.setCellValueFactory(new PropertyValueFactory<>("patientId"));
-	        patients_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
-	        patients_col_email.setCellValueFactory(new PropertyValueFactory<>("email"));
-	        patients_col_gender.setCellValueFactory(new PropertyValueFactory<>("gender"));
-	        patients_col_phone.setCellValueFactory(new PropertyValueFactory<>("phone"));
-	        patients_col_address.setCellValueFactory(new PropertyValueFactory<>("address"));
-	        patients_col_diagnosis.setCellValueFactory(new PropertyValueFactory<>("diagnosis"));
-	        patients_col_height.setCellValueFactory(new PropertyValueFactory<>("height"));
-	        patients_col_weight.setCellValueFactory(new PropertyValueFactory<>("weight"));
-	        patients_col_create.setCellValueFactory(new PropertyValueFactory<>("createDate"));
-	        patients_col_update.setCellValueFactory(new PropertyValueFactory<>("updateDate"));
-	        
-	        // Cột hành động
-	        patients_col_action.setCellFactory(col -> new TableCell<>() {
-	            private final Button editBtn = new Button("Update");
-	            private final Button deleteBtn = new Button("Delete");
-	            private final Button detailBtn = new Button("Detail");
-	            private final HBox hbox = new HBox(5, editBtn, deleteBtn, detailBtn);
-	            {
-	                editBtn.setOnAction(e -> {
-	                    PatientData patient = getTableView().getItems().get(getIndex());
-	                    openEditPatientForm(patient);
-	                });
+			while (rs.next()) {
+				PatientData patient = new PatientData(rs.getString("Patient_Id"), rs.getString("Name"),
+						rs.getString("Email"), rs.getString("Gender"), rs.getString("Phone"), rs.getString("Address"),
+						rs.getString("Diagnosis"), rs.getBigDecimal("Height"), rs.getBigDecimal("Weight"),
+						rs.getTimestamp("Create_date"), rs.getTimestamp("Update_date"));
+				patientMasterList.add(patient);
+			}
 
-	                deleteBtn.setOnAction(e -> {
-	                    PatientData patient = getTableView().getItems().get(getIndex());
-	                    deletePatient(patient.getPatientId());
-	                });
-	                detailBtn.setOnAction(e -> {
-	                    PatientData patient = getTableView().getItems().get(getIndex());
-	                    handleViewPatientDetail(patient.getPatientId());
-	                });
-	            }
+			// Gán dữ liệu cho TableView
+			patients_col_patientID.setCellValueFactory(new PropertyValueFactory<>("patientId"));
+			patients_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
+			patients_col_email.setCellValueFactory(new PropertyValueFactory<>("email"));
+			patients_col_gender.setCellValueFactory(new PropertyValueFactory<>("gender"));
+			patients_col_phone.setCellValueFactory(new PropertyValueFactory<>("phone"));
+			patients_col_address.setCellValueFactory(new PropertyValueFactory<>("address"));
+			patients_col_diagnosis.setCellValueFactory(new PropertyValueFactory<>("diagnosis"));
+			patients_col_height.setCellValueFactory(new PropertyValueFactory<>("height"));
+			patients_col_weight.setCellValueFactory(new PropertyValueFactory<>("weight"));
+			patients_col_create.setCellValueFactory(new PropertyValueFactory<>("createDate"));
+			patients_col_update.setCellValueFactory(new PropertyValueFactory<>("updateDate"));
 
-	            @Override
-	            protected void updateItem(Void item, boolean empty) {
-	                super.updateItem(item, empty);
-	                setGraphic(empty ? null : hbox);
-	            }
-	        });
+			// Cột hành động
+			patients_col_action.setCellFactory(col -> new TableCell<>() {
+				private final Button editBtn = new Button("Update");
+				private final Button deleteBtn = new Button("Delete");
+				private final Button detailBtn = new Button("Detail");
+				private final HBox hbox = new HBox(5, editBtn, deleteBtn, detailBtn);
+				{
+					editBtn.setOnAction(e -> {
+						PatientData patient = getTableView().getItems().get(getIndex());
+						openEditPatientForm(patient);
+					});
 
-	        patients_tableView.setItems(patientMasterList);
-	        conn.close();
-	        
+					deleteBtn.setOnAction(e -> {
+						PatientData patient = getTableView().getItems().get(getIndex());
+						deletePatient(patient.getPatientId());
+					});
+					detailBtn.setOnAction(e -> {
+						PatientData patient = getTableView().getItems().get(getIndex());
+						handleViewPatientDetail(patient.getPatientId());
+					});
+				}
+
+				@Override
+				protected void updateItem(Void item, boolean empty) {
+					super.updateItem(item, empty);
+					setGraphic(empty ? null : hbox);
+				}
+			});
+
+			patients_tableView.setItems(patientMasterList);
+			conn.close();
+
 //	        // Thêm nút cập nhật và xóa vào mỗi dòng
 //	        patients_col_action.setCellFactory(col -> new TableCell<>() {
 //	            private final Button btnEdit = new Button("Edit");
@@ -1017,122 +774,113 @@ private ObservableList<PatientData> patientMasterList = FXCollections.observable
 //	            }
 //	        });
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        Alert alert = new Alert(Alert.AlertType.ERROR);
-	        alert.setContentText("Error loading patient list!");
-	        alert.showAndWait();
-	    }
+		} catch (Exception e) {
+			e.printStackTrace();
+			Alert alert = new Alert(Alert.AlertType.ERROR);
+			alert.setContentText("Error loading patient list!");
+			alert.showAndWait();
+		}
 	}
-	
+
 	private void handleViewPatientDetail(String patientId) {
-	    try (Connection conn = Database.connectDB()) {
-	        String sql = "SELECT * FROM PATIENT WHERE Patient_id = ?";
-	        PreparedStatement ps = conn.prepareStatement(sql);
-	        ps.setString(1, patientId);
-	        ResultSet rs = ps.executeQuery();
+		try (Connection conn = Database.connectDB()) {
+			String sql = "SELECT * FROM PATIENT WHERE Patient_id = ?";
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setString(1, patientId);
+			ResultSet rs = ps.executeQuery();
 
-	        if (rs.next()) {
-	            PatientData patient = new PatientData(
-	                rs.getString("Patient_id"),
-	                rs.getString("Name"),
-	                rs.getString("Email"),
-	                rs.getString("Gender"),
-	                rs.getString("Phone"),
-	                rs.getString("Address"),
-	                rs.getString("Diagnosis"),
-	                rs.getBigDecimal("Height"),
-	                rs.getBigDecimal("Weight"),
-	                rs.getTimestamp("Create_date"),
-	                rs.getTimestamp("Update_date")
-	            );
+			if (rs.next()) {
+				PatientData patient = new PatientData(rs.getString("Patient_id"), rs.getString("Name"),
+						rs.getString("Email"), rs.getString("Gender"), rs.getString("Phone"), rs.getString("Address"),
+						rs.getString("Diagnosis"), rs.getBigDecimal("Height"), rs.getBigDecimal("Weight"),
+						rs.getTimestamp("Create_date"), rs.getTimestamp("Update_date"));
 
-	            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/PatientDetailView.fxml"));
-	            Parent root = loader.load();
+				FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/PatientDetailView.fxml"));
+				Parent root = loader.load();
 
-	            PatientDetailController controller = loader.getController();
-	            controller.setPatientData(patient); // truyền dữ liệu vào controller
+				PatientDetailController controller = loader.getController();
+				controller.setPatientData(patient); // truyền dữ liệu vào controller
 
-	            Stage stage = new Stage();
-	            stage.setTitle("Patient Detail");
-	            stage.setScene(new Scene(root));
-	            stage.show();
-	        } else {
-	            Alert alert = new Alert(Alert.AlertType.ERROR, "Patient not found.");
-	            alert.showAndWait();
-	        }
+				Stage stage = new Stage();
+				stage.setTitle("Patient Detail");
+				stage.setScene(new Scene(root));
+				stage.show();
+			} else {
+				Alert alert = new Alert(Alert.AlertType.ERROR, "Patient not found.");
+				alert.showAndWait();
+			}
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        Alert alert = new Alert(Alert.AlertType.ERROR, "Error loading patient detail: " + e.getMessage());
-	        alert.showAndWait();
-	    }
+		} catch (Exception e) {
+			e.printStackTrace();
+			Alert alert = new Alert(Alert.AlertType.ERROR, "Error loading patient detail: " + e.getMessage());
+			alert.showAndWait();
+		}
 	}
-	
+
 	private void deletePatient(String patientId) {
-	    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-	    alert.setTitle("Delete Confirmation");
-	    alert.setHeaderText("Are you sure you want to delete this patient?");
-	    alert.setContentText("This action cannot be undone.");
+		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+		alert.setTitle("Delete Confirmation");
+		alert.setHeaderText("Are you sure you want to delete this patient?");
+		alert.setContentText("This action cannot be undone.");
 
-	    Optional<ButtonType> result = alert.showAndWait();
-	    if (result.isPresent() && result.get() == ButtonType.OK) {
-	        try {
-	            Connection conn = Database.connectDB();
+		Optional<ButtonType> result = alert.showAndWait();
+		if (result.isPresent() && result.get() == ButtonType.OK) {
+			try {
+				Connection conn = Database.connectDB();
 
-	            String sql = "DELETE FROM PATIENT WHERE Patient_Id = ?";
-	            PreparedStatement ps = conn.prepareStatement(sql);
-	            ps.setString(1, patientId);
-	            ps.executeUpdate();
+				String sql = "DELETE FROM PATIENT WHERE Patient_Id = ?";
+				PreparedStatement ps = conn.prepareStatement(sql);
+				ps.setString(1, patientId);
+				ps.executeUpdate();
 
-	            conn.close();
-	            loadPatientTable(); // Refresh lại bảng sau khi xoá
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
-	    }
+				conn.close();
+				loadPatientTable(); // Refresh lại bảng sau khi xoá
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
-	
+
 	private void openEditPatientForm(PatientData patient) {
-	    try {
-	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/EditPatientForm.fxml"));
-	        Parent root = loader.load();
+		try {
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/EditPatientForm.fxml"));
+			Parent root = loader.load();
 
-	        EditPatientFormController controller = loader.getController();
-	        controller.setPatientData(patient); // Truyền dữ liệu sang form chỉnh sửa
+			EditPatientFormController controller = loader.getController();
+			controller.setPatientData(patient); // Truyền dữ liệu sang form chỉnh sửa
 
-	        Stage stage = new Stage();
-	        stage.initModality(Modality.APPLICATION_MODAL);
-	        stage.initStyle(StageStyle.UNDECORATED);
-	        stage.setTitle("Update Patient");
-	        stage.setScene(new Scene(root));
+			Stage stage = new Stage();
+			stage.initModality(Modality.APPLICATION_MODAL);
+			stage.initStyle(StageStyle.UNDECORATED);
+			stage.setTitle("Update Patient");
+			stage.setScene(new Scene(root));
 
-	        stage.setOnHidden(e -> loadPatientTable()); // Tải lại bảng khi form đóng
-	        stage.showAndWait();
+			stage.setOnHidden(e -> loadPatientTable()); // Tải lại bảng khi form đóng
+			stage.showAndWait();
 
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	        System.err.println("ERROR : " + e.getMessage());
-	    }
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("ERROR : " + e.getMessage());
+		}
 	}
-	
+
 	@FXML
 	private void openAddPatientForm() {
-	    try {
-	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/AddPatientForm.fxml"));
-	        Parent root = loader.load();
+		try {
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/AddPatientForm.fxml"));
+			Parent root = loader.load();
 
-	        Stage stage = new Stage();
-	        stage.initModality(Modality.APPLICATION_MODAL);
-	        stage.setTitle("Add New Patient");
-	        stage.setScene(new Scene(root));
+			Stage stage = new Stage();
+			stage.initModality(Modality.APPLICATION_MODAL);
+			stage.setTitle("Add New Patient");
+			stage.setScene(new Scene(root));
 
-	        stage.setOnHidden(e -> loadPatientTable()); // Refresh lại bảng khi thêm thuốc
-	        stage.showAndWait();
+			stage.setOnHidden(e -> loadPatientTable()); // Refresh lại bảng khi thêm thuốc
+			stage.showAndWait();
 
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	    }
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/* =====================LOAD PROFILE======================================== */
@@ -1199,41 +947,41 @@ private ObservableList<PatientData> patientMasterList = FXCollections.observable
 			prepare.setString(1, username);
 			result = prepare.executeQuery();
 			if (result.next()) {
-			    InputStream inputStream = result.getBinaryStream("Avatar");
+				InputStream inputStream = result.getBinaryStream("Avatar");
 
-			    if (inputStream != null) {
-			        // Đọc toàn bộ dữ liệu từ inputStream vào byte[]
-			        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-			        byte[] data = new byte[1024];
-			        int nRead;
-			        while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
-			            buffer.write(data, 0, nRead);
-			        }
-			        buffer.flush();
-			        byte[] imageBytes = buffer.toByteArray();
-			        inputStream.close();
+				if (inputStream != null) {
+					// Đọc toàn bộ dữ liệu từ inputStream vào byte[]
+					ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+					byte[] data = new byte[1024];
+					int nRead;
+					while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+						buffer.write(data, 0, nRead);
+					}
+					buffer.flush();
+					byte[] imageBytes = buffer.toByteArray();
+					inputStream.close();
 
-			        // Tạo nhiều InputStream từ cùng một mảng byte
-			        InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
-			        InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
+					// Tạo nhiều InputStream từ cùng một mảng byte
+					InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
+					InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
 
-			        Image img1 = new Image(imgStream1, 137, 95, true, true);
-			        profile_circle.setFill(new ImagePattern(img1));
+					Image img1 = new Image(imgStream1, 137, 95, true, true);
+					profile_circle.setFill(new ImagePattern(img1));
 
-			        Image img2 = new Image(imgStream2, 1012, 22, true, true);
+					Image img2 = new Image(imgStream2, 1012, 22, true, true);
 
-			        top_profile.setFill(new ImagePattern(img2));
-			    } else {
-			        System.out.println("Ảnh trong DB bị null.");
-			    }
+					top_profile.setFill(new ImagePattern(img2));
+				} else {
+					System.out.println("Ảnh trong DB bị null.");
+				}
 			}
 
 		} catch (Exception e) {
-			  System.out.println("Lỗi khi xử lý dữ liệu hình ảnh: " + e.getMessage());
+			System.out.println("Lỗi khi xử lý dữ liệu hình ảnh: " + e.getMessage());
 			e.printStackTrace();
 		}
 	}
-	
+
 	/* =====================EDIT PROFILE======================================== */
 	public void profileUpdateBtn() {
 		String name = txt_name_recept.getText();
@@ -1269,7 +1017,7 @@ private ObservableList<PatientData> patientMasterList = FXCollections.observable
 					return;
 				}
 			}
-			
+
 			// Cập nhật user_account
 			prepare = connect.prepareStatement(updateUserSQL);
 			prepare.setString(1, name);
@@ -1297,7 +1045,7 @@ private ObservableList<PatientData> patientMasterList = FXCollections.observable
 			alert.errorMessage("Error updating profile: " + e.getMessage());
 		}
 	}
-	
+
 	@FXML
 	private void profileImportBtn(ActionEvent event) {
 		FileChooser open = new FileChooser();
@@ -1335,8 +1083,783 @@ private ObservableList<PatientData> patientMasterList = FXCollections.observable
 			}
 		}
 	}
-	
-	/* =====================FORMAT AND INTIALIZE======================================== */
+	/*
+	 * =====================CREATE
+	 * APPOINTMENT========================================
+	 */
+
+	private void loadComboBoxPatient() {
+		ObservableList<PatientData> patientList = FXCollections.observableArrayList();
+		String sql = "SELECT * FROM patient";
+
+		try {
+			connect = Database.connectDB();
+			prepare = connect.prepareStatement(sql);
+			ResultSet rs = prepare.executeQuery();
+
+			while (rs.next()) {
+				LocalDate birthDate = rs.getDate("date_of_birth").toLocalDate();
+
+				patientList.add(new PatientData(rs.getString("patient_id"), rs.getString("name"), rs.getString("email"),
+						rs.getString("gender"), rs.getString("phone"), rs.getString("address"),
+						rs.getString("diagnosis"), rs.getBigDecimal("height"), rs.getBigDecimal("weight"), birthDate));
+			}
+			appointment_patient.setItems(patientList);
+
+			cb_patient.setItems(patientList);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void loadComboBoxService() {
+		ObservableList<ServiceData> serviceList = FXCollections.observableArrayList();
+
+		String sql = "SELECT * FROM service";
+
+		try {
+			connect = Database.connectDB();
+			prepare = connect.prepareStatement(sql);
+			ResultSet rs = prepare.executeQuery();
+
+			while (rs.next()) {
+				serviceList.add(new ServiceData(rs.getString("id"), rs.getString("name"), rs.getBigDecimal("price"),
+						rs.getString("type")));
+			}
+
+			cb_service.setItems(serviceList);
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void loadComboBoxDoctor(String serviceId, ComboBox<DoctorData> cbDoctor) {
+		ObservableList<DoctorData> doctorList = FXCollections.observableArrayList();
+
+		String sql = "SELECT d.Doctor_id, d.Phone, d.Service_id, d.Address, d.Is_confirmed, "
+				+ "u.Username, u.Password, u.Email, u.Name, u.Gender, u.Is_active, " + "s.Name AS ServiceName "
+				+ "FROM DOCTOR d " + "JOIN USER_ACCOUNT u ON d.Doctor_id = u.Id "
+				+ "LEFT JOIN SERVICE s ON d.Service_id = s.Id " + "WHERE d.Service_id = ?";
+
+		try {
+			connect = Database.connectDB();
+			prepare = connect.prepareStatement(sql);
+			prepare.setString(1, serviceId);
+			ResultSet rs = prepare.executeQuery();
+
+			while (rs.next()) {
+				doctorList.add(new DoctorData(rs.getString("Doctor_id"), rs.getString("Username"),
+						rs.getString("Password"), rs.getString("Name"), rs.getString("Email"), rs.getString("Gender"),
+						rs.getBoolean("Is_active"), rs.getString("Phone"), rs.getString("ServiceName"),
+						rs.getString("Address"), rs.getBoolean("Is_confirmed")));
+			}
+
+			cbDoctor.setItems(doctorList);
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void loadUrgencyLevels() {
+		cb_urgency.getItems().clear();
+		cb_urgency.getItems().addAll(UrgencyLevel.values());
+	}
+
+	@FXML
+	private void choosePatient(ActionEvent event) throws IOException {
+		selectedPatient = cb_patient.getSelectionModel().getSelectedItem();
+
+		if (selectedPatient != null) {
+			String sql = "SELECT * FROM patient WHERE patient_id = ?";
+			try (Connection connect = Database.connectDB(); PreparedStatement ps = connect.prepareStatement(sql)) {
+
+				ps.setString(1, selectedPatient.getPatientId());
+				ResultSet rs = ps.executeQuery();
+
+				if (rs.next()) {
+					lb_patient_name.setText(rs.getString("name"));
+					lb_patient_gender.setText(rs.getString("gender"));
+					lb_patient_address.setText(rs.getString("gender"));
+					int age = Period.between(selectedPatient.getBirthDate(), LocalDate.now()).getYears();
+					lb_patient_age.setText(String.valueOf(age));
+				}
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		} else {
+			lb_patient_name.setText("");
+		}
+
+	}
+
+	@FXML
+	private void chooseService(ActionEvent event) throws IOException {
+		ComboBox<ServiceData> cbService = (ComboBox<ServiceData>) event.getSource();
+		AnchorPane currentPane = (AnchorPane) cbService.getParent();
+		Label lbPrice = (Label) currentPane.lookup("#lb_price_service");
+
+		ComboBox<DoctorData> cbDoctor = (ComboBox<DoctorData>) currentPane.lookup("#cb_doctor");
+
+		ServiceData selectedService = cb_service.getSelectionModel().getSelectedItem();
+
+		if (selectedService != null) {
+			String sql = "SELECT * FROM service WHERE id = ?";
+			try (Connection connect = Database.connectDB(); PreparedStatement ps = connect.prepareStatement(sql)) {
+
+				ps.setString(1, selectedService.getServiceId());
+				ResultSet rs = ps.executeQuery();
+
+				if (rs.next()) {
+					lbPrice.setText(formatCurrencyVND(rs.getBigDecimal("price")));
+				}
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			loadComboBoxDoctor(selectedService.getServiceId(), cbDoctor);
+		} else {
+			lbPrice.setText("");
+		}
+
+	}
+
+	@FXML
+	private void addNewForm(ActionEvent event) {
+		try {
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ChooseServiceForm.fxml"));
+			AnchorPane newForm = loader.load();
+
+			int insertPos = vboxContainer.getChildren().size() - 2;
+			if (insertPos < 0) {
+				insertPos = 0;
+			}
+
+			vboxContainer.getChildren().add(insertPos, newForm);
+//	        updateRemoveButtons();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@FXML
+	private void removeForm(ActionEvent event) {
+		Button btn = (Button) event.getSource();
+		AnchorPane pane = (AnchorPane) btn.getParent();
+
+		VBox vboxContainer = (VBox) pane.getParent();
+
+//		if (vboxContainer.getChildren().size() <= 1) {
+//			return;
+//		}
+
+		vboxContainer.getChildren().remove(pane);
+//		updateRemoveButtons();
+	}
+
+//	private void updateRemoveButtons() {
+//		ObservableList<Node> children = vboxContainer.getChildren();
+//
+//		for (int i = 0; i < children.size(); i++) {
+//			Node node = children.get(i);
+//			if (node instanceof AnchorPane) {
+//				AnchorPane pane = (AnchorPane) node;
+//				Button btnRemove = (Button) pane.lookup("#btn_remove");
+//				if (btnRemove != null) {
+//					btnRemove.setVisible(i != 0);
+//				}
+//			}
+//		}
+//	}
+
+	// lấy danh sách các serviceId
+	private List<String> getSelectedServiceIdsFromVBox() {
+		List<String> serviceIds = new ArrayList<>();
+		for (Node node : vboxContainer.getChildren()) {
+			if (node instanceof AnchorPane) {
+				AnchorPane pane = (AnchorPane) node;
+				ComboBox<ServiceData> cbService = (ComboBox<ServiceData>) pane.lookup("#cb_service");
+				if (cbService != null) {
+					ServiceData selected = cbService.getSelectionModel().getSelectedItem();
+					if (selected != null) {
+						serviceIds.add(selected.getServiceId());
+					}
+				}
+			}
+		}
+		return serviceIds;
+	}
+
+	// tạo suggest
+	@FXML
+	public void createSuggest(ActionEvent event) throws IOException, InterruptedException {
+
+		if (selectedPatient == null) {
+			alert.errorMessage("⚠ Please select patient.");
+			return;
+		}
+
+		if (cb_urgency.getValue() == null) {
+			alert.errorMessage("⚠ Please select urgency level.");
+			return;
+		}
+		String patientId = selectedPatient.getPatientId();
+		List<String> serviceIds = getSelectedServiceIdsFromVBox();
+		int urgency = cb_urgency.getValue().getScore();
+		boolean isFollowup = checkbox_followUp.isSelected();
+		AppointmentSuggester suggester = new AppointmentSuggester(txt_suggest);
+		suggester.createSuggest(patientId, serviceIds, urgency, isFollowup);
+	}
+
+	boolean isAvailableAppointment = true;
+	boolean isCheck = false;
+
+	// Lấy danh sách dịch vụ đã chọn
+	List<String> selectedServiceNames = new ArrayList<>();
+	List<Map<String, String>> selectedDoctorInfos = new ArrayList<>();
+	List<String> selectedSlotTimes = new ArrayList<>();
+	List<LocalDate> selectTimes = new ArrayList<>();
+	List<LocalTime> slotTimes = new ArrayList<>();
+
+	PatientData selectedPatient = new PatientData();
+	int urgency;
+	boolean isFollowup;
+
+	// kiểm tra trùng lịch khám
+	public boolean hasDuplicateSlots() {
+		Set<String> bookedSlots = new HashSet<>();
+
+		for (int i = 0; i < selectTimes.size(); i++) {
+			LocalDate date = selectTimes.get(i);
+			LocalTime time = slotTimes.get(i);
+
+			String key = date.toString() + "|" + time.toString();
+
+			if (bookedSlots.contains(key)) {
+				return true;
+			} else {
+				bookedSlots.add(key);
+			}
+		}
+
+		return false;
+	}
+
+	// check lịch hẹn
+	@FXML
+	public void checkSchedule(ActionEvent event) {
+		isAvailableAppointment = true;
+		isCheck = true;
+		txt_details.clear();
+		selectedServiceNames.clear();
+		selectedDoctorInfos.clear();
+		selectedSlotTimes.clear();
+		selectTimes.clear();
+		slotTimes.clear();
+		if (selectedPatient == null) {
+			alert.errorMessage("⚠ Please select patient!");
+			isAvailableAppointment = false;
+			return;
+		}
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("🔹 Patient: ").append(selectedPatient.getName()).append("\n\n");
+
+		for (Node node : vboxContainer.getChildren()) {
+
+			if (node instanceof AnchorPane anchorPane) {
+				// Lấy thông tin dịch vụ
+				ComboBox<ServiceData> cbService = (ComboBox<ServiceData>) anchorPane.lookup("#cb_service");
+				ComboBox<DoctorData> cbDoctor = (ComboBox<DoctorData>) anchorPane.lookup("#cb_doctor");
+				DatePicker selectTime = (DatePicker) anchorPane.lookup("#select_time");
+				Spinner<Integer> selectHour = (Spinner<Integer>) anchorPane.lookup("#spHour");
+				Spinner<Integer> selectMinute = (Spinner<Integer>) anchorPane.lookup("#spMinute");
+
+				String serviceName = (cbService != null && cbService.getValue() != null)
+						? cbService.getValue().getName()
+						: "Haven't chosen service";
+
+				if (serviceName == null) {
+					alert.errorMessage("⚠ Please fill all the banks.");
+					isAvailableAppointment = false;
+					return;
+				}
+
+				String doctorName = (cbDoctor != null && cbDoctor.getValue() != null) ? cbDoctor.getValue().getName()
+						: "Haven't chosen doctor";
+				String doctorId = (cbDoctor != null && cbDoctor.getValue() != null) ? cbDoctor.getValue().getId()
+						: null;
+
+				if (doctorId == null) {
+					alert.errorMessage("⚠ Please select doctor for service " + serviceName);
+					isAvailableAppointment = false;
+					return;
+				}
+
+				String slotTimeStr;
+				String selectTimeStr;
+				if (selectTime != null && selectTime.getValue() != null) {
+					Integer hour = selectHour != null && selectHour.getValue() != null ? selectHour.getValue() : 0;
+					Integer minute = selectMinute != null && selectMinute.getValue() != null ? selectMinute.getValue()
+							: 0;
+
+					LocalDate date = selectTime.getValue();
+					LocalTime time = LocalTime.of(hour, minute);
+					LocalDateTime dateTime = LocalDateTime.of(date, time);
+
+					slotTimeStr = time.format(DateTimeFormatter.ofPattern("HH:mm"));
+					selectTimeStr = dateTime.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+
+					String sqlDoctor = "SELECT COUNT(*) FROM AVAILABLE_SLOT WHERE Doctor_id = ? AND TIME(Slot_time) = ? AND Is_booked = TRUE";
+					String sqlPatient = "SELECT COUNT(*) FROM APPOINTMENT" + " WHERE Patient_id = ? AND TIME = ?";
+					try {
+						connect = Database.connectDB();
+						prepare = connect.prepareStatement(sqlDoctor);
+						prepare.setString(1, doctorId);
+						prepare.setString(2, slotTimeStr);
+						ResultSet rs = prepare.executeQuery();
+						if (rs.next()) {
+							int count = rs.getInt(1);
+							if (count > 0) {
+								lb_check.setText("⚠ Bác sĩ " + cbDoctor.getValue().getName()
+										+ " đã có lịch hẹn vào lúc " + slotTimeStr);
+								isAvailableAppointment = false;
+								return;
+							}
+						}
+						DateTimeFormatter inputFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+						DateTimeFormatter sqlFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+						String sqlTimeStr = LocalDateTime.parse(selectTimeStr, inputFormat).format(sqlFormat);
+
+						prepare = connect.prepareStatement(sqlPatient);
+						prepare.setString(1, selectedPatient.getPatientId());
+						prepare.setString(2, sqlTimeStr);
+						rs = prepare.executeQuery();
+						if (rs.next()) {
+							int count = rs.getInt(1);
+							if (count > 0) {
+								lb_check.setText("⚠ " + serviceName
+										+ " is coincided. This patient has already have appointment at " + slotTimeStr);
+								isAvailableAppointment = false;
+								return;
+							}
+						}
+					} catch (SQLException e) {
+						e.printStackTrace();
+						lb_check.setText("❌ Error while checking appointments!");
+					}
+					selectedServiceNames.add(serviceName);
+
+					Map<String, String> doctorInfo = new HashMap<>();
+					doctorInfo.put("id", doctorId);
+					doctorInfo.put("name", doctorName);
+
+					selectedDoctorInfos.add(doctorInfo);
+
+					selectedSlotTimes.add(selectTimeStr);
+					selectTimes.add(date);
+					slotTimes.add(time);
+
+				} else {
+					// Chưa chọn thời gian
+					lb_check.setText("You haven't choose time for service " + serviceName);
+					isAvailableAppointment = false;
+				}
+
+			}
+		}
+
+		if (selectedServiceNames.isEmpty()) {
+			alert.errorMessage("⚠ Please select at lease 1 service.");
+			isAvailableAppointment = false;
+			return;
+		}
+
+		if (hasDuplicateSlots()) {
+			alert.errorMessage("⚠ There are duplicated appointments among your chosen doctors!.");
+			isAvailableAppointment = false;
+			return;
+		}
+
+		// Lấy thông tin khác
+		urgency = cb_urgency.getValue() != null ? cb_urgency.getValue().getScore() : 1;
+		isFollowup = checkbox_followUp.isSelected();
+
+		// Ghi thông tin vào txt_details
+		for (int i = 0; i < selectedServiceNames.size(); i++) {
+			sb.append("📌 Service: ").append(selectedServiceNames.get(i)).append("\n");
+			sb.append("👨‍⚕️ Doctor: ").append(selectedDoctorInfos.get(i).get("name")).append("\n");
+			sb.append("⏰ Time: ").append(selectedSlotTimes.get(i)).append("\n");
+			sb.append("----------------------------------------\n");
+		}
+
+		sb.append("\n🔻 Emergency: ").append(urgency);
+		sb.append("\n🔁 Follow Up: ").append(isFollowup ? "Yes" : "No");
+		txt_details.setText(sb.toString());
+
+		if (isAvailableAppointment) {
+			lb_check.setText("✔ These appointments are valid!");
+		}
+
+	}
+
+	@FXML
+	public void createAppointment(ActionEvent event) {
+		if (!isCheck) {
+			alert.errorMessage("⚠ Please check all the fields before creating.");
+			return;
+		}
+
+		if (!isAvailableAppointment) {
+			alert.errorMessage("⚠ There is more than one invalid appointment. Please recheck!");
+			return;
+		}
+
+		try {
+			String insertAppointmentSQL = "INSERT INTO APPOINTMENT (Id, Time, Status, Doctor_id, Patient_id, Urgency_level, Is_followup, Priority_score) "
+					+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+			String updateSlotSQL = "UPDATE AVAILABLE_SLOT SET Doctor_id = ?, Is_booked = ?, Appointment_id = ? "
+					+ "WHERE Id = ?";
+			String findSlotSQL = "SELECT Id FROM AVAILABLE_SLOT WHERE Doctor_id = ? AND Slot_date = ? AND Slot_time = ? AND Is_booked = FALSE LIMIT 1";
+			connect = Database.connectDB();
+			PreparedStatement psFindSlot = connect.prepareStatement(findSlotSQL);
+			PreparedStatement psInsertAppointment = connect.prepareStatement(insertAppointmentSQL);
+			PreparedStatement psUpdateSlot = connect.prepareStatement(updateSlotSQL);
+
+			for (int i = 0; i < selectedServiceNames.size(); i++) {
+				// Lấy dữ liệu từ danh sách
+				String serviceName = selectedServiceNames.get(i);
+				String doctorId = selectedDoctorInfos.get(i).get("id");
+				String doctorName = selectedDoctorInfos.get(i).get("name");
+				LocalDate date = selectTimes.get(i);
+				LocalTime time = slotTimes.get(i);
+				LocalDateTime appointmentDateTime = LocalDateTime.of(date, time);
+
+				// 1. Tìm slot trống
+				psFindSlot.setString(1, doctorId);
+				psFindSlot.setDate(2, java.sql.Date.valueOf(date));
+				psFindSlot.setTime(3, java.sql.Time.valueOf(time));
+
+				ResultSet rs = psFindSlot.executeQuery();
+
+				if (rs.next()) {
+					String slotId = rs.getString("Id");
+
+					// 2. Tạo ID lịch hẹn mới
+					String appointmentId = UUID.randomUUID().toString();
+					psInsertAppointment.setString(1, appointmentId);
+					psInsertAppointment.setTimestamp(2, Timestamp.valueOf(appointmentDateTime));
+					psInsertAppointment.setString(3, "Coming");
+					psInsertAppointment.setString(4, doctorId);
+					psInsertAppointment.setString(5, selectedPatient.getPatientId());
+					psInsertAppointment.setInt(6, urgency);
+					psInsertAppointment.setBoolean(7, isFollowup);
+					psInsertAppointment.setInt(8, 0);
+
+					psInsertAppointment.executeUpdate();
+
+					// 3. Update slot thành đã đặt + gán Appointment_id
+					psUpdateSlot.setString(1, doctorId);
+					psUpdateSlot.setBoolean(2, true);
+					psUpdateSlot.setString(3, appointmentId);
+					psUpdateSlot.setString(4, slotId);
+					psUpdateSlot.executeUpdate();
+
+				} else {
+					alert.errorMessage("⚠ There is no empty slot for " + doctorName + " at: " + time.toString()
+							+ " date: " + date.toString());
+				}
+			}
+			alert.successMessage("✔ Create Appointment Successfully!");
+
+			// gọi hàm in hoá đơn thanh toán ở đây
+
+			// Xoá danh sách tạm sau khi tạo xong
+			selectedServiceNames.clear();
+			selectedDoctorInfos.clear();
+			selectedSlotTimes.clear();
+			selectTimes.clear();
+			slotTimes.clear();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			alert.errorMessage("❌ Lỗi khi tạo lịch hẹn: " + e.getMessage());
+		}
+	}
+
+	public void clearSuggestion(ActionEvent event) {
+		txt_suggest.clear();
+	}
+	/*
+	 * =====================MANGE APPOINTMENT AND PRINT DRUG
+	 * BILL========================================
+	 */
+
+	private void loadAppointmentData() {
+		String sql = """
+				    SELECT
+				        a.id,
+				        a.time,
+				        a.status AS appointment_status,
+				        a.Doctor_id,
+				        ua.name AS doctor_name,
+				        a.Patient_id AS patient_id,
+				        pt.name AS patient_name,
+				        pt.phone AS contact_number,
+				        s.id AS service_id,
+				        s.name AS service_name,
+				        a.cancel_reason,
+				        p.status AS prescription_status,
+				        a.create_date,
+				        a.update_date
+				    FROM appointment a
+				             JOIN doctor d ON a.Doctor_id = d.Doctor_id
+				    JOIN user_account ua ON ua.id = a.Doctor_id
+				    JOIN patient pt ON pt.Patient_id = a.Patient_id
+				    JOIN service s ON d.service_id = s.id
+				    LEFT JOIN prescription p ON p.Appointment_id = a.id
+				""";
+
+		connect = Database.connectDB();
+		try {
+			prepare = connect.prepareStatement(sql);
+			result = prepare.executeQuery();
+			appoinmentListData.clear();
+			while (result.next()) {
+				String id = result.getString("id");
+				Timestamp time = result.getTimestamp("time");
+				String status = result.getString("appointment_status");
+				String doctorId = result.getString("Doctor_id");
+				String doctorName = result.getString("doctor_name");
+				String patientId = result.getString("patient_id");
+				String patientName = result.getString("patient_name");
+				String contactNumber = result.getString("contact_number");
+				String serviceId = result.getString("Service_id");
+				String serviceName = result.getString("service_name");
+				String reason = result.getString("cancel_reason");
+				String prescriptionStatus = result.getString("prescription_status");
+				Timestamp createdDate = result.getTimestamp("create_date");
+				Timestamp lastModifiedDate = result.getTimestamp("update_date");
+
+				appoinmentListData.add(new AppointmentData(id, time, status, reason, doctorId, patientId, serviceId,
+						serviceName, prescriptionStatus, createdDate, lastModifiedDate, patientName, doctorName,
+						contactNumber));
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void appointmentUpdateBtn() {
+		AppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
+		String appointmentID = "";
+		if (selectedAppointment != null) {
+			appointmentID = selectedAppointment.getId();
+		} else {
+			alert.errorMessage("Please select appointment to update");
+		}
+
+		Integer hour = spHour1 != null && spHour1.getValue() != null ? spHour1.getValue() : 0;
+		Integer minute = spMinute1 != null && spMinute1.getValue() != null ? spMinute1.getValue() : 0;
+
+		LocalDate dateSet = appointment_date.getValue();
+		LocalTime timeSet = LocalTime.of(hour, minute);
+		LocalDateTime dateTime = LocalDateTime.of(dateSet, timeSet);
+
+		String slotTimeStr = dateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")); // cho DB TIME
+		String selectTimeStr = dateTime.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")); // cho hiển thị
+		DateTimeFormatter inputFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+		DateTimeFormatter sqlFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+		String sqlTimeStr = LocalDateTime.parse(selectTimeStr, inputFormat).format(sqlFormat);
+
+		String status = appointment_status.getSelectionModel().getSelectedItem();
+		String cancelReason = appointment_cancelReason.getText();
+		String patientID = appointment_patient.getSelectionModel().getSelectedItem().getPatientId();
+		String doctorId = appointment_doctor.getSelectionModel().getSelectedItem().getId();
+		String doctorName = appointment_doctor.getSelectionModel().getSelectedItem().getName();
+		String serviceName = appointment_serviceName.getText();
+
+		if (appointmentID.isEmpty() || sqlTimeStr.isEmpty() || status.isEmpty() || patientID.isEmpty()) {
+			alert.errorMessage("Please fill all blank fields");
+			System.out.println(sqlTimeStr);
+			return;
+		}
+
+		// Chuẩn bị các câu truy vấn kiểm tra
+		String sqlDoctor = "SELECT COUNT(*) FROM AVAILABLE_SLOT WHERE Doctor_id = ? AND TIME(Slot_time) = ? AND Is_booked = TRUE";
+		String sqlPatient = "SELECT COUNT(*) FROM APPOINTMENT WHERE Patient_id = ? AND time = ?";
+		String sqlUpdate = "UPDATE appointment SET time = ?, status = ?, cancel_reason = ?, patient_id = ?, doctor_id = ? WHERE id = ?";
+
+		try {
+			connect = Database.connectDB();
+
+			// 1. Check lịch của bác sĩ
+			prepare = connect.prepareStatement(sqlDoctor);
+			prepare.setString(1, doctorId);
+			prepare.setString(2, slotTimeStr); // slotTimeStr định dạng 'HH:mm:ss' hoặc tương tự
+			ResultSet rs = prepare.executeQuery();
+			if (rs.next()) {
+				int count = rs.getInt(1);
+				if (count > 0) {
+					lb_check.setText("⚠ Doctor " + doctorName + " has already had appointment " + slotTimeStr);
+					isAvailableAppointment = false;
+					return;
+				}
+			}
+
+			// 2. Check lịch của bệnh nhân
+
+			prepare = connect.prepareStatement(sqlPatient);
+			prepare.setString(1, selectedPatient.getPatientId());
+			prepare.setString(2, sqlTimeStr);
+			rs = prepare.executeQuery();
+			if (rs.next()) {
+				int count = rs.getInt(1);
+				if (count > 0) {
+					lb_check.setText("⚠ " + serviceName + " is coincided. This patient already has an appointment at "
+							+ slotTimeStr);
+					isAvailableAppointment = false;
+					return;
+				}
+			}
+
+			prepare = connect.prepareStatement(sqlUpdate);
+			prepare.setString(1, sqlTimeStr);
+			prepare.setString(2, status);
+			prepare.setString(3, cancelReason);
+			prepare.setString(4, patientID);
+			prepare.setString(5, doctorId);
+			prepare.setString(6, appointmentID);
+
+			int rowsUpdated = prepare.executeUpdate();
+			if (rowsUpdated > 0) {
+				alert.successMessage("Appointment updated successfully.");
+				appointmentClearBtn();
+				loadAppointmentData();
+			} else {
+				alert.errorMessage("No appointment found with ID: " + appointmentID);
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			alert.errorMessage("Error updating appointment: " + e.getMessage());
+		}
+
+	}
+
+	public void appointmentPrescriptionBtn() {
+		// Get the selected appointment
+		AppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
+		if (selectedAppointment == null) {
+			alert.errorMessage("Please select an appointment first.");
+			return;
+		}
+		if (!selectedAppointment.getStatus().equals(AppointmentStatus.Finish.toString())) {
+			alert.errorMessage("This appointment has not finished yet.");
+			return;
+		}
+
+		// load đơn thuốc xong in tính tiền ở đây
+
+	}
+
+	public void appointmentSelect() {
+		AppointmentData appointmentData = appointments_tableView.getSelectionModel().getSelectedItem();
+		int index = appointments_tableView.getSelectionModel().getSelectedIndex();
+		if (index <= -1 || appointmentData == null) {
+			System.out.println("No appointment selected");
+			return;
+		}
+
+		loadComboBoxDoctor(appointmentData.getServiceId(), appointment_doctor);
+		for (DoctorData doc : appointment_doctor.getItems()) {
+			if (doc.getId().equals(appointmentData.getDoctorId())) {
+				appointment_doctor.getSelectionModel().select(doc);
+				break;
+			}
+		}
+		appointment_serviceName.setText(appointmentData.getServiceName());
+		appointment_mobileNumber.setText(appointmentData.getContactNumber());
+
+		appointment_status.setValue(appointmentData.getStatus());
+		appointment_cancelReason.setText(appointmentData.getCancelReason());
+
+		for (PatientData patient : appointment_patient.getItems()) {
+			if (patient.getPatientId().equals(appointmentData.getPatientId())) {
+				appointment_patient.getSelectionModel().select(patient);
+				break;
+			}
+		}
+
+		appointment_date.setValue(appointmentData.getLocalDate());
+
+		spHour1.getValueFactory().setValue(appointmentData.getLocalTime().getHour());
+		spMinute1.getValueFactory().setValue(appointmentData.getLocalTime().getMinute());
+
+		appointment_createdDate.setText(FormatterUtils.formatTime(appointmentData.getCreateDate().toString()));
+		appointment_updatedDate.setText(FormatterUtils.formatTime(appointmentData.getUpdateDate().toString()));
+	}
+
+	public void appointmentDeleteBtn() {
+		AppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
+		String appointmentID = "";
+		if (selectedAppointment != null) {
+			appointmentID = selectedAppointment.getId();
+		} else {
+			alert.errorMessage("Please select appointment to update");
+		}
+		System.out.println("Appointment ID: " + appointmentID);
+
+		if (appointmentID.isEmpty()) {
+			alert.errorMessage("Please select an appointment to delete.");
+			return;
+		}
+
+		String sql = "DELETE FROM appointment WHERE id = ?";
+		connect = Database.connectDB();
+		try {
+			prepare = connect.prepareStatement(sql);
+			prepare.setString(1, appointmentID);
+
+			int rowsDeleted = prepare.executeUpdate();
+			if (rowsDeleted > 0) {
+				alert.successMessage("Appointment deleted successfully.");
+				appointmentClearBtn();
+				loadAppointmentData();
+			} else {
+				alert.errorMessage("No appointment found with ID: " + appointmentID);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			alert.errorMessage("Error deleting appointment: " + e.getMessage());
+		}
+	}
+
+	public void appointmentClearBtn() {
+
+		appointment_doctor.getSelectionModel().clearSelection();
+		appointment_serviceName.clear();
+		appointment_mobileNumber.clear();
+		appointment_patient.getSelectionModel().clearSelection();
+		appointment_status.getSelectionModel().clearSelection();
+		appointment_status.setValue("");
+		appointment_cancelReason.clear();
+		appointment_date.getEditor().clear();
+		spMinute1.getValueFactory().setValue(null); 
+		spHour1.getValueFactory().setValue(null); 
+
+		appointment_createdDate.setText("");
+		appointment_updatedDate.setText("");
+	}
+
+	/*
+	 * =====================FORMAT AND
+	 * INTIALIZE========================================
+	 */
 	@FXML
 	private void switchForm(ActionEvent event) {
 
@@ -1348,9 +1871,11 @@ private ObservableList<PatientData> patientMasterList = FXCollections.observable
 			showForm("drugs");
 		} else if (event.getSource() == appointments_btn) {
 			showForm("appointments");
+		} else if (event.getSource() == appointments_manage_btn) {
+			showForm("appointments_manage");
 		} else if (event.getSource() == profile_btn) {
 			showForm("profile");
-		} 
+		}
 	}
 
 	private void showForm(String formName) {
@@ -1358,42 +1883,45 @@ private ObservableList<PatientData> patientMasterList = FXCollections.observable
 		drugs_form.setVisible(false);
 		patients_form.setVisible(false);
 		appointments_form.setVisible(false);
+		appointments_manage_form.setVisible(false);
 		profile_form.setVisible(false);
 
 		switch (formName) {
-			case "dashboard":
-				home_form.setVisible(true);
-				current_form.setText("Home Form");
-				break;
-			case "drugs":
-				drugs_form.setVisible(true);
-				current_form.setText("Drugs Form");
-				 loadDrugTable(); 
-				break;
-			case "patients":
-				patients_form.setVisible(true);
-				current_form.setText("Patients Form");
-				 loadPatientTable(); 
-				break;
-			case "appointments":
-				appointments_form.setVisible(true);
-				current_form.setText("Appointments Form");
-				break;
-
-			case "profile":
-				profile_form.setVisible(true);
-				current_form.setText("Profile Form");
-				break;
+		case "dashboard":
+			home_form.setVisible(true);
+			current_form.setText("Home Form");
+			break;
+		case "drugs":
+			drugs_form.setVisible(true);
+			current_form.setText("Drugs Form");
+			loadDrugTable();
+			break;
+		case "patients":
+			patients_form.setVisible(true);
+			current_form.setText("Patients Form");
+			loadPatientTable();
+			break;
+		case "appointments":
+			appointments_form.setVisible(true);
+			current_form.setText("Appointments Form");
+			break;
+		case "appointments_manage":
+			loadAppointmentData();
+			appointments_manage_form.setVisible(true);
+			current_form.setText("Appointments Manage Form");
+			break;
+		case "profile":
+			profile_form.setVisible(true);
+			current_form.setText("Profile Form");
+			break;
 		}
 	}
-	
-	
+
 	public void loadComboBox() {
 		gender_cb.setItems(FXCollections
 				.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
 	}
-	
-	
+
 	public void runTime() {
 
 		new Thread() {
@@ -1416,7 +1944,7 @@ private ObservableList<PatientData> patientMasterList = FXCollections.observable
 			}
 		}.start();
 	}
-	
+
 	@FXML
 	void logoutBtn(ActionEvent event) {
 
@@ -1435,25 +1963,54 @@ private ObservableList<PatientData> patientMasterList = FXCollections.observable
 			e.printStackTrace();
 		}
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		runTime();
 		loadComboBox();
-		
+		loadComboBoxPatient();
+		loadComboBoxService();
+		loadUrgencyLevels();
+		loadAppointmentData();
+		SpinnerValueFactory<Integer> hourFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(8, 17, 8);
+		spHour.setValueFactory(hourFactory);
+
+		SpinnerValueFactory<Integer> minuteFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 45, 0, 15);
+		spMinute.setValueFactory(minuteFactory);
+
+		SpinnerValueFactory<Integer> hourFactory1 = new SpinnerValueFactory.IntegerSpinnerValueFactory(8, 17, 8);
+		spHour1.setValueFactory(hourFactory1);
+
+		SpinnerValueFactory<Integer> minuteFactory1 = new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 45, 0, 15);
+		spMinute1.setValueFactory(minuteFactory1);
 		initializeDrugFilters();
 		initializePatientFilters();
+
 		showForm("dashboard");
 
-		//homePatientDisplayData();
-		//homeAppointmentDisplayData();
-		//homeDoctorInfoDisplay();
+		appointments_col_service.setCellValueFactory(new PropertyValueFactory<>("serviceName"));
+		appointments_col_status.setCellValueFactory(new PropertyValueFactory<>("status"));
+		appointments_col_name.setCellValueFactory(new PropertyValueFactory<>("patientName"));
+		appointments_col_doctor.setCellValueFactory(new PropertyValueFactory<>("doctorName"));
+		appointments_col_contactNumber.setCellValueFactory(new PropertyValueFactory<>("contactNumber"));
+		appointments_col_reason.setCellValueFactory(new PropertyValueFactory<>("cancelReason"));
+		appointments_col_prescription.setCellValueFactory(cellData -> {
+			String status = cellData.getValue().getPrescriptionStatus();
+			return new SimpleStringProperty(status != null ? status : "");
+		});
 
-		// doctorShowCard();
+		appointments_tableView.setItems(appoinmentListData);
+		appointment_status.setItems(FXCollections.observableArrayList(
+				Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
 
-		//appointmentAppointmentInfoDisplay();
-		//appointmentDoctor();
+	}
 
+	public static String formatCurrencyVND(BigDecimal amount) {
+		if (amount == null)
+			return "0 VNĐ";
+		NumberFormat formatter = NumberFormat.getInstance(new Locale("vi", "VN"));
+		return formatter.format(amount) + " VNĐ";
 	}
 
 }

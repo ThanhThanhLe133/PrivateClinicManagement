@@ -21,7 +21,13 @@ public class ServiceData {
          this.price = BigDecimal.ZERO;
          this.type=ServiceType.Examination.name();
     }
-
+    
+    @Override
+	public String toString() {
+		
+    	return this.name;
+	}
+    
     public ServiceData(String serviceId, String name, BigDecimal price,String type) {
         this.serviceId = serviceId;
         this.name = name;

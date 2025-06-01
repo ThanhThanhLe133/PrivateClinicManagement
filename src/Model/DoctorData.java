@@ -12,7 +12,12 @@ public class DoctorData extends UserAccount {
 	public DoctorData() {
 		super();
 	}
-
+	
+	@Override
+	public String toString() {
+		return this.name;
+	}
+	
 	public DoctorData(String id, String username, String password, String name, String email,
 			String gender, Boolean isActive, String phone, String serviceName,
 			String address, boolean isConfirmed) {
