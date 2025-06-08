@@ -17,6 +17,7 @@ module myModule {
 	requires java.net.http;
 	requires com.fasterxml.jackson.databind;
 	requires com.fasterxml.jackson.core;
+	requires org.apache.xmlbeans;
 
 	opens application to javafx.fxml, javafx.graphics;
 	opens Alert to javafx.fxml;

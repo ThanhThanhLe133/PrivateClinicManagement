@@ -603,6 +603,27 @@ public class DoctorMainFormController implements Initializable {
 	        stage.setOnHidden(e -> {
 	            dashboardDisplayNumPrescriptions(); // Refresh prescription count
 	            dashboardLoadAppointmentData(); // Refresh appointment data
+	            // Update Prescription_Status to "Created" after prescription is generated
+	            connect = Database.connectDB();
+	            if (connect != null) {
+	                try {
+	                    String updateSql = "UPDATE appointment SET Prescription_Status = ? WHERE id = ?";
+	                    prepare = connect.prepareStatement(updateSql);
+	                    prepare.setString(1, "Created");
+	                    prepare.setString(2, selectedAppointment.getId());
+	                    int rowsUpdated = prepare.executeUpdate();
+	                } catch (SQLException ex) {
+	                    ex.printStackTrace();
+	                    alert.errorMessage("Error updating Prescription_Status: " + ex.getMessage());
+	                } finally {
+	                    try {
+	                        if (prepare != null) prepare.close();
+	                        if (connect != null) connect.close();
+	                    } catch (SQLException ex) {
+	                        ex.printStackTrace();
+	                    }
+	                }
+	            }
 	        });
 	        stage.showAndWait();
 

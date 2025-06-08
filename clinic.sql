@@ -1,3 +1,6 @@
+-- SHOW PROCESSLIST;
+-- KILL {Id};
+
 -- DROP VÀ TẠO LẠI DATABASE
 DROP DATABASE IF EXISTS clinic;
 CREATE DATABASE clinic;
@@ -78,6 +81,7 @@ CREATE TABLE APPOINTMENT (
     Doctor_id CHAR(36) NOT NULL,
     Patient_id CHAR(36) NOT NULL,
     Urgency_level INT DEFAULT 1,
+    Prescription_Status VARCHAR(50) DEFAULT "None", -- None, Created, Paid
     Is_followup BOOLEAN DEFAULT FALSE,  -- true nếu là tái khám
     Priority_score INT,
 
@@ -88,6 +92,14 @@ CREATE TABLE APPOINTMENT (
     -- Thời gian tạo và cập nhật
     Create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE APPOINTMENT_SERVICE (
+    Appointment_id CHAR(36) NOT NULL,
+    Service_id CHAR(36) NOT NULL,
+    PRIMARY KEY (Appointment_id, Service_id),
+    FOREIGN KEY (Appointment_id) REFERENCES APPOINTMENT(Id) ON DELETE CASCADE,
+    FOREIGN KEY (Service_id) REFERENCES SERVICE(Id) ON DELETE CASCADE
 );
 
 CREATE TABLE AVAILABLE_SLOT (
@@ -101,7 +113,6 @@ CREATE TABLE AVAILABLE_SLOT (
     FOREIGN KEY (Doctor_id) REFERENCES DOCTOR(Doctor_id),
     FOREIGN KEY (Appointment_id) REFERENCES APPOINTMENT(Id) ON DELETE SET NULL
 );
-
 
 CREATE TABLE DRUG (
     Id CHAR(36) PRIMARY KEY NOT NULL DEFAULT (UUID()),
@@ -123,7 +134,7 @@ CREATE TABLE PRESCRIPTION (
     TotalAmount DECIMAL(20,2) NOT NULL, 
     diagnose TEXT,
     advice TEXT,
-    status VARCHAR(50) NOT NULL DEFAULT 'Created', -- 'khi in tính tiền thì sẽ pa
+    status VARCHAR(50) NOT NULL DEFAULT 'Created', -- 'khi in tính tiền thì sẽ paid
     FOREIGN KEY (Patient_id) REFERENCES PATIENT(patient_Id),
     FOREIGN KEY (Doctor_id) REFERENCES DOCTOR(doctor_Id),
     FOREIGN KEY (Appointment_id) REFERENCES APPOINTMENT(Id),
@@ -530,7 +541,7 @@ INSERT INTO APPOINTMENT (
     Urgency_level, Is_followup, Priority_score,
     Create_date, Update_date
 ) VALUES (
-    UUID(), '2025-05-10 09:00:00', 'Finished', NULL, @doctor1_id , @patient_id,
+    UUID(), '2025-05-10 09:00:00', 'Finish', NULL, @doctor1_id , @patient_id,
     1, FALSE, 6, NOW(), NOW()
 );
 
@@ -540,7 +551,7 @@ INSERT INTO APPOINTMENT (
     Urgency_level, Is_followup, Priority_score,
     Create_date, Update_date
 ) VALUES (
-    UUID(), '2025-05-11 10:30:00', 'Cancelled', 'Patient had a family emergency', @doctor2_id, @patient_id,
+    UUID(), '2025-05-11 10:30:00', 'Cancel', 'Patient had a family emergency', @doctor2_id, @patient_id,
     3, FALSE, 3, NOW(), NOW()
 );
 
@@ -590,16 +601,16 @@ VALUES
 (UUID(), '2025-05-10 09:00:00', 'Coming', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
  (SELECT Patient_id FROM PATIENT WHERE Name = 'John Smith' LIMIT 1), 1, FALSE, 10, NOW(), NOW()),
 
-(UUID(), '2025-05-11 14:00:00', 'Finished', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
+(UUID(), '2025-05-11 14:00:00', 'Finish', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
  (SELECT Patient_id FROM PATIENT WHERE Name = 'Emily Johnson' LIMIT 1), 2, FALSE, 8, NOW(), NOW()),
 
-(UUID(), '2025-05-12 11:00:00', 'Cancelled', 'Patient unavailable', '88669f0e-300b-11f0-bbf2-581122815a3a',
+(UUID(), '2025-05-12 11:00:00', 'Cancel', 'Patient unavailable', '88669f0e-300b-11f0-bbf2-581122815a3a',
  (SELECT Patient_id FROM PATIENT WHERE Name = 'Michael Brown' LIMIT 1), 3, FALSE, 5, NOW(), NOW()),
 
 (UUID(), '2025-05-13 16:30:00', 'Coming', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
  (SELECT Patient_id FROM PATIENT WHERE Name = 'Sarah Davis' LIMIT 1), 1, TRUE, 9, NOW(), NOW()),
 
-(UUID(), '2025-05-14 10:45:00', 'Finished', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
+(UUID(), '2025-05-14 10:45:00', 'Finish', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
  (SELECT Patient_id FROM PATIENT WHERE Name = 'David Wilson' LIMIT 1), 2, FALSE, 7, NOW(), NOW());
 
 
