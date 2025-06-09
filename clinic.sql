@@ -160,11 +160,13 @@ CREATE TRIGGER trg_update_prescription_diagnose_after_patient_update
 AFTER UPDATE ON PATIENT
 FOR EACH ROW
 BEGIN
-    -- Nếu trường Diagnosis thay đổi và không NULL
+    -- Nếu Diagnosis của bệnh nhân thay đổi và không NULL
     IF NEW.Diagnosis IS NOT NULL AND NEW.Diagnosis <> OLD.Diagnosis THEN
+        -- Cập nhật các đơn thuốc chưa có chuẩn đoán
         UPDATE PRESCRIPTION
         SET diagnose = NEW.Diagnosis
-        WHERE Patient_id = NEW.Patient_id;
+        WHERE Patient_id = NEW.Patient_id
+          AND (diagnose IS NULL OR diagnose = '');
     END IF;
 END$$
 

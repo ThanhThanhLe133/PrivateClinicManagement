@@ -1119,10 +1119,10 @@ public class AdminMainFormController {
 					InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
 					InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
 
-					Image img1 = new Image(imgStream1, 137, 95, true, true);
+					Image img1 = new Image(imgStream1, 0, 0, true, true);
 					profile_circle.setFill(new ImagePattern(img1));
 
-					Image img2 = new Image(imgStream2, 1012, 22, true, true);
+					Image img2 = new Image(imgStream2, 0, 0, true, true);
 
 					top_profile.setFill(new ImagePattern(img2));
 				} else {
@@ -1203,7 +1203,7 @@ public class AdminMainFormController {
 			Data.path = file.getAbsolutePath();
 
 			// Hiển thị ảnh lên UI
-			image = new Image(file.toURI().toString(), 137, 95, false, true);
+			image = new Image(file.toURI().toString(), 0, 0, false, true);
 			profile_circle.setFill(new ImagePattern(image));
 
 			// Lưu ảnh vào DB

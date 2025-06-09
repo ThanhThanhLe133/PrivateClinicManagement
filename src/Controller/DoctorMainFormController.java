@@ -795,10 +795,15 @@ public class DoctorMainFormController implements Initializable {
 			        inputStream.close();
 
 			        // Tạo nhiều InputStream từ cùng một mảng byte
-			        InputStream imgStream = new ByteArrayInputStream(imageBytes);
-			        Image img = new Image(imgStream, 0, 0, true, true);
-			        profile_circleImage.setFill(new ImagePattern(img));
-			        top_profile.setFill(new ImagePattern(img));
+			        InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
+					InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
+
+					Image img1 = new Image(imgStream1, 0, 0, true, true);
+					profile_circleImage.setFill(new ImagePattern(img1));
+
+					Image img2 = new Image(imgStream2, 0, 0, true, true);
+
+					top_profile.setFill(new ImagePattern(img2));
 			    } else {
 			        System.out.println("Ảnh trong DB bị null.");
 			    }
@@ -908,6 +913,7 @@ public class DoctorMainFormController implements Initializable {
 				} else {
 					alert.errorMessage("Failed to update avatar.");
 				}
+				profileDisplayImages();
 			} catch (Exception e) {
 				e.printStackTrace();
 				alert.errorMessage("Error uploading avatar: " + e.getMessage());
