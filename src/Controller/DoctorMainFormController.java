@@ -363,6 +363,10 @@ public class DoctorMainFormController implements Initializable {
 	@FXML
 	private TableColumn<DoctorAppointmentData, String> appointments_col_reason;
 	ObservableList<DoctorAppointmentData> appoinmentListData = FXCollections.observableArrayList();
+ 	@FXML
+	private ComboBox<String> appointments_searchBy;
+ 	@FXML
+ 	private TextField appointments_searchQuery;
 
 	@FXML
 	private TextField appointment_appointmentID;
@@ -599,32 +603,36 @@ public class DoctorMainFormController implements Initializable {
 	        stage.setResizable(false);
 	        stage.setScene(new Scene(root));
 
-	        // Refresh data after the form is closed
 	        stage.setOnHidden(e -> {
-	            dashboardDisplayNumPrescriptions(); // Refresh prescription count
-	            dashboardLoadAppointmentData(); // Refresh appointment data
-	            // Update Prescription_Status to "Created" after prescription is generated
-	            connect = Database.connectDB();
-	            if (connect != null) {
-	                try {
-	                    String updateSql = "UPDATE appointment SET Prescription_Status = ? WHERE id = ?";
-	                    prepare = connect.prepareStatement(updateSql);
-	                    prepare.setString(1, "Created");
-	                    prepare.setString(2, selectedAppointment.getId());
-	                    int rowsUpdated = prepare.executeUpdate();
-	                } catch (SQLException ex) {
-	                    ex.printStackTrace();
-	                    alert.errorMessage("Error updating Prescription_Status: " + ex.getMessage());
-	                } finally {
-	                    try {
-	                        if (prepare != null) prepare.close();
-	                        if (connect != null) connect.close();
-	                    } catch (SQLException ex) {
-	                        ex.printStackTrace();
-	                    }
-	                }
-	            }
-	        });
+            dashboardDisplayNumPrescriptions(); // Refresh prescription count
+            dashboardLoadAppointmentData(); // Refresh appointment data
+
+            // Update Prescription_Status to "Created" after prescription is generated
+            connect = Database.connectDB();
+            if (connect != null) {
+               try {
+                      String updateSql = "UPDATE appointment SET Prescription_Status = ? WHERE id = ?";
+                      prepare = connect.prepareStatement(updateSql);
+                      prepare.setString(1, "Created");
+                      prepare.setString(2, selectedAppointment.getId());
+                      int rowsUpdated = prepare.executeUpdate();
+                    } catch (SQLException ex) 
+					{
+                        ex.printStackTrace();
+                        alert.errorMessage("Error updating Prescription_Status: " + ex.getMessage());
+                    } finally 
+					{
+						try {
+							if (prepare != null) prepare.close();
+							if (connect != null) connect.close();
+						} catch (SQLException ex) {
+							ex.printStackTrace();
+						}
+					}
+           
+                }
+            });
+
 	        stage.showAndWait();
 
 	    } catch (IOException e) {
@@ -793,17 +801,18 @@ public class DoctorMainFormController implements Initializable {
 			        buffer.flush();
 			        byte[] imageBytes = buffer.toByteArray();
 			        inputStream.close();
+					// Tạo nhiều InputStream từ cùng một mảng byte
+                    InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
+                    InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
 
-			        // Tạo nhiều InputStream từ cùng một mảng byte
-			        InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
-					InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
+                    Image img1 = new Image(imgStream1, 0, 0, true, true);
+                    Image img2 = new Image(imgStream2, 0, 0, true, true);
 
-					Image img1 = new Image(imgStream1, 0, 0, true, true);
-					profile_circleImage.setFill(new ImagePattern(img1));
+                    profile_circleImage.setFill(new ImagePattern(img1));
+                    top_profile.setFill(new ImagePattern(img2));
 
-					Image img2 = new Image(imgStream2, 0, 0, true, true);
 
-					top_profile.setFill(new ImagePattern(img2));
+
 			    } else {
 			        System.out.println("Ảnh trong DB bị null.");
 			    }
@@ -913,7 +922,7 @@ public class DoctorMainFormController implements Initializable {
 				} else {
 					alert.errorMessage("Failed to update avatar.");
 				}
-				profileDisplayImages();
+ 				profileDisplayImages();
 			} catch (Exception e) {
 				e.printStackTrace();
 				alert.errorMessage("Error uploading avatar: " + e.getMessage());
@@ -947,32 +956,32 @@ public class DoctorMainFormController implements Initializable {
 		}
 	}
 	
-//	private void showForm(String formName) {
-//		dashboard_form.setVisible(false);
-//		patients_form.setVisible(false);
-//		appointments_form.setVisible(false);
-//		profile_form.setVisible(false);
-//
-//		switch (formName) {
-//			case "dashboard":
-//				dashboard_form.setVisible(true);
-//				current_form.setText("Home Form");
-//				break;
-//			case "patients":
-//				patients_form.setVisible(true);
-//				current_form.setText("Patients Form");
-//				break;
-//			case "appointments":
-//				appointments_form.setVisible(true);
-//				current_form.setText("Appointments Form");
-//				break;
-//
-//			case "profile":
-//				profile_form.setVisible(true);
-//				current_form.setText("Profile Form");
-//				break;
-//		}
-//	}
+	private void showForm(String formName) {
+		dashboard_form.setVisible(false);
+		patients_form.setVisible(false);
+		appointments_form.setVisible(false);
+		profile_form.setVisible(false);
+
+		switch (formName) {
+			case "dashboard":
+				dashboard_form.setVisible(true);
+				current_form.setText("Home Form");
+				break;
+			case "patients":
+				patients_form.setVisible(true);
+				current_form.setText("Patients Form");
+				break;
+			case "appointments":
+				appointments_form.setVisible(true);
+				current_form.setText("Appointments Form");
+				break;
+
+			case "profile":
+				profile_form.setVisible(true);
+				current_form.setText("Profile Form");
+				break;
+		}
+	}
 
 	public void logoutBtn() {
 
@@ -1143,6 +1152,37 @@ public class DoctorMainFormController implements Initializable {
 				return (string != null && !string.isEmpty()) ? LocalDate.parse(string, formatter) : null;
 			}
 		});
+
+ 		appointments_searchBy.setItems(FXCollections.observableArrayList("Name", "Contact", "Cancel Reason"));
+ 		appointments_searchBy.getSelectionModel().selectFirst();
+		appointments_searchBy.valueProperty().addListener((observable, oldValue, newValue) -> {
+ 			onSearchChanged();
+ 		});
+		appointments_searchQuery.textProperty().addListener((observable, oldValue, newValue) -> {			
+			onSearchChanged();
+		});
+ 	}
+ 
+ 	private void onSearchChanged() {
+		String searchBy = appointments_searchBy.getSelectionModel().getSelectedItem();
+ 		String query = appointments_searchQuery.getText().trim().toLowerCase();
+ 
+ 		if (query.isEmpty() || searchBy == null || searchBy.isEmpty()) {
+ 			appointments_tableView.setItems(appoinmentListData);
+			return; 		}
+ 
+		ObservableList<DoctorAppointmentData> filteredData = appoinmentListData.filtered(appointment -> {
+ 			switch (searchBy) {
+ 				case "Name":
+ 					return appointment.getName() != null && appointment.getName().toLowerCase().contains(query);
+ 				case "Contact":
+ 					return appointment.getContactNumber() != null && appointment.getContactNumber().toLowerCase().contains(query);
+				case "Cancel Reason":
+ 					return appointment.getReason() != null && appointment.getReason().toLowerCase().contains(query);
+				default:
+					return false;
+ 		}});
+ 		appointments_tableView.setItems(filteredData);
 	}
 
 	public void setDoctorId(String doctor_id) {
