@@ -151,9 +151,9 @@ public class ForgotPassController implements Initializable {
 	public void sendVerificationCode(String to, String codeSend) {
 		// Xác nhận người dùng
 		Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-		confirmAlert.setTitle("Thông báo!");
+		confirmAlert.setTitle("Notice!");
 		confirmAlert.setHeaderText(null);
-		confirmAlert.setContentText("Mã xác thực sẽ được gửi về email của bạn?");
+		confirmAlert.setContentText("OTP has been sent to your email");
 
 		Optional<ButtonType> result = confirmAlert.showAndWait();
 		if (result.isEmpty() || result.get() != ButtonType.OK) {
@@ -229,11 +229,11 @@ public class ForgotPassController implements Initializable {
 
 	@FXML
 	public void verifyOTP() {
-		String userInput = input_otp.getText().trim();
+		String userInput = input_otp.getText();
 
 		if (userInput.isEmpty()) {
 			Alert alert = new Alert(Alert.AlertType.WARNING);
-			alert.setTitle("Thông báo");
+			alert.setTitle("Notice");
 			alert.setHeaderText(null);
 			alert.setContentText("Please input OTP code having been sent to your email");
 			alert.showAndWait();
