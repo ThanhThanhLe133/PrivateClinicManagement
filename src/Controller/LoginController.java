@@ -22,6 +22,7 @@ import DAO.Database;
 import Enum.ServiceType;
 import Enum.User;
 import Model.Data;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -402,9 +403,11 @@ public class LoginController implements Initializable {
 		if (event.getSource() == login_registerHere) {
 			login_form.setVisible(false);
 			register_form.setVisible(true);
+			register_form.requestFocus();
 		} else if (event.getSource() == register_loginHere) {
 			login_form.setVisible(true);
 			register_form.setVisible(false);
+			login_form.requestFocus();
 		}
 
 	}
@@ -424,6 +427,8 @@ public class LoginController implements Initializable {
 
 	@Override
 	public void initialize(URL url, ResourceBundle rb) {
+		
 		loadCombobox();
+		 Platform.runLater(() -> main_form.requestFocus()); 
 	}
 }

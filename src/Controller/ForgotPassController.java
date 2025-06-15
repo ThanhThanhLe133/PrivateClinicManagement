@@ -28,6 +28,7 @@ import Alert.AlertMessage;
 import DAO.Database;
 import Model.Data;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.animation.KeyFrame;
 import javafx.util.Duration;
 
@@ -340,6 +341,6 @@ public class ForgotPassController implements Initializable {
 	@Override
 	public void initialize(URL arg0, ResourceBundle arg1) {
 		// TODO Auto-generated method stub
-
+		 Platform.runLater(() -> forgot_pass.requestFocus());
 	}
 }
