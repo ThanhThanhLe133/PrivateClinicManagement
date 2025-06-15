@@ -9,7 +9,6 @@
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ButtonBar?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
@@ -112,7 +111,7 @@
                <center>
                   <AnchorPane prefHeight="706.0" prefWidth="1100.0" BorderPane.alignment="CENTER">
                      <children>
-                        <AnchorPane fx:id="dashboard_form" layoutX="161.0" layoutY="112.0" prefHeight="646.0" prefWidth="886.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <AnchorPane fx:id="dashboard_form" layoutX="161.0" layoutY="112.0" prefHeight="646.0" prefWidth="886.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
                               <AnchorPane layoutX="13.0" layoutY="14.0" prefHeight="156.0" prefWidth="860.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.leftAnchor="13.0" AnchorPane.rightAnchor="13.0" AnchorPane.topAnchor="14.0">
                                  <styleClass>
@@ -278,9 +277,9 @@
                               </AnchorPane>
                            </children>
                         </AnchorPane>
-                        <AnchorPane fx:id="patients_form" layoutX="1.0" prefHeight="560.0" prefWidth="886.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <AnchorPane fx:id="patients_form" layoutX="1.0" prefHeight="651.0" prefWidth="886.0" visible="false" AnchorPane.bottomAnchor="111.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
-                              <AnchorPane prefHeight="537.0" prefWidth="868.0">
+                              <AnchorPane prefHeight="646.0" prefWidth="876.0" AnchorPane.bottomAnchor="5.0" AnchorPane.leftAnchor="5.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="5.0">
                                  <styleClass>
                                     <String fx:value="white-bg" />
                                     <String fx:value="shadow" />
@@ -328,9 +327,9 @@
                               </AnchorPane>
                            </children>
                         </AnchorPane>
-                        <AnchorPane fx:id="appointments_form" layoutX="5.0" layoutY="5.0" prefHeight="562.0" prefWidth="886.0" visible="false" AnchorPane.bottomAnchor="94.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <AnchorPane fx:id="appointments_form" layoutX="5.0" layoutY="5.0" prefHeight="562.0" prefWidth="886.0" AnchorPane.bottomAnchor="94.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
-                              <AnchorPane layoutX="9.0" layoutY="14.0" prefHeight="337.0" prefWidth="868.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="317.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="14.0">
+                              <AnchorPane layoutX="9.0" layoutY="14.0" prefHeight="338.0" prefWidth="868.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="326.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="4.0">
                                  <styleClass>
                                     <String fx:value="white-bg" />
                                     <String fx:value="shadow" />
@@ -351,7 +350,7 @@
                                           <Insets left="10.0" right="10.0" />
                                        </padding>
                                     </HBox>
-                                    <TableView fx:id="appointments_tableView" layoutX="13.0" layoutY="14.0" onMouseClicked="#appointmentSelect" prefHeight="279.0" prefWidth="843.0" stylesheets="@../design/DoctorMainFormDesign.css" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="13.0" AnchorPane.rightAnchor="12.0" AnchorPane.topAnchor="50.0">
+                                    <TableView fx:id="appointments_tableView" layoutX="13.0" layoutY="14.0" onMouseClicked="#appointmentSelect" prefHeight="287.0" prefWidth="843.0" stylesheets="@../design/DoctorMainFormDesign.css" AnchorPane.bottomAnchor="13.0" AnchorPane.leftAnchor="13.0" AnchorPane.rightAnchor="12.0" AnchorPane.topAnchor="50.0">
                                        <columns>
                                           <TableColumn fx:id="appointments_col_appointmentID" prefWidth="65.0" text="Appointment ID" />
                                           <TableColumn fx:id="appointments_col_time" prefWidth="76.0" text="Time" />
@@ -367,7 +366,7 @@
                                     </TableView>
                                  </children>
                               </AnchorPane>
-                              <AnchorPane layoutX="9.0" layoutY="356.0" prefHeight="320.0" prefWidth="868.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="-8.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="356.0">
+                              <AnchorPane layoutX="9.0" layoutY="356.0" prefHeight="308.0" prefWidth="868.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="9.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0">
                                  <styleClass>
                                     <String fx:value="white-bg" />
                                     <String fx:value="shadow" />
@@ -405,19 +404,19 @@
 
 <Label layoutX="450.0" layoutY="201.0" prefHeight="17.0" prefWidth="100.0" text="Last Modified:" AnchorPane.rightAnchor="318.0" />
 <Label fx:id="appointment_updatedDate" layoutX="550.0" layoutY="201.0" prefHeight="17.0" prefWidth="220.0" styleClass="textfield-2" AnchorPane.rightAnchor="98.0" />
-                                    <ButtonBar layoutX="208.0" layoutY="252.0">
-                                       <buttons>
-      <Button fx:id="appointment_updateBtn" mnemonicParsing="false" onAction="#appointmentUpdateBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Update" />
-                                          <Button fx:id="appointment_prescriptionBtn" mnemonicParsing="false" onAction="#appointmentPrescriptionBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Prescription" />
-      <Button fx:id="appointment_clearBtn" mnemonicParsing="false" onAction="#appointmentClearBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Clear" />
-      <Button fx:id="appointment_deleteBtn" mnemonicParsing="false" onAction="#appointmentDeleteBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Delete" />
-                                       </buttons>
-                                    </ButtonBar>
+                                    <HBox alignment="CENTER" layoutX="215.0" layoutY="223.0" prefHeight="49.0" prefWidth="459.0" spacing="20.0" stylesheets="@../design/DoctorMainFormDesign.css" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                       <children>
+        									<Button fx:id="appointment_updateBtn" mnemonicParsing="false" onAction="#appointmentUpdateBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Update" />
+       										 <Button fx:id="appointment_prescriptionBtn" mnemonicParsing="false" onAction="#appointmentPrescriptionBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Prescription" />
+        									<Button fx:id="appointment_clearBtn" mnemonicParsing="false" onAction="#appointmentClearBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Clear" />
+        									<Button fx:id="appointment_deleteBtn" mnemonicParsing="false" onAction="#appointmentDeleteBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-2" text="Delete" />
+                                       </children>
+                                    </HBox>
                                  </children>
                               </AnchorPane>
                            </children>
                         </AnchorPane>
-                        <AnchorPane fx:id="profile_form" layoutX="114.0" layoutY="102.0" prefHeight="552.0" prefWidth="886.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <AnchorPane fx:id="profile_form" layoutX="114.0" layoutY="102.0" prefHeight="651.0" prefWidth="886.0" visible="false" AnchorPane.bottomAnchor="111.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
                               <AnchorPane layoutX="14.0" layoutY="15.0" prefHeight="531.0" prefWidth="256.0" stylesheets="@../design/DoctorMainFormDesign.css" AnchorPane.bottomAnchor="14.0" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="15.0">
                                  <styleClass>
@@ -538,7 +537,7 @@
                                        </font>
                                     </Label>
                                     <TextArea fx:id="profile_address" layoutX="198.0" layoutY="265.0" prefHeight="91.0" prefWidth="306.0" AnchorPane.leftAnchor="198.0" AnchorPane.rightAnchor="80.0" AnchorPane.topAnchor="265.0" />
-                                    <Button fx:id="profile_updateBtn" layoutX="210.0" layoutY="477.0" mnemonicParsing="false" onAction="#profileUpdateBtn" prefHeight="40.0" prefWidth="164.0" styleClass="btn-2" stylesheets="@../design/DoctorMainFormDesign.css" text="Update" AnchorPane.bottomAnchor="14.0" AnchorPane.leftAnchor="210.0" AnchorPane.rightAnchor="210.0" />
+                                    <Button fx:id="profile_updateBtn" layoutX="210.0" layoutY="381.0" mnemonicParsing="false" onAction="#profileUpdateBtn" prefHeight="40.0" prefWidth="164.0" styleClass="btn-2" stylesheets="@../design/DoctorMainFormDesign.css" text="Update" AnchorPane.leftAnchor="210.0" AnchorPane.rightAnchor="210.0" AnchorPane.topAnchor="381.0" />
                                     <Label layoutX="113.0" layoutY="225.0" text="Username:">
                                        <font>
                                           <Font size="15.0" />

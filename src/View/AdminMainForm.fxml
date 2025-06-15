@@ -16,6 +16,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.shape.Line?>
@@ -432,7 +433,7 @@
 								</AnchorPane>
 								-->
 								
-	<AnchorPane fx:id="service_form" layoutX="5.0" layoutY="5.0" prefHeight="560.0" prefWidth="886.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+	<AnchorPane fx:id="service_form" layoutX="5.0" layoutY="5.0" prefHeight="560.0" prefWidth="886.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
     <children>
 
         <!-- Header -->
@@ -443,7 +444,7 @@
         </Label>
 
         <!-- Bảng danh sách nhân viên -->
-        <TableView fx:id="service_tableView" layoutX="20.0" layoutY="50.0" prefHeight="400.0" prefWidth="840.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="50.0">
+        <TableView fx:id="service_tableView" layoutX="20.0" layoutY="50.0" prefHeight="400.0" prefWidth="840.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="110.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="50.0">
             <columns>
                 <TableColumn fx:id="service_col_name" prefWidth="324.00002098083496" text="Service Name" />
                 <TableColumn fx:id="service_col_type" prefWidth="192.79998779296875" text="Service Type" />
@@ -454,9 +455,13 @@
                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
             </columnResizePolicy>
         </TableView>
-
-        <!-- Nút trả lương -->
-        <Button fx:id="add_service_btn" layoutX="370.0" layoutY="470.0" mnemonicParsing="false" onAction="#openAddServiceForm" prefHeight="40.0" prefWidth="150.0" styleClass="btn-1" text="Add Service" />
+                              <HBox alignment="CENTER" layoutX="20.0" layoutY="484.0" prefHeight="53.0" prefWidth="841.0" stylesheets="@../design/PageDesign.css" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0">
+                                 <children>
+      
+              <!-- Nút trả lương -->
+              <Button fx:id="add_service_btn" mnemonicParsing="false" onAction="#openAddServiceForm" prefHeight="40.0" prefWidth="150.0" styleClass="btn-1" text="Add Service" />
+                                 </children>
+                              </HBox>
 
     </children>
 </AnchorPane>
@@ -465,7 +470,7 @@
 <!--   REVENUE ===============================================================-->
 								
 								
-								<AnchorPane fx:id="report_form" layoutX="5.0" layoutY="5.0" prefHeight="560.0" prefWidth="886.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+								<AnchorPane fx:id="report_form" layoutX="5.0" layoutY="5.0" prefHeight="560.0" prefWidth="886.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
     <children>
         <AnchorPane layoutX="9.0" layoutY="12.0" prefHeight="245.0" prefWidth="900.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="12.0">
             <styleClass>

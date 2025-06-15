@@ -9,7 +9,6 @@
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ButtonBar?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
@@ -31,7 +30,7 @@
 <?import javafx.scene.shape.Line?>
 <?import javafx.scene.text.Font?>
 
-<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="710.0" prefWidth="1100.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.ReceptionistController">
+<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="710.0" prefWidth="1100.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.ReceptionistController">
    <children>
       <AnchorPane fx:id="main_form" prefHeight="710.0" prefWidth="1100.0">
          <children>
@@ -374,7 +373,7 @@
                         </AnchorPane>
                         <AnchorPane fx:id="appointments_form" layoutX="5.0" layoutY="5.0" prefHeight="560.0" prefWidth="886.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
-                              <AnchorPane layoutY="12.0" prefHeight="655.0" prefWidth="534.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="352.0" AnchorPane.topAnchor="12.0">
+                              <AnchorPane layoutX="7.0" layoutY="6.0" prefHeight="654.0" prefWidth="535.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="6.0" AnchorPane.rightAnchor="345.0" AnchorPane.topAnchor="6.0">
                                  <children>
                                     <ScrollPane fitToHeight="true" fitToWidth="true" layoutX="-5.0" layoutY="-5.0" prefHeight="661.0" prefWidth="534.0" AnchorPane.bottomAnchor="-6.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                        <content>
@@ -510,7 +509,7 @@
                                     </ScrollPane>
                                  </children>
                               </AnchorPane>
-                              <AnchorPane layoutX="535.2000122070312" layoutY="12.0" AnchorPane.bottomAnchor="11.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="12.0">
+                              <AnchorPane layoutX="541.0" layoutY="6.0" prefHeight="645.0" prefWidth="338.0" AnchorPane.bottomAnchor="19.0" AnchorPane.rightAnchor="7.0" AnchorPane.topAnchor="6.0">
                                  <children>
                                     <ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="659.0" prefWidth="338.0" AnchorPane.bottomAnchor="-15.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                        <content>
@@ -556,9 +555,9 @@
                               </AnchorPane>
                            </children>
                         </AnchorPane>
-                        <AnchorPane fx:id="appointments_manage_form" layoutX="10.0" layoutY="68.0" prefHeight="796.0" prefWidth="885.6" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <AnchorPane fx:id="appointments_manage_form" layoutX="10.0" layoutY="68.0" prefHeight="796.0" prefWidth="885.6" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
-                              <AnchorPane stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="280.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="0.0">
+                              <AnchorPane layoutY="4.0" prefHeight="363.0" prefWidth="868.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="303.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="4.0">
                                  <styleClass>
                                     <String fx:value="white-bg" />
                                     <String fx:value="shadow" />
@@ -576,7 +575,7 @@
                                           <TextField fx:id="appointments_searchQuery" prefHeight="25.0" prefWidth="309.0" />
                                        </children>
                                     </HBox>
-                                    <TableView fx:id="appointments_tableView" layoutX="13.0" layoutY="14.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" onMouseClicked="#appointmentSelect" prefHeight="282.0" prefWidth="833.0" AnchorPane.bottomAnchor="60.0" AnchorPane.leftAnchor="13.0" AnchorPane.rightAnchor="12.0" AnchorPane.topAnchor="56.0">
+                                    <TableView fx:id="appointments_tableView" layoutX="13.0" layoutY="14.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" onMouseClicked="#appointmentSelect" prefHeight="273.0" prefWidth="843.0" AnchorPane.bottomAnchor="16.0" AnchorPane.leftAnchor="13.0" AnchorPane.rightAnchor="12.0" AnchorPane.topAnchor="56.0">
                                        <columns>
                                           <TableColumn fx:id="appointments_col_service" prefWidth="65.0" text="Service" />
                                           <TableColumn fx:id="appointments_col_time" prefWidth="76.0" text="Time" />
@@ -600,7 +599,7 @@
                                     </TableView>
                                  </children>
                               </AnchorPane>
-                              <AnchorPane stylesheets="@../design/ReceptionistMainFormDesign.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="350.0">
+                              <AnchorPane prefHeight="296.0" prefWidth="868.0" stylesheets="@../design/ReceptionistMainFormDesign.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0">
                                  <styleClass>
                                     <String fx:value="white-bg" />
                                     <String fx:value="shadow" />
@@ -618,25 +617,21 @@
                                     <Label layoutX="450.0" layoutY="55.0" prefHeight="17.0" prefWidth="100.0" text="Status:" AnchorPane.rightAnchor="318.0" />
                                     <ComboBox fx:id="appointment_status" layoutX="550.0" layoutY="51.0" prefHeight="25.0" prefWidth="152.0" promptText="Choose..." styleClass="textfield-2" stylesheets="@../design/ReceptionistMainFormDesign.css" AnchorPane.rightAnchor="166.0" />
                                     <Label layoutX="412.0" layoutY="94.0" prefHeight="17.0" prefWidth="100.0" text="Cancel Reason:" AnchorPane.rightAnchor="317.60000000000014" />
-                                    <TextArea fx:id="appointment_cancelReason" layoutX="512.0" layoutY="91.0" prefHeight="105.0" prefWidth="302.0" styleClass="textfield-2" AnchorPane.rightAnchor="16.0">
-                                       <padding>
-                                          <Insets top="20.0" />
-                                       </padding>
-                                    </TextArea>
+                                    <TextArea fx:id="appointment_cancelReason" layoutX="512.0" layoutY="91.0" prefHeight="105.0" prefWidth="302.0" styleClass="textfield-2" AnchorPane.rightAnchor="16.0" />
                                     <Label layoutX="30.0" layoutY="176.0" prefHeight="17.0" prefWidth="100.0" text="Date:" AnchorPane.leftAnchor="30.0" />
                                     <DatePicker fx:id="appointment_date" layoutX="140.0" layoutY="173.0" prefHeight="17.0" prefWidth="250.0" AnchorPane.leftAnchor="140.0" />
                                     <Label layoutX="30.0" layoutY="209.0" text="Created Date:" AnchorPane.leftAnchor="30.0" />
                                     <Label fx:id="appointment_createdDate" layoutX="141.0" layoutY="209.0" prefHeight="18.0" prefWidth="248.0" styleClass="textfield-2" AnchorPane.leftAnchor="141.0" />
                                     <Label layoutX="411.0" layoutY="209.0" prefHeight="17.0" prefWidth="100.0" text="Last Modified:" AnchorPane.rightAnchor="318.60000000000014" />
                                     <Label fx:id="appointment_updatedDate" layoutX="511.0" layoutY="209.0" prefHeight="18.0" prefWidth="302.0" styleClass="textfield-2" AnchorPane.rightAnchor="16.0" />
-                                    <ButtonBar layoutX="195.0" layoutY="247.0" prefHeight="36.0" prefWidth="459.0" AnchorPane.leftAnchor="195.0" AnchorPane.rightAnchor="200.0">
-                                       <buttons>
-                                          <Button fx:id="appointment_prescriptionBtn" mnemonicParsing="false" onAction="#appointmentPrescriptionBtn" prefHeight="36.0" prefWidth="106.0" styleClass="btn-3" text="Prescription" />
-                                          <Button fx:id="appointment_clearBtn" mnemonicParsing="false" onAction="#appointmentClearBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-3" text="Clear" />
-                                          <Button fx:id="appointment_deleteBtn" alignment="CENTER" mnemonicParsing="false" onAction="#appointmentDeleteBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-3" text="Delete" textAlignment="CENTER" />
-                                          <Button fx:id="appointment_updateBtn" mnemonicParsing="false" onAction="#appointmentUpdateBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-3" stylesheets="@../design/ReceptionistMainFormDesign.css" text="Update" />
-                                       </buttons>
-                                    </ButtonBar>
+                                    <HBox alignment="CENTER" layoutX="215.0" layoutY="223.0" prefHeight="49.0" prefWidth="459.0" spacing="20.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                       <children>
+        									<Button fx:id="appointment_updateBtn" mnemonicParsing="false" onAction="#appointmentUpdateBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-3" text="Update" />
+       										 <Button fx:id="appointment_prescriptionBtn" mnemonicParsing="false" onAction="#appointmentPrescriptionBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-3" text="Prescription" />
+        									<Button fx:id="appointment_clearBtn" mnemonicParsing="false" onAction="#appointmentClearBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-3" text="Clear" />
+        									<Button fx:id="appointment_deleteBtn" mnemonicParsing="false" onAction="#appointmentDeleteBtn" prefHeight="36.0" prefWidth="100.0" styleClass="btn-3" text="Delete" />
+                                       </children>
+                                    </HBox>
                                     <Spinner fx:id="spHour1" layoutX="141.0" layoutY="130.0" prefHeight="26.0" prefWidth="68.0" />
                                     <Spinner fx:id="spMinute1" layoutX="247.0" layoutY="130.0" prefHeight="26.0" prefWidth="68.0" />
                                     <Label layoutX="30.0" layoutY="134.0" prefHeight="17.0" prefWidth="100.0" text="Time" />
