@@ -676,7 +676,7 @@ public class AdminMainFormController {
 	BigDecimal examineFees;
 	BigDecimal medicationFees;
 	BigDecimal labTestFees;
-	BigDecimal serviceFees;
+	static BigDecimal serviceFees;
 	List<Map<String, String>> drugRevenueList = new ArrayList<>();
 	List<Map<String, String>> serviceRevenueList = new ArrayList<>();
 	List<Map<String, String>> revenueListSortByDate = new ArrayList<>();
@@ -739,8 +739,15 @@ public class AdminMainFormController {
 		Path destPath = Paths.get(destFileName);
 
 		if (Files.exists(destPath)) {
-			Files.delete(destPath); // Nếu tệp đích đã tồn tại, xóa
+			try {
+				Files.delete(destPath);
+			} catch (java.nio.file.AccessDeniedException e) {
+				alert.errorMessage("Tệp " + destPath + " đang được sử dụng bởi chương trình khác.");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
+
 		File destFile = new File(destFileName);
 
 		// Copy file gốc sang file đích
@@ -790,35 +797,40 @@ public class AdminMainFormController {
 
 	private static void replaceTablePlaceholderRows(XWPFTable table, String placeholderKey, List<String> columns,
 			List<Map<String, String>> dataList, int rowIndex) {
-		if (dataList == null||dataList.isEmpty()) {
+
+		if (dataList == null || dataList.isEmpty()) {
 			dataList = new ArrayList<>();
 			Map<String, String> emptyData = new HashMap<>();
-			
 			for (String column : columns) {
-				emptyData.put(column, "");  
+				emptyData.put(column, "");
 			}
-			dataList.add(emptyData); 
+			dataList.add(emptyData);
 		}
-
 		XWPFTableRow row = table.getRow(rowIndex);
+		boolean found = false;
+
+		int insertPos = rowIndex;
 
 		for (XWPFTableCell cell : row.getTableCells()) {
 			String text = cell.getText();
 			if (text != null && text.contains(placeholderKey)) {
 				table.removeRow(rowIndex);
-				for (Map<String, String> data : dataList) {
-					XWPFTableRow newRow = table.insertNewTableRow(rowIndex++);
-					for (String col : columns) {
-						String value = data.get(col);
-						
-						if (value == null || value.trim().isEmpty()) {
-							value = "";
-						}
-						newRow.addNewTableCell().setText(value);
+				found = true;
+				break;
+			}
+		}
+
+		if (found) {
+			for (Map<String, String> data : dataList) {
+				XWPFTableRow newRow = table.insertNewTableRow(insertPos++);
+				for (String col : columns) {
+					String value = data.getOrDefault(col, "");
+					if (value == null || value.trim().isEmpty()) {
+						value = "";
 					}
-					rowIndex++;
+
+					newRow.createCell().setText(value);
 				}
-				return;
 			}
 		}
 	}
@@ -838,12 +850,7 @@ public class AdminMainFormController {
 							if (text == null)
 								continue;
 							if (text != null) {
-								replaceInParagraph(para, "{{totalDrugRevenue}}",
-										FormatterUtils.formatCurrencyVND(medicationFees));
-								replaceInParagraph(para, "{{totalServiceRevenue}}",
-										FormatterUtils.formatCurrencyVND(serviceFees));
-								replaceInParagraph(para, "{{grandTotal}}",
-										FormatterUtils.formatCurrencyVND(totalRevenue));
+
 								if (text.contains("{{noDrug}}")) {
 									replaceTablePlaceholderRows(table, "{{noDrug}}",
 											List.of("noDrug", "drugName", "quantity", "DrugPrice", "totalDrug"),
@@ -852,17 +859,23 @@ public class AdminMainFormController {
 								}
 								if (text.contains("{{noService}}")) {
 									replaceTablePlaceholderRows(table, "{{noService}}",
-											List.of("noService", "serviceName", "type", "ServicePrice", "totalService"),
+											List.of("noService", "serviceName", "type","ServiceQuantity", "ServicePrice", "totalService"),
 											serviceRevenueList, i);
 									break;
 								}
 								if (text.contains("{{noTotal}}")) {
+
 									replaceTablePlaceholderRows(table, "{{noTotal}}",
-											List.of("date", "totalDrug", "totalService", "totalRevenue"),
+											List.of("noTotal", "date", "totalDrug", "totalService", "totalRevenue"),
 											revenueListSortByDate, i);
 									break;
 								}
-
+								replaceInParagraph(para, "{{totalDrugRevenue}}",
+										FormatterUtils.formatCurrencyVND(medicationFees));
+								replaceInParagraph(para, "{{totalServiceRevenue}}",
+										FormatterUtils.formatCurrencyVND(serviceFees));
+								replaceInParagraph(para, "{{grandTotal}}",
+										FormatterUtils.formatCurrencyVND(totalRevenue));
 							}
 						}
 					} catch (Exception e) {
@@ -887,21 +900,34 @@ public class AdminMainFormController {
 	private void handleDateReport(LocalDate startDate, LocalDate endDate) {
 
 		try (Connection conn = Database.connectDB()) {
-			String sql = "SELECT DATE(pd.Create_date) AS CreateDate, " + "SUM(d.Price) AS TotalDrugRevenue, "
-					+ "SUM(s.Price) AS TotalServiceRevenue, " + "SUM(d.Price + s.Price) AS GrandTotal "
-					+ "FROM PRESCRIPTION_DETAILS pd " + "JOIN APPOINTMENT p ON p.Create_date = pd.Create_date "
-					+ "JOIN DRUG d ON d.id=pd.Drug_id " + "JOIN DOCTOR doc ON doc.Doctor_id = p.Doctor_id "
-					+ "JOIN SERVICE s ON s.Id = doc.Service_id " + "WHERE DATE(pd.Create_date) BETWEEN ? AND ? "
-					+ "GROUP BY DATE(pd.Create_date) " + "ORDER BY DATE(pd.Create_date) DESC";
+			String sql = "SELECT " + "    CreateDate, " + "    SUM(totalDrugRevenue) AS totalDrugRevenue, "
+					+ "    SUM(totalServiceRevenue) AS totalServiceRevenue, " + "    SUM(grandTotal) AS grandTotal "
+					+ "FROM ( " + "    SELECT " + "        DATE(p.Create_Date) AS CreateDate, "
+					+ "        SUM(d.Price * pd.Quantity) AS totalDrugRevenue, " + "        0 AS totalServiceRevenue, "
+					+ "        SUM(d.Price * pd.Quantity) AS grandTotal " + "    FROM PRESCRIPTION_DETAILS pd "
+					+ "    JOIN PRESCRIPTION p ON p.Id = pd.Prescription_id " + "    JOIN DRUG d ON d.Id = pd.Drug_id "
+					+ "    JOIN APPOINTMENT a ON a.Id = p.Appointment_id " + "    WHERE a.Prescription_Status = 'Paid' "
+					+ "      AND DATE(p.Create_Date) BETWEEN ? AND ? " + "    GROUP BY DATE(p.Create_Date) "
+					+ "    UNION ALL " + "    SELECT " + "        DATE(a.Create_Date) AS CreateDate, "
+					+ "        0 AS totalDrugRevenue, " + "        SUM(s.Price) AS totalServiceRevenue, "
+					+ "        SUM(s.Price) AS grandTotal " + "    FROM APPOINTMENT a "
+					+ "    JOIN APPOINTMENT_SERVICE aps ON aps.Appointment_id = a.Id "
+					+ "    JOIN SERVICE s ON s.Id = aps.Service_id " + "    WHERE DATE(a.Create_Date) BETWEEN ? AND ? "
+					+ "    GROUP BY DATE(a.Create_Date) " + ") AS tmp " + "GROUP BY CreateDate "
+					+ "ORDER BY CreateDate ASC;";
+
 			PreparedStatement ps = conn.prepareStatement(sql);
 			ps.setDate(1, java.sql.Date.valueOf(startDate));
 			ps.setDate(2, java.sql.Date.valueOf(endDate));
-
+			ps.setDate(3, java.sql.Date.valueOf(startDate));
+			ps.setDate(4, java.sql.Date.valueOf(endDate));
 			ResultSet rs = ps.executeQuery();
 			i = 1;
 			revenueListSortByDate.clear();
+			medicationFees = BigDecimal.ZERO;
+			serviceFees = BigDecimal.ZERO;
 			while (rs.next()) {
-				String createDate = rs.getString("CreateDate");
+				LocalDate createDate = LocalDate.parse(rs.getString("CreateDate"));
 				BigDecimal totalDrugRevenue = rs.getBigDecimal("TotalDrugRevenue");
 				BigDecimal totalServiceRevenue = rs.getBigDecimal("TotalServiceRevenue");
 				BigDecimal grandTotal = rs.getBigDecimal("GrandTotal");
@@ -909,14 +935,13 @@ public class AdminMainFormController {
 				medicationFees = medicationFees.add(totalDrugRevenue);
 				serviceFees = serviceFees.add(totalServiceRevenue);
 
-				revenueListSortByDate.add(Map.of("noTotal", String.valueOf(i), "CreateDate",
-						FormatterUtils.formatTimestamp(createDate.toString()), "totalDrugRevenue",
-						totalDrugRevenue.toString(), "totalServiceRevenue", totalServiceRevenue.toString(),
-						"grandTotal", grandTotal.toString()));
+				revenueListSortByDate.add(Map.of("noTotal", String.valueOf(i), "date",
+						createDate.format(formatter).toString(), "totalDrug", totalDrugRevenue.toString(),
+						"totalService", totalServiceRevenue.toString(), "totalRevenue", grandTotal.toString()));
 
 				i++;
-			}
 
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			Alert error = new Alert(Alert.AlertType.ERROR, "Failed to load revenue report: " + e.getMessage());
@@ -945,10 +970,13 @@ public class AdminMainFormController {
 	private void handleRevenueDrugReport(LocalDate startDate, LocalDate endDate) {
 
 		try (Connection conn = Database.connectDB()) {
-			String sql = "SELECT d.Name AS DrugName, SUM(pd.Quantity) AS quantity, d.Price, SUM(d.Price) AS TotalRevenue "
-					+ "FROM PRESCRIPTION_DETAILS pd " + "JOIN DRUG d ON pd.Drug_id = d.Id "
-					+ "WHERE DATE(pd.Create_date) BETWEEN ? AND ? " + "GROUP BY d.Name, d.Price "
-					+ "ORDER BY DATE(pd.Create_date) DESC";
+			String sql = "SELECT d.Name AS DrugName, " + "SUM(pd.Quantity) AS Quantity, " + "d.Price, "
+					+ "SUM(d.Price * pd.Quantity) AS TotalRevenue " + "FROM PRESCRIPTION_DETAILS pd "
+					+ "JOIN PRESCRIPTION p ON pd.Prescription_id = p.Id "
+					+ "JOIN APPOINTMENT a ON p.Appointment_id = a.Id " + "JOIN DRUG d ON pd.Drug_id = d.Id "
+					+ "WHERE a.Prescription_Status = 'Paid' " + "AND DATE(pd.Create_date) BETWEEN ? AND ? "
+					+ "GROUP BY d.Name, d.Price " + "ORDER BY DATE(pd.Create_date) DESC";
+
 			PreparedStatement ps = conn.prepareStatement(sql);
 			ps.setDate(1, java.sql.Date.valueOf(startDate));
 			ps.setDate(2, java.sql.Date.valueOf(endDate));
@@ -990,10 +1018,11 @@ public class AdminMainFormController {
 
 	private void handleRevenueServiceReport(LocalDate startDate, LocalDate endDate) {
 		try (Connection conn = Database.connectDB()) {
-			String sql = "SELECT s.Name AS ServiceName, COUNT(*) AS quantity, s.Price,s.Type, SUM(s.Price) AS TotalRevenue "
-					+ "FROM SERVICE s " + "JOIN DOCTOR d ON d.Service_id = s.Id "
-					+ "JOIN APPOINTMENT p ON p.Doctor_id = d.Doctor_id " + "WHERE DATE(p.Create_date) BETWEEN ? AND ? "
-					+ "GROUP BY s.Name, s.Price" + " ORDER BY DATE(p.Create_date) DESC";
+			String sql = "SELECT s.Name AS ServiceName, " + "COUNT(*) AS Quantity, " + "s.Price, " + "s.Type, "
+					+ "SUM(s.Price) AS TotalRevenue " + "FROM SERVICE s "
+					+ "JOIN APPOINTMENT_SERVICE aps ON aps.Service_id = s.Id "
+					+ "JOIN APPOINTMENT p ON p.Id = aps.Appointment_id " + "WHERE DATE(p.Create_Date) BETWEEN ? AND ? "
+					+ "GROUP BY s.Name, s.Price, s.Type " + "ORDER BY DATE(p.Create_Date) DESC;";
 
 			PreparedStatement ps = conn.prepareStatement(sql);
 			ps.setDate(1, java.sql.Date.valueOf(startDate));
@@ -1022,7 +1051,7 @@ public class AdminMainFormController {
 				dataList.add(new RevenueService(serviceName, type, quantity, price, totalRevenue));
 
 				serviceRevenueList.add(Map.of("noService", String.valueOf(i), "serviceName", serviceName, "type", type,
-						"ServicePrice", price.toString(), "totalService", totalRevenue.toString()));
+						"ServiceQuantity",String.valueOf(quantity),"ServicePrice", price.toString(), "totalService", totalRevenue.toString()));
 
 				i++;
 			}
@@ -1119,10 +1148,8 @@ public class AdminMainFormController {
 					InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
 					InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
 
-
- 					Image img1 = new Image(imgStream1, 137, 95, true, true);
+					Image img1 = new Image(imgStream1, 137, 95, true, true);
 					profile_circle.setFill(new ImagePattern(img1));
-
 
 					Image img2 = new Image(imgStream2, 1012, 22, true, true);
 
@@ -1206,7 +1233,7 @@ public class AdminMainFormController {
 
 			// Hiển thị ảnh lên UI
 
- 			image = new Image(file.toURI().toString(), 137, 95, false, true);
+			image = new Image(file.toURI().toString(), 137, 95, false, true);
 			profile_circle.setFill(new ImagePattern(image));
 
 			// Lưu ảnh vào DB

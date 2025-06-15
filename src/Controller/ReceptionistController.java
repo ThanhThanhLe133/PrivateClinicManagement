@@ -10,13 +10,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import org.apache.poi.xwpf.usermodel.*;
- 
+
 import Model.AppointmentData;
 import Model.PatientData;
- 
+
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
 import org.apache.poi.xwpf.usermodel.*;
-import org.apache.poi.util.Units; import java.io.*;
+import org.apache.poi.util.Units;
+import java.io.*;
 import java.nio.file.*;
 import java.sql.*;
 import java.time.*;
@@ -69,7 +70,7 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTR;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTText;
 
 import com.microsoft.schemas.vml.CTTextbox;
- 
+
 import Alert.AlertMessage;
 import Controller.DoctorMainFormController.DashBoardAppointmentData;
 import Controller.DoctorMainFormController.DoctorAppointmentData;
@@ -363,10 +364,10 @@ public class ReceptionistController implements Initializable {
 	@FXML
 	private TableColumn<AppointmentData, String> appointments_col_reason;
 	ObservableList<AppointmentData> appoinmentListData = FXCollections.observableArrayList();
- 	@FXML
- 	private ComboBox<String> appointments_searchBy;
- 	@FXML
- 	private TextField appointments_searchQuery;
+	@FXML
+	private ComboBox<String> appointments_searchBy;
+	@FXML
+	private TextField appointments_searchQuery;
 
 	@FXML
 	private TextField appointment_serviceName;
@@ -994,12 +995,10 @@ public class ReceptionistController implements Initializable {
 					InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
 					InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
 
-
- 					Image img1 = new Image(imgStream1, 137, 95, true, true);
+					Image img1 = new Image(imgStream1, 137, 95, true, true);
 					profile_circle.setFill(new ImagePattern(img1));
 
-
- 					Image img2 = new Image(imgStream2, 1012, 22, true, true);
+					Image img2 = new Image(imgStream2, 1012, 22, true, true);
 
 					top_profile.setFill(new ImagePattern(img2));
 				} else {
@@ -1089,7 +1088,7 @@ public class ReceptionistController implements Initializable {
 
 			// Hiển thị ảnh lên UI
 
- 			image = new Image(file.toURI().toString(), 137, 95, false, true);
+			image = new Image(file.toURI().toString(), 137, 95, false, true);
 			profile_circle.setFill(new ImagePattern(image));
 
 			// Lưu ảnh vào DB
@@ -1411,7 +1410,7 @@ public class ReceptionistController implements Initializable {
 
 				String serviceName = (cbService != null && cbService.getValue() != null)
 						? cbService.getValue().getName()
-: "Haven't chosen service";
+						: "Haven't chosen service";
 
 				if (serviceName == null) {
 					alert.errorMessage("⚠ Please fill all the banks.");
@@ -1420,7 +1419,7 @@ public class ReceptionistController implements Initializable {
 				}
 
 				String doctorName = (cbDoctor != null && cbDoctor.getValue() != null) ? cbDoctor.getValue().getName()
-: "Haven't chosen doctor";
+						: "Haven't chosen doctor";
 				String doctorId = (cbDoctor != null && cbDoctor.getValue() != null) ? cbDoctor.getValue().getId()
 						: null;
 
@@ -1483,7 +1482,7 @@ public class ReceptionistController implements Initializable {
 						lb_check.setText("❌ Error while checking appointments!");
 					}
 					selectedServiceNames.add(serviceName);
-
+					System.out.println(serviceName);
 					Map<String, String> doctorInfo = new HashMap<>();
 					doctorInfo.put("id", doctorId);
 					doctorInfo.put("name", doctorName);
@@ -1496,7 +1495,7 @@ public class ReceptionistController implements Initializable {
 
 				} else {
 					// Chưa chọn thời gian
-lb_check.setText("You haven't choose time for service " + serviceName);
+					lb_check.setText("You haven't choose time for service " + serviceName);
 					isAvailableAppointment = false;
 				}
 
@@ -1537,465 +1536,498 @@ lb_check.setText("You haven't choose time for service " + serviceName);
 
 	}
 
- 	@FXML
- 	private static final Logger LOGGER = Logger.getLogger(ReceptionistController.class.getName());
-     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
- 
-     static {
-         LOGGER.setLevel(Level.FINE);
-         for (Handler handler : LOGGER.getParent().getHandlers()) {
-             handler.setLevel(Level.FINE);
-         }
-     }
- 
-  // Helper method to get receptionist name
-     private String getReceptionistName(Connection connect) {
-        String sql = "SELECT ua.Name FROM USER_ACCOUNT ua JOIN RECEPTIONIST r ON ua.Id = r.Receptionist_id WHERE ua.Username = ?";
-         try (PreparedStatement ps = connect.prepareStatement(sql)) {
-             ps.setString(1, username);
-             ResultSet rs = ps.executeQuery();
-             if (rs.next()) {
-                 return rs.getString("Name");
-             }
-         } catch (SQLException e) {
-             LOGGER.severe("Error fetching receptionist name: " + e.getMessage());
-         }
-         return "Unknown";
-     }
- 
-     // Method to replace placeholders while preserving formatting
-     private void replacePlaceholders(XWPFDocument doc, Map<String, String> placeholders) {
-         if (placeholders == null) {
-             LOGGER.warning("Placeholders map is null, skipping replacement.");
-             return;
-         }
- 
-         // Process paragraphs
-         for (XWPFParagraph para : doc.getParagraphs()) {
-             replaceInParagraph(para, placeholders);
-         }
- 
-         // Process tables
-         for (XWPFTable table : doc.getTables()) {
-            for (XWPFTableRow row : table.getRows()) {
-                 for (XWPFTableCell cell : row.getTableCells()) {
-                     for (XWPFParagraph para : cell.getParagraphs()) {
-                         replaceInParagraph(para, placeholders);
-                     }
-                    if (cell.getParagraphs().isEmpty()) {
-                         XWPFParagraph newPara = cell.addParagraph();
-                         replaceInParagraph(newPara, placeholders);
-                     }
-                 }
-             }
-        }
- 
-         // Process headers and footers
-         XWPFHeaderFooterPolicy headerFooterPolicy = doc.getHeaderFooterPolicy();
-         if (headerFooterPolicy != null) {
-             XWPFHeader defaultHeader = headerFooterPolicy.getDefaultHeader();
-             if (defaultHeader != null) {
-                 for (XWPFParagraph para : defaultHeader.getParagraphs()) {
-                     replaceInParagraph(para, placeholders);
-                 }
-             }
-             XWPFFooter defaultFooter = headerFooterPolicy.getDefaultFooter();
-              if (defaultFooter != null) {
-                 for (XWPFParagraph para : defaultFooter.getParagraphs()) {
-                     replaceInParagraph(para, placeholders);
-                 }
-             }
-         }
-     }
- 
-     private void replaceInParagraph(XWPFParagraph para, Map<String, String> placeholders) {
-         if (para == null || placeholders == null) {
-             LOGGER.warning("Paragraph or placeholders is null: Para=" + para);
-             return;
-         }
-         List<XWPFRun> runs = para.getRuns();
-         if (runs == null || runs.isEmpty()) {
-             XWPFRun newRun = para.createRun();
-             newRun.setFontFamily("Times New Roman");
-             newRun.setFontSize(12);
-             runs = para.getRuns();
-         }
- 
-         StringBuilder fullText = new StringBuilder();
-         for (XWPFRun run : runs) {
-             String text = run.getText(0);
-             if (text != null) {
-                 fullText.append(text);
-             }
-         }
- 
-         String originalText = fullText.toString();
-         String replacedText = originalText;
-         for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-             String placeholder = "{{" + entry.getKey() + "}}";
-             String replacement = entry.getValue() != null ? entry.getValue() : "";
-             replacedText = replacedText.replace(placeholder, replacement);
-             if (originalText.contains("$" + entry.getKey())) {
-                 replacedText = replacedText.replace("$" + entry.getKey(), replacement);
-             }
-        }
- 
-         if (!originalText.equals(replacedText)) {
-             for (int i = runs.size() - 1; i >= 0; i--) {
-                 para.removeRun(i);
-             }
-             boolean isTotal = originalText.contains("Total:");
-             boolean isAdvice = originalText.contains("Advice:");
-             if (isTotal) {
-                 XWPFRun totalRun = para.createRun();
-                 totalRun.setFontFamily("Times New Roman");
-                 totalRun.setFontSize(12);
-                 totalRun.setBold(true);
-                 totalRun.setText("Total: ");
-                 XWPFRun valueRun = para.createRun();
-                 valueRun.setFontFamily("Times New Roman");
-                 valueRun.setFontSize(12);
-                 valueRun.setText(replacedText.replace("Total: ", ""));
-             } else if (isAdvice) {
-                 XWPFRun adviceRun = para.createRun();
-                 adviceRun.setFontFamily("Times New Roman");
-                 adviceRun.setFontSize(12);
-                 adviceRun.setBold(true);
-                 adviceRun.setText("Advice: ");
-                 XWPFRun valueRun = para.createRun();
-                 valueRun.setFontFamily("Times New Roman");
-                 valueRun.setFontSize(12);
-                 valueRun.setText(replacedText.replace("Advice: ", ""));
-             } else {
-                 XWPFRun newRun = para.createRun();
-                 newRun.setFontFamily("Times New Roman");
-                 newRun.setFontSize(12);
-                 newRun.setText(replacedText);
-             }
-             LOGGER.fine("Replaced placeholders in paragraph: " + originalText + " -> " + replacedText);
-         }
-     }
- 
-     private void replaceTablePlaceholders(XWPFDocument doc, List<String> serviceNames, List<BigDecimal> servicePrices,
-             List<Map<String, Object>> drugs, BigDecimal totalPrice, String formattedDate,
-             String receptionistName, String doctorName, String diagnose, String advice) {
-         List<XWPFTable> tables = doc.getTables();
-         if (tables.isEmpty()) {
-             LOGGER.warning("No tables found in document.");
-             return;
-         }
- 
-         Map<String, String> tablePlaceholders = new HashMap<>();
-         tablePlaceholders.put("patientId", selectedPatient != null ? selectedPatient.getPatientId() : "");
-         tablePlaceholders.put("patientName", selectedPatient != null ? selectedPatient.getName() : "");
-         tablePlaceholders.put("age", selectedPatient != null && selectedPatient.getBirthDate() != null ?
-                 String.valueOf(Period.between(selectedPatient.getBirthDate(), LocalDate.now()).getYears()) : "0");
-         tablePlaceholders.put("gender", selectedPatient != null ? selectedPatient.getGender() : "");
-         tablePlaceholders.put("address", selectedPatient != null ? selectedPatient.getAddress() : "");
-         tablePlaceholders.put("diagnose", diagnose != null ? diagnose : "");
-         tablePlaceholders.put("advice", advice != null ? advice : "");
-         tablePlaceholders.put("totalPrice", totalPrice != null ? formatCurrencyVND(totalPrice) : "0 VNĐ");
-         tablePlaceholders.put("date", formattedDate != null ? formattedDate : "");
-         tablePlaceholders.put("receptionistName", receptionistName != null ? receptionistName : "");
-         tablePlaceholders.put("doctorName", doctorName != null ? doctorName : "");
- 
-         for (XWPFTable table : tables) {
-             int headerRowIndex = -1;
-             boolean isServiceTable = false;
-             boolean isDrugTable = false;
- 
-             for (int i = 0; i < table.getRows().size(); i++) {
-                 XWPFTableRow row = table.getRow(i);
-                 String cellText = row.getCell(0) != null ? row.getCell(0).getText().toLowerCase() : "";
-                 if (cellText.contains("service")) {
-                     isServiceTable = true;
-                     headerRowIndex = i;
-                     break;
-                 } else if (cellText.contains("medicine")) {
-                     isDrugTable = true;
-                     headerRowIndex = i;
-                     break;
-                 }
-             }
- 
-             if (headerRowIndex == -1) headerRowIndex = 0;
- 
-             while (table.getRows().size() > headerRowIndex + 1) {
-                 table.removeRow(table.getRows().size() - 1);
-             }
- 
-             if (isServiceTable && serviceNames != null && servicePrices != null) {
-                 for (int i = 0; i < serviceNames.size(); i++) {
-                     XWPFTableRow row = table.createRow();
-                     while (row.getTableCells().size() < 2) {
-                         row.addNewTableCell();
-                     }
-                     XWPFTableCell nameCell = row.getCell(0);
-                     XWPFTableCell priceCell = row.getCell(1);
-                     if (nameCell.getParagraphs().isEmpty()) nameCell.addParagraph();
-                     if (priceCell.getParagraphs().isEmpty()) priceCell.addParagraph();
-                     replaceInParagraph(nameCell.getParagraphs().get(0), tablePlaceholders);
-                     replaceInParagraph(priceCell.getParagraphs().get(0), tablePlaceholders);
-                     XWPFRun nameRun = nameCell.getParagraphs().get(0).getRuns().isEmpty() ? nameCell.getParagraphs().get(0).createRun() : nameCell.getParagraphs().get(0).getRuns().get(0);
-                     XWPFRun priceRun = priceCell.getParagraphs().get(0).getRuns().isEmpty() ? priceCell.getParagraphs().get(0).createRun() : priceCell.getParagraphs().get(0).getRuns().get(0);
-                     nameRun.setFontFamily("Times New Roman");
-                     nameRun.setFontSize(12);
-                     nameRun.setText(serviceNames.get(i) != null ? serviceNames.get(i) : "N/A");
-                     priceRun.setFontFamily("Times New Roman");
-                     priceRun.setFontSize(12);
-                     priceRun.setText(servicePrices.get(i) != null ? formatCurrencyVND(servicePrices.get(i)) : "0 VNĐ");
-                 }
-             }
- 
-             if (isDrugTable && drugs != null) {
-                 for (int i = 0; i < drugs.size(); i++) {
-                     XWPFTableRow row = table.createRow();
-                     while (row.getTableCells().size() < 4) {
-                         row.addNewTableCell();
-                     }
-                     Map<String, Object> drug = drugs.get(i);
-                     String drugName = (String) drug.get("name");
-                     String instructions = (String) drug.get("instructions");
-                     Object quantityObj = drug.get("quantity");
-                     String unit = (String) drug.get("unit");
-                     BigDecimal price = (BigDecimal) drug.get("price");
-                     int quantity = quantityObj instanceof Integer ? (Integer) quantityObj : 0;
- 
-                     XWPFTableCell nameCell = row.getCell(0);
-                     XWPFTableCell xCell = row.getCell(1);
-                     XWPFTableCell qtyCell = row.getCell(2);
-                     XWPFTableCell priceCell = row.getCell(3);
- 
-                     if (nameCell.getParagraphs().isEmpty()) nameCell.addParagraph();
-                     if (xCell.getParagraphs().isEmpty()) xCell.addParagraph();
-                     if (qtyCell.getParagraphs().isEmpty()) qtyCell.addParagraph();
-                     if (priceCell.getParagraphs().isEmpty()) priceCell.addParagraph();
-                     replaceInParagraph(nameCell.getParagraphs().get(0), tablePlaceholders);
-                     replaceInParagraph(xCell.getParagraphs().get(0), tablePlaceholders);
-                     replaceInParagraph(qtyCell.getParagraphs().get(0), tablePlaceholders);
-                     replaceInParagraph(priceCell.getParagraphs().get(0), tablePlaceholders);
- 
-                     XWPFRun nameRun = nameCell.getParagraphs().get(0).getRuns().isEmpty() ? nameCell.getParagraphs().get(0).createRun() : nameCell.getParagraphs().get(0).getRuns().get(0);
-                     XWPFRun xRun = xCell.getParagraphs().get(0).getRuns().isEmpty() ? xCell.getParagraphs().get(0).createRun() : xCell.getParagraphs().get(0).getRuns().get(0);
-                     XWPFRun qtyRun = qtyCell.getParagraphs().get(0).getRuns().isEmpty() ? qtyCell.getParagraphs().get(0).createRun() : qtyCell.getParagraphs().get(0).getRuns().get(0);
-                     XWPFRun priceRun = priceCell.getParagraphs().get(0).getRuns().isEmpty() ? priceCell.getParagraphs().get(0).createRun() : priceCell.getParagraphs().get(0).getRuns().get(0);
- 
-                     nameRun.setFontFamily("Times New Roman");
-                     nameRun.setFontSize(12);
-                     nameRun.setText(drugName != null ? drugName : "N/A");
-                     if (instructions != null) {
-                         nameRun.addBreak();
-                         XWPFRun instrRun = nameCell.getParagraphs().get(0).createRun();
-                         instrRun.setFontFamily("Times New Roman");
-                         instrRun.setFontSize(12);
-                         instrRun.setItalic(true);
-                         instrRun.setText(instructions);
-                     }
-                     xRun.setText("x");
-                     qtyRun.setText(quantityObj != null ? quantity + (unit != null ? " " + unit : "") : "0");
-                     priceRun.setText(price != null ? formatCurrencyVND(price.multiply(BigDecimal.valueOf(quantity))) : "0 VNĐ");
-                 }
-             }
-         }
-     }
-     
-     
- // Method to create appointments and generate invoice
-     @FXML
-    public void createAppointment(ActionEvent event) {
+	@FXML
+	private static final Logger LOGGER = Logger.getLogger(ReceptionistController.class.getName());
+	private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
- 		if (!isCheck) {
-             alert.errorMessage("Please check the schedule before creating appointments!");
-             return;
-         }
-		 if (!isAvailableAppointment) {
-			 alert.errorMessage("⚠ Cannot create appointment due to schedule conflicts!");
-			 return;
-		 }
-		 
-        if (selectedPatient == null) {
-            alert.errorMessage("Please select a patient!");
-             return;
-        }
+	static {
+		LOGGER.setLevel(Level.FINE);
+		for (Handler handler : LOGGER.getParent().getHandlers()) {
+			handler.setLevel(Level.FINE);
+		}
+	}
 
-try {
-	 List<ServiceData> selectedServices = new ArrayList<>();
-    if (selectedServices.isEmpty()) {
-        alert.errorMessage("Please select at least one service!");
-        return;
-    }
+	// Helper method to get receptionist name
+	private String getReceptionistName(Connection connect) {
+		String sql = "SELECT ua.Name FROM USER_ACCOUNT ua JOIN RECEPTIONIST r ON ua.Id = r.Receptionist_id WHERE ua.Username = ?";
+		try (PreparedStatement ps = connect.prepareStatement(sql)) {
+			ps.setString(1, username);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				return rs.getString("Name");
+			}
+		} catch (SQLException e) {
+			LOGGER.severe("Error fetching receptionist name: " + e.getMessage());
+		}
+		return "Unknown";
+	}
 
-    connect = Database.connectDB();
-    connect.setAutoCommit(false);
+	// Method to replace placeholders while preserving formatting
+	private void replacePlaceholders(XWPFDocument doc, Map<String, String> placeholders) {
+		if (placeholders == null) {
+			LOGGER.warning("Placeholders map is null, skipping replacement.");
+			return;
+		}
 
-    String insertAppointmentSQL = "INSERT INTO appointment (id, time, status, cancel_reason, Doctor_id, Patient_id, Urgency_level, Is_followup, Priority_score, create_date, update_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    String insertAppointmentServiceSQL = "INSERT INTO appointment_service (Appointment_id, Service_id) VALUES (?, ?)";
-    String updateSlotSQL = "UPDATE AVAILABLE_SLOT SET Doctor_id = ?, Is_booked = ?, Appointment_id = ? WHERE Id = ?";
-    String findSlotSQL = "SELECT Id FROM AVAILABLE_SLOT WHERE Doctor_id = ? AND Slot_date = ? AND Slot_time = ? AND Is_booked = FALSE LIMIT 1";
+		// Process paragraphs
+		for (XWPFParagraph para : doc.getParagraphs()) {
+			replaceInParagraph(para, placeholders);
+		}
 
-    PreparedStatement psFindSlot = connect.prepareStatement(findSlotSQL);
-    PreparedStatement psInsertAppointment = connect.prepareStatement(insertAppointmentSQL);
-    PreparedStatement psUpdateSlot = connect.prepareStatement(updateSlotSQL);
+		// Process tables
+		for (XWPFTable table : doc.getTables()) {
+			for (XWPFTableRow row : table.getRows()) {
+				for (XWPFTableCell cell : row.getTableCells()) {
+					for (XWPFParagraph para : cell.getParagraphs()) {
+						replaceInParagraph(para, placeholders);
+					}
+					if (cell.getParagraphs().isEmpty()) {
+						XWPFParagraph newPara = cell.addParagraph();
+						replaceInParagraph(newPara, placeholders);
+					}
+				}
+			}
+		}
 
-    for (int i = 0; i < selectedServiceNames.size(); i++) {
-        String appointmentId = UUID.randomUUID().toString();
-        String doctorId = selectedDoctorInfos.get(i).get("id");
-        String doctorName = selectedDoctorInfos.get(i).get("name");
-        LocalDate date = selectTimes.get(i);
-        LocalTime time = slotTimes.get(i);
-        LocalDateTime appointmentDateTime = LocalDateTime.of(date, time);
+		// Process headers and footers
+		XWPFHeaderFooterPolicy headerFooterPolicy = doc.getHeaderFooterPolicy();
+		if (headerFooterPolicy != null) {
+			XWPFHeader defaultHeader = headerFooterPolicy.getDefaultHeader();
+			if (defaultHeader != null) {
+				for (XWPFParagraph para : defaultHeader.getParagraphs()) {
+					replaceInParagraph(para, placeholders);
+				}
+			}
+			XWPFFooter defaultFooter = headerFooterPolicy.getDefaultFooter();
+			if (defaultFooter != null) {
+				for (XWPFParagraph para : defaultFooter.getParagraphs()) {
+					replaceInParagraph(para, placeholders);
+				}
+			}
+		}
+	}
 
-        // 1. Kiểm tra slot trống
-        psFindSlot.setString(1, doctorId);
-        psFindSlot.setDate(2, java.sql.Date.valueOf(date));
-        psFindSlot.setTime(3, java.sql.Time.valueOf(time));
-        ResultSet rs = psFindSlot.executeQuery();
+	private void replaceInParagraph(XWPFParagraph para, Map<String, String> placeholders) {
+		if (para == null || placeholders == null) {
+			LOGGER.warning("Paragraph or placeholders is null: Para=" + para);
+			return;
+		}
+		List<XWPFRun> runs = para.getRuns();
+		if (runs == null || runs.isEmpty()) {
+			XWPFRun newRun = para.createRun();
+			newRun.setFontFamily("Times New Roman");
+			newRun.setFontSize(12);
+			runs = para.getRuns();
+		}
 
-        if (rs.next()) {
-            String slotId = rs.getString("Id");
+		StringBuilder fullText = new StringBuilder();
+		for (XWPFRun run : runs) {
+			String text = run.getText(0);
+			if (text != null) {
+				fullText.append(text);
+			}
+		}
 
-            // 2. Thêm lịch hẹn
-            psInsertAppointment.setString(1, appointmentId);
-            psInsertAppointment.setTimestamp(2, Timestamp.valueOf(appointmentDateTime));
-            psInsertAppointment.setString(3, "Scheduled");
-            psInsertAppointment.setString(4, "");
-            psInsertAppointment.setString(5, doctorId);
-            psInsertAppointment.setString(6, selectedPatient.getPatientId());
-            psInsertAppointment.setInt(7, urgency);
-            psInsertAppointment.setBoolean(8, isFollowup);
-            psInsertAppointment.setInt(9, 0); // priority_score
-            psInsertAppointment.setTimestamp(10, Timestamp.valueOf(LocalDateTime.now()));
-            psInsertAppointment.setTimestamp(11, Timestamp.valueOf(LocalDateTime.now()));
-            psInsertAppointment.executeUpdate();
+		String originalText = fullText.toString();
+		String replacedText = originalText;
+		for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+			String placeholder = "{{" + entry.getKey() + "}}";
+			String replacement = entry.getValue() != null ? entry.getValue() : "";
+			replacedText = replacedText.replace(placeholder, replacement);
+			if (originalText.contains("$" + entry.getKey())) {
+				replacedText = replacedText.replace("$" + entry.getKey(), replacement);
+			}
+		}
 
-            // 3. Cập nhật slot đã đặt
-            psUpdateSlot.setString(1, doctorId);
-            psUpdateSlot.setBoolean(2, true);
-            psUpdateSlot.setString(3, appointmentId);
-            psUpdateSlot.setString(4, slotId);
-            psUpdateSlot.executeUpdate();
+		if (!originalText.equals(replacedText)) {
+			for (int i = runs.size() - 1; i >= 0; i--) {
+				para.removeRun(i);
+			}
+			boolean isTotal = originalText.contains("Total:");
+			boolean isAdvice = originalText.contains("Advice:");
+			if (isTotal) {
+				XWPFRun totalRun = para.createRun();
+				totalRun.setFontFamily("Times New Roman");
+				totalRun.setFontSize(12);
+				totalRun.setBold(true);
+				totalRun.setText("Total: ");
+				XWPFRun valueRun = para.createRun();
+				valueRun.setFontFamily("Times New Roman");
+				valueRun.setFontSize(12);
+				valueRun.setText(replacedText.replace("Total: ", ""));
+			} else if (isAdvice) {
+				XWPFRun adviceRun = para.createRun();
+				adviceRun.setFontFamily("Times New Roman");
+				adviceRun.setFontSize(12);
+				adviceRun.setBold(true);
+				adviceRun.setText("Advice: ");
+				XWPFRun valueRun = para.createRun();
+				valueRun.setFontFamily("Times New Roman");
+				valueRun.setFontSize(12);
+				valueRun.setText(replacedText.replace("Advice: ", ""));
+			} else {
+				XWPFRun newRun = para.createRun();
+				newRun.setFontFamily("Times New Roman");
+				newRun.setFontSize(12);
+				newRun.setText(replacedText);
+			}
+			LOGGER.fine("Replaced placeholders in paragraph: " + originalText + " -> " + replacedText);
+		}
+	}
 
-            // 4. Thêm các dịch vụ tương ứng
-            for (ServiceData serviceData : selectedServices) {
-                PreparedStatement psAppointmentService = connect.prepareStatement(insertAppointmentServiceSQL);
-                psAppointmentService.setString(1, appointmentId);
-                psAppointmentService.setString(2, serviceData.getServiceId());
-                psAppointmentService.executeUpdate();
-            }
+	private void replaceTablePlaceholders(XWPFDocument doc, List<String> serviceNames, List<BigDecimal> servicePrices,
+			List<Map<String, Object>> drugs, BigDecimal totalPrice, String formattedDate, String receptionistName,
+			String doctorName, String diagnose, String advice) {
+		List<XWPFTable> tables = doc.getTables();
+		if (tables.isEmpty()) {
+			LOGGER.warning("No tables found in document.");
+			return;
+		}
 
-        } else {
-            alert.errorMessage("⚠ No empty slot for " + doctorName + " at " + time + " on " + date);
-        }
-    }
+		Map<String, String> tablePlaceholders = new HashMap<>();
+		tablePlaceholders.put("patientId", selectedPatient != null ? selectedPatient.getPatientId() : "");
+		tablePlaceholders.put("patientName", selectedPatient != null ? selectedPatient.getName() : "");
+		tablePlaceholders.put("age",
+				selectedPatient != null && selectedPatient.getBirthDate() != null
+						? String.valueOf(Period.between(selectedPatient.getBirthDate(), LocalDate.now()).getYears())
+						: "0");
+		tablePlaceholders.put("gender", selectedPatient != null ? selectedPatient.getGender() : "");
+		tablePlaceholders.put("address", selectedPatient != null ? selectedPatient.getAddress() : "");
+		tablePlaceholders.put("diagnose", diagnose != null ? diagnose : "");
+		tablePlaceholders.put("advice", advice != null ? advice : "");
+		tablePlaceholders.put("totalPrice", totalPrice != null ? formatCurrencyVND(totalPrice) : "0 VNĐ");
+		tablePlaceholders.put("date", formattedDate != null ? formattedDate : "");
+		tablePlaceholders.put("receptionistName", receptionistName != null ? receptionistName : "");
+		tablePlaceholders.put("doctorName", doctorName != null ? doctorName : "");
 
-    connect.commit();
+		for (XWPFTable table : tables) {
+			int headerRowIndex = -1;
+			boolean isServiceTable = false;
+			boolean isDrugTable = false;
 
-    // In hoá đơn
-    List<String> serviceNames = selectedServices.stream().map(ServiceData::getName).collect(Collectors.toList());
-    List<BigDecimal> servicePrices = selectedServices.stream().map(ServiceData::getPrice).collect(Collectors.toList());
-    try {
-    generateInvoiceDocx(serviceNames, servicePrices, getReceptionistName(connect));
-} catch (IOException e) {
-    e.printStackTrace();
-    alert.errorMessage("Error generating invoice: " + e.getMessage());
-}
+			for (int i = 0; i < table.getRows().size(); i++) {
+				XWPFTableRow row = table.getRow(i);
+				String cellText = row.getCell(0) != null ? row.getCell(0).getText().toLowerCase() : "";
+				if (cellText.contains("service")) {
+					isServiceTable = true;
+					headerRowIndex = i;
+					break;
+				} else if (cellText.contains("medicine")) {
+					isDrugTable = true;
+					headerRowIndex = i;
+					break;
+				}
+			}
 
+			if (headerRowIndex == -1)
+				headerRowIndex = 0;
 
-    alert.successMessage("✔ Appointment(s) created successfully!");
+			while (table.getRows().size() > headerRowIndex + 1) {
+				table.removeRow(table.getRows().size() - 1);
+			}
 
-    // Xoá danh sách tạm
-    selectedServiceNames.clear();
-    selectedDoctorInfos.clear();
-    selectedSlotTimes.clear();
-    selectTimes.clear();
-    slotTimes.clear();
+			if (isServiceTable && serviceNames != null && servicePrices != null) {
+				for (int i = 0; i < serviceNames.size(); i++) {
+					XWPFTableRow row = table.createRow();
+					while (row.getTableCells().size() < 2) {
+						row.addNewTableCell();
+					}
+					XWPFTableCell nameCell = row.getCell(0);
+					XWPFTableCell priceCell = row.getCell(1);
+					if (nameCell.getParagraphs().isEmpty())
+						nameCell.addParagraph();
+					if (priceCell.getParagraphs().isEmpty())
+						priceCell.addParagraph();
+					replaceInParagraph(nameCell.getParagraphs().get(0), tablePlaceholders);
+					replaceInParagraph(priceCell.getParagraphs().get(0), tablePlaceholders);
+					XWPFRun nameRun = nameCell.getParagraphs().get(0).getRuns().isEmpty()
+							? nameCell.getParagraphs().get(0).createRun()
+							: nameCell.getParagraphs().get(0).getRuns().get(0);
+					XWPFRun priceRun = priceCell.getParagraphs().get(0).getRuns().isEmpty()
+							? priceCell.getParagraphs().get(0).createRun()
+							: priceCell.getParagraphs().get(0).getRuns().get(0);
+					nameRun.setFontFamily("Times New Roman");
+					nameRun.setFontSize(12);
+					nameRun.setText(serviceNames.get(i) != null ? serviceNames.get(i) : "N/A");
+					priceRun.setFontFamily("Times New Roman");
+					priceRun.setFontSize(12);
+					priceRun.setText(servicePrices.get(i) != null ? formatCurrencyVND(servicePrices.get(i)) : "0 VNĐ");
+				}
+			}
 
-} catch (SQLException e) {
-    e.printStackTrace();
-    alert.errorMessage("❌ Lỗi khi tạo lịch hẹn: " + e.getMessage());
-    try {
-        if (connect != null) connect.rollback();
-    } catch (SQLException rollbackEx) {
-        rollbackEx.printStackTrace();
-	} 
-}
-}
+			if (isDrugTable && drugs != null) {
+				for (int i = 0; i < drugs.size(); i++) {
+					XWPFTableRow row = table.createRow();
+					while (row.getTableCells().size() < 4) {
+						row.addNewTableCell();
+					}
+					Map<String, Object> drug = drugs.get(i);
+					String drugName = (String) drug.get("name");
+					String instructions = (String) drug.get("instructions");
+					Object quantityObj = drug.get("quantity");
+					String unit = (String) drug.get("unit");
+					BigDecimal price = (BigDecimal) drug.get("price");
+					int quantity = quantityObj instanceof Integer ? (Integer) quantityObj : 0;
 
-             
+					XWPFTableCell nameCell = row.getCell(0);
+					XWPFTableCell xCell = row.getCell(1);
+					XWPFTableCell qtyCell = row.getCell(2);
+					XWPFTableCell priceCell = row.getCell(3);
 
-     // Fixed generateInvoiceDocx method
-     private void generateInvoiceDocx(List<String> serviceNames, List<BigDecimal> servicePrices, String receptionistName) throws IOException {
-         LOGGER.info("Starting invoice generation. Service count: " + (serviceNames != null ? serviceNames.size() : 0));
-         if (selectedPatient == null) {
-             LOGGER.severe("Selected patient is null.");
-             throw new IllegalStateException("Selected patient cannot be null.");
-         }
-         if (serviceNames == null || servicePrices == null || serviceNames.size() != servicePrices.size()) {
-             LOGGER.severe("Mismatch in service data: serviceNames=" + serviceNames + ", servicePrices=" + servicePrices);
-             throw new IllegalStateException("Invalid service names or prices.");
-         }
- 
-         Files.createDirectories(Paths.get("Word"));
-         String destFileName = "Word/invoice_details_" + UUID.randomUUID().toString() + ".docx";
-         File sourceFile = new File("Word/INVOICE.docx");
-         Path destPath = Paths.get(destFileName);
- 
-         if (!sourceFile.exists()) {
-             LOGGER.severe("Source file Word/INVOICE.docx not found.");
-             throw new IOException("Source file not found.");
-         }
- 
-         if (Files.exists(destPath)) {
-             Files.delete(destPath);
-         }
-         Files.copy(sourceFile.toPath(), destPath, StandardCopyOption.REPLACE_EXISTING);
- 
-         try (XWPFDocument doc = new XWPFDocument(new FileInputStream(destFileName))) {
-             int age = selectedPatient != null && selectedPatient.getBirthDate() != null ?
-                     Period.between(selectedPatient.getBirthDate(), LocalDate.now()).getYears() : 0;
-             BigDecimal totalPrice = BigDecimal.ZERO;
-             for (BigDecimal price : servicePrices) {
-                 totalPrice = totalPrice.add(price != null ? price : BigDecimal.ZERO);
-             }
- 
-             ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
-             String formattedDate = now.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
- 
-             Map<String, String> placeholders = new HashMap<>();
-             placeholders.put("patientId", selectedPatient.getPatientId());
-             placeholders.put("patientName", selectedPatient.getName());
-             placeholders.put("age", String.valueOf(age));
-             placeholders.put("gender", selectedPatient.getGender());
-             placeholders.put("address", selectedPatient.getAddress());
-             placeholders.put("totalPrice", formatCurrencyVND(totalPrice));
-             placeholders.put("date", formattedDate);
-             placeholders.put("receptionistName", receptionistName);
- 
-             replacePlaceholders(doc, placeholders);
-             replaceTablePlaceholders(doc, serviceNames, servicePrices, null, totalPrice, formattedDate, receptionistName, null, null, null);
- 
-             try (FileOutputStream fos = new FileOutputStream(destFileName)) {
-                 doc.write(fos);
-                 LOGGER.info("Invoice document successfully written to " + destFileName);
-             }
- 
-             if (Desktop.isDesktopSupported()) {
-                 try {
-                     Desktop.getDesktop().open(new File(destFileName));
-                 } catch (IOException e) {
-                     LOGGER.severe("Error opening invoice document: " + destFileName + ": " + e.getMessage());
-                     alert.errorMessage("Failed to open invoice file: " + e.getMessage());
-                 }
-             }
- 
-             alert.successMessage("Invoice successfully exported to " + destFileName);
-         } catch (IOException e) {
-             LOGGER.severe("IO Exception during invoice document generation: " + e.getMessage());
-             alert.errorMessage("Error exporting invoice: " + e.getMessage());
-             throw e;
-         }
-     }
-     
+					if (nameCell.getParagraphs().isEmpty())
+						nameCell.addParagraph();
+					if (xCell.getParagraphs().isEmpty())
+						xCell.addParagraph();
+					if (qtyCell.getParagraphs().isEmpty())
+						qtyCell.addParagraph();
+					if (priceCell.getParagraphs().isEmpty())
+						priceCell.addParagraph();
+					replaceInParagraph(nameCell.getParagraphs().get(0), tablePlaceholders);
+					replaceInParagraph(xCell.getParagraphs().get(0), tablePlaceholders);
+					replaceInParagraph(qtyCell.getParagraphs().get(0), tablePlaceholders);
+					replaceInParagraph(priceCell.getParagraphs().get(0), tablePlaceholders);
+
+					XWPFRun nameRun = nameCell.getParagraphs().get(0).getRuns().isEmpty()
+							? nameCell.getParagraphs().get(0).createRun()
+							: nameCell.getParagraphs().get(0).getRuns().get(0);
+					XWPFRun xRun = xCell.getParagraphs().get(0).getRuns().isEmpty()
+							? xCell.getParagraphs().get(0).createRun()
+							: xCell.getParagraphs().get(0).getRuns().get(0);
+					XWPFRun qtyRun = qtyCell.getParagraphs().get(0).getRuns().isEmpty()
+							? qtyCell.getParagraphs().get(0).createRun()
+							: qtyCell.getParagraphs().get(0).getRuns().get(0);
+					XWPFRun priceRun = priceCell.getParagraphs().get(0).getRuns().isEmpty()
+							? priceCell.getParagraphs().get(0).createRun()
+							: priceCell.getParagraphs().get(0).getRuns().get(0);
+
+					nameRun.setFontFamily("Times New Roman");
+					nameRun.setFontSize(12);
+					nameRun.setText(drugName != null ? drugName : "N/A");
+					if (instructions != null) {
+						nameRun.addBreak();
+						XWPFRun instrRun = nameCell.getParagraphs().get(0).createRun();
+						instrRun.setFontFamily("Times New Roman");
+						instrRun.setFontSize(12);
+						instrRun.setItalic(true);
+						instrRun.setText(instructions);
+					}
+					xRun.setText("x");
+					qtyRun.setText(quantityObj != null ? quantity + (unit != null ? " " + unit : "") : "0");
+					priceRun.setText(
+							price != null ? formatCurrencyVND(price.multiply(BigDecimal.valueOf(quantity))) : "0 VNĐ");
+				}
+			}
+		}
+	}
+
+	// Method to create appointments and generate invoice
+	@FXML
+	public void createAppointment(ActionEvent event) {
+
+		if (!isCheck) {
+			alert.errorMessage("Please check the schedule before creating appointments!");
+			return;
+		}
+		if (!isAvailableAppointment) {
+			alert.errorMessage("⚠ Cannot create appointment due to schedule conflicts!");
+			return;
+		}
+
+		if (selectedPatient == null) {
+			alert.errorMessage("Please select a patient!");
+			return;
+		}
+
+		try {
+			List<ServiceData> selectedServices = new ArrayList<>();
+			for (Node node : vboxContainer.getChildren()) {
+			    if (node instanceof AnchorPane) {
+			        ComboBox<ServiceData> cbService = (ComboBox<ServiceData>) ((AnchorPane) node).lookup("#cb_service");
+			        if (cbService != null && cbService.getValue() != null) {
+			            selectedServices.add(cbService.getValue());
+			        }
+			    }
+			}
+			if (selectedServices.isEmpty()) {
+				alert.errorMessage("Please select at least one service!");
+				return;
+			}
+
+			connect = Database.connectDB();
+			connect.setAutoCommit(false);
+
+			String insertAppointmentSQL = "INSERT INTO appointment (id, time, status, cancel_reason, Doctor_id, Patient_id, Urgency_level, Is_followup, Priority_score, create_date, update_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			String insertAppointmentServiceSQL = "INSERT INTO appointment_service (Appointment_id, Service_id) VALUES (?, ?)";
+			String updateSlotSQL = "UPDATE AVAILABLE_SLOT SET Doctor_id = ?, Is_booked = ?, Appointment_id = ? WHERE Id = ?";
+			String findSlotSQL = "SELECT Id FROM AVAILABLE_SLOT WHERE Doctor_id = ? AND Slot_date = ? AND Slot_time = ? AND Is_booked = FALSE LIMIT 1";
+
+			PreparedStatement psFindSlot = connect.prepareStatement(findSlotSQL);
+			PreparedStatement psInsertAppointment = connect.prepareStatement(insertAppointmentSQL);
+			PreparedStatement psUpdateSlot = connect.prepareStatement(updateSlotSQL);
+
+			for (int i = 0; i < selectedServiceNames.size(); i++) {
+				String appointmentId = UUID.randomUUID().toString();
+				String doctorId = selectedDoctorInfos.get(i).get("id");
+				String doctorName = selectedDoctorInfos.get(i).get("name");
+				LocalDate date = selectTimes.get(i);
+				LocalTime time = slotTimes.get(i);
+				LocalDateTime appointmentDateTime = LocalDateTime.of(date, time);
+
+				// 1. Kiểm tra slot trống
+				psFindSlot.setString(1, doctorId);
+				psFindSlot.setDate(2, java.sql.Date.valueOf(date));
+				psFindSlot.setTime(3, java.sql.Time.valueOf(time));
+				ResultSet rs = psFindSlot.executeQuery();
+
+				if (rs.next()) {
+					String slotId = rs.getString("Id");
+
+					// 2. Thêm lịch hẹn
+					psInsertAppointment.setString(1, appointmentId);
+					psInsertAppointment.setTimestamp(2, Timestamp.valueOf(appointmentDateTime));
+					psInsertAppointment.setString(3, "Scheduled");
+					psInsertAppointment.setString(4, "");
+					psInsertAppointment.setString(5, doctorId);
+					psInsertAppointment.setString(6, selectedPatient.getPatientId());
+					psInsertAppointment.setInt(7, urgency);
+					psInsertAppointment.setBoolean(8, isFollowup);
+					psInsertAppointment.setInt(9, 0); // priority_score
+					psInsertAppointment.setTimestamp(10, Timestamp.valueOf(LocalDateTime.now()));
+					psInsertAppointment.setTimestamp(11, Timestamp.valueOf(LocalDateTime.now()));
+					psInsertAppointment.executeUpdate();
+
+					// 3. Cập nhật slot đã đặt
+					psUpdateSlot.setString(1, doctorId);
+					psUpdateSlot.setBoolean(2, true);
+					psUpdateSlot.setString(3, appointmentId);
+					psUpdateSlot.setString(4, slotId);
+					psUpdateSlot.executeUpdate();
+
+					// 4. Thêm các dịch vụ tương ứng
+					for (ServiceData serviceData : selectedServices) {
+						PreparedStatement psAppointmentService = connect.prepareStatement(insertAppointmentServiceSQL);
+						psAppointmentService.setString(1, appointmentId);
+						psAppointmentService.setString(2, serviceData.getServiceId());
+						psAppointmentService.executeUpdate();
+					}
+
+				} else {
+					alert.errorMessage("⚠ No empty slot for " + doctorName + " at " + time + " on " + date);
+				}
+			}
+
+			connect.commit();
+
+			// In hoá đơn
+			List<String> serviceNames = selectedServices.stream().map(ServiceData::getName)
+					.collect(Collectors.toList());
+			List<BigDecimal> servicePrices = selectedServices.stream().map(ServiceData::getPrice)
+					.collect(Collectors.toList());
+			try {
+				generateInvoiceDocx(serviceNames, servicePrices, getReceptionistName(connect));
+			} catch (IOException e) {
+				e.printStackTrace();
+				alert.errorMessage("Error generating invoice: " + e.getMessage());
+			}
+
+			alert.successMessage("✔ Appointment(s) created successfully!");
+
+			// Xoá danh sách tạm
+			selectedServiceNames.clear();
+			selectedDoctorInfos.clear();
+			selectedSlotTimes.clear();
+			selectTimes.clear();
+			slotTimes.clear();
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			alert.errorMessage("❌ Lỗi khi tạo lịch hẹn: " + e.getMessage());
+			try {
+				if (connect != null)
+					connect.rollback();
+			} catch (SQLException rollbackEx) {
+				rollbackEx.printStackTrace();
+			}
+		}
+	}
+
+	// Fixed generateInvoiceDocx method
+	private void generateInvoiceDocx(List<String> serviceNames, List<BigDecimal> servicePrices, String receptionistName)
+			throws IOException {
+		LOGGER.info("Starting invoice generation. Service count: " + (serviceNames != null ? serviceNames.size() : 0));
+		if (selectedPatient == null) {
+			LOGGER.severe("Selected patient is null.");
+			throw new IllegalStateException("Selected patient cannot be null.");
+		}
+		if (serviceNames == null || servicePrices == null || serviceNames.size() != servicePrices.size()) {
+			LOGGER.severe(
+					"Mismatch in service data: serviceNames=" + serviceNames + ", servicePrices=" + servicePrices);
+			throw new IllegalStateException("Invalid service names or prices.");
+		}
+
+		Files.createDirectories(Paths.get("Word"));
+		String destFileName = "Word/invoice_details_" + UUID.randomUUID().toString() + ".docx";
+		File sourceFile = new File("Word/INVOICE.docx");
+		Path destPath = Paths.get(destFileName);
+
+		if (!sourceFile.exists()) {
+			LOGGER.severe("Source file Word/INVOICE.docx not found.");
+			throw new IOException("Source file not found.");
+		}
+
+		if (Files.exists(destPath)) {
+			Files.delete(destPath);
+		}
+		Files.copy(sourceFile.toPath(), destPath, StandardCopyOption.REPLACE_EXISTING);
+
+		try (XWPFDocument doc = new XWPFDocument(new FileInputStream(destFileName))) {
+			int age = selectedPatient != null && selectedPatient.getBirthDate() != null
+					? Period.between(selectedPatient.getBirthDate(), LocalDate.now()).getYears()
+					: 0;
+			BigDecimal totalPrice = BigDecimal.ZERO;
+			for (BigDecimal price : servicePrices) {
+				totalPrice = totalPrice.add(price != null ? price : BigDecimal.ZERO);
+			}
+
+			ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+			String formattedDate = now.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+
+			Map<String, String> placeholders = new HashMap<>();
+			placeholders.put("patientId", selectedPatient.getPatientId());
+			placeholders.put("patientName", selectedPatient.getName());
+			placeholders.put("age", String.valueOf(age));
+			placeholders.put("gender", selectedPatient.getGender());
+			placeholders.put("address", selectedPatient.getAddress());
+			placeholders.put("totalPrice", formatCurrencyVND(totalPrice));
+			placeholders.put("date", formattedDate);
+			placeholders.put("receptionistName", receptionistName);
+
+			replacePlaceholders(doc, placeholders);
+			replaceTablePlaceholders(doc, serviceNames, servicePrices, null, totalPrice, formattedDate,
+					receptionistName, null, null, null);
+
+			try (FileOutputStream fos = new FileOutputStream(destFileName)) {
+				doc.write(fos);
+				LOGGER.info("Invoice document successfully written to " + destFileName);
+			}
+
+			if (Desktop.isDesktopSupported()) {
+				try {
+					Desktop.getDesktop().open(new File(destFileName));
+				} catch (IOException e) {
+					LOGGER.severe("Error opening invoice document: " + destFileName + ": " + e.getMessage());
+					alert.errorMessage("Failed to open invoice file: " + e.getMessage());
+				}
+			}
+
+			alert.successMessage("Invoice successfully exported to " + destFileName);
+		} catch (IOException e) {
+			LOGGER.severe("IO Exception during invoice document generation: " + e.getMessage());
+			alert.errorMessage("Error exporting invoice: " + e.getMessage());
+			throw e;
+		}
+	}
+
 	public void clearSuggestion(ActionEvent event) {
 		txt_suggest.clear();
 	}
@@ -2006,111 +2038,109 @@ try {
 
 	private void loadAppointmentData() {
 
- 		String sql = """
- 	        SELECT
+		String sql = """
+				    SELECT
 
- 				        a.id,
- 	            a.time,
+				       a.id,
+				        a.time,
 
- 	            a.status AS appointment_status,
+				        a.status AS appointment_status,
 
- 	            a.Doctor_id,
+				        a.Doctor_id,
 
- 	            ua.name AS doctor_name,
+				        ua.name AS doctor_name,
 
- 	            a.Patient_id AS patient_id,
+				        a.Patient_id AS patient_id,
 
- 	            pt.name AS patient_name,
+				        pt.name AS patient_name,
 
- 	            pt.phone AS contact_number,
+				        pt.phone AS contact_number,
 
- 	            s.id AS service_id,
+				        s.id AS service_id,
 
- 	            s.name AS service_name,
+				        s.name AS service_name,
 
- 	            a.cancel_reason,
+				        a.cancel_reason,
 
- 	            a.Prescription_Status,
+				        a.Prescription_Status,
 
- 	            a.create_date,
+				        a.create_date,
 
- 	            a.update_date
+				        a.update_date
 
- 	        FROM appointment a
+				    FROM appointment a
 
- 	                 JOIN doctor d ON a.Doctor_id = d.Doctor_id
+				             JOIN doctor d ON a.Doctor_id = d.Doctor_id
 
- 	        JOIN user_account ua ON ua.id = a.Doctor_id
+				    JOIN user_account ua ON ua.id = a.Doctor_id
 
- 	        JOIN patient pt ON pt.Patient_id = a.Patient_id
+				    JOIN patient pt ON pt.Patient_id = a.Patient_id
 
- 	        JOIN service s ON d.service_id = s.id
+				    JOIN service s ON d.service_id = s.id
 
- 	        LEFT JOIN prescription p ON p.Appointment_id = a.id
+				    LEFT JOIN prescription p ON p.Appointment_id = a.id
 
- 	    """;
+				""";
 
+		connect = Database.connectDB();
 
- 	    connect = Database.connectDB();
+		try {
 
- 	    try {
+			prepare = connect.prepareStatement(sql);
 
- 	        prepare = connect.prepareStatement(sql);
+			result = prepare.executeQuery();
 
- 	        result = prepare.executeQuery();
+			appoinmentListData.clear();
 
- 	        appoinmentListData.clear();
+			while (result.next()) {
 
- 	        while (result.next()) {
+				String id = result.getString("id");
 
- 	            String id = result.getString("id");
+				Timestamp time = result.getTimestamp("time");
 
- 	            Timestamp time = result.getTimestamp("time");
+				String status = result.getString("appointment_status");
 
- 	            String status = result.getString("appointment_status");
+				String doctorId = result.getString("Doctor_id");
 
- 	            String doctorId = result.getString("Doctor_id");
+				String doctorName = result.getString("doctor_name");
 
- 	            String doctorName = result.getString("doctor_name");
+				String patientId = result.getString("patient_id");
 
- 	            String patientId = result.getString("patient_id");
+				String patientName = result.getString("patient_name");
 
- 	            String patientName = result.getString("patient_name");
+				String contactNumber = result.getString("contact_number");
 
- 	            String contactNumber = result.getString("contact_number");
+				String serviceId = result.getString("service_id");
 
- 	            String serviceId = result.getString("service_id");
+				String serviceName = result.getString("service_name");
 
- 	            String serviceName = result.getString("service_name");
+				String reason = result.getString("cancel_reason");
 
- 	            String reason = result.getString("cancel_reason");
+				String prescriptionStatus = result.getString("Prescription_Status"); // New field
 
- 	            String prescriptionStatus = result.getString("Prescription_Status"); // New field
+				Timestamp createdDate = result.getTimestamp("create_date");
 
- 	            Timestamp createdDate = result.getTimestamp("create_date");
+				Timestamp lastModifiedDate = result.getTimestamp("update_date");
 
- 	            Timestamp lastModifiedDate = result.getTimestamp("update_date");
+				appoinmentListData.add(new AppointmentData(id, time, status, reason, doctorId, patientId, serviceId,
 
+						serviceName, prescriptionStatus, createdDate, lastModifiedDate, patientName, doctorName,
 
- 	            appoinmentListData.add(new AppointmentData(id, time, status, reason, doctorId, patientId, serviceId,
+						contactNumber));
+			}
 
- 	                    serviceName, prescriptionStatus, createdDate, lastModifiedDate, patientName, doctorName,
+		} catch (SQLException e) {
 
- 	                    contactNumber));
- 	        }
+			e.printStackTrace();
 
- 	    } catch (SQLException e) {
-
- 	        e.printStackTrace();
-
-
- 	    } finally {
- 	        try {
- 	            if (connect != null) connect.close();
- 	        } catch (SQLException e) {
- 	            e.printStackTrace();
- 	        }
- 	    }
+		} finally {
+			try {
+				if (connect != null)
+					connect.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public void appointmentUpdateBtn() {
@@ -2210,175 +2240,168 @@ try {
 
 	}
 
- 	
- 	// Method to generate prescription document
- 	@FXML
- 	public void appointmentPrescriptionBtn() {
- 		// Get the selected appointment
+	// Method to generate prescription document
+	@FXML
+	public void appointmentPrescriptionBtn() {
+		// Get the selected appointment
 
- 		AppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
+		AppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
 
- 		if (selectedAppointment == null) {
+		if (selectedAppointment == null) {
 
- 			alert.errorMessage("Please select an appointment first.");
-             return;
-        }
+			alert.errorMessage("Please select an appointment first.");
+			return;
+		}
 
+		if (!selectedAppointment.getStatus().equals(AppointmentStatus.Finish.toString())) {
 
- 		if (!selectedAppointment.getStatus().equals(AppointmentStatus.Finish.toString())) {
+			alert.errorMessage("This appointment has not finished yet.");
+			return;
+		}
 
- 			alert.errorMessage("This appointment has not finished yet.");
- 			return;
- 		}
+		if ("Paid".equals(selectedAppointment.getPrescriptionStatus())) {
+			String filePath = "Word/prescription_" + selectedAppointment.getId() + ".docx";
+			File file = new File(filePath);
+			if (file.exists()) {
+				try {
+					alert.successMessage("Opening prescription file: " + filePath);
+					LOGGER.info("Opening prescription file: " + filePath);
+					Desktop.getDesktop().open(file);
+				} catch (IOException e) {
+					LOGGER.severe("Failed to open prescription file: " + e.getMessage());
+					alert.errorMessage("Failed to open prescription file: " + e.getMessage());
+				}
+				return;
+			} else {
+				LOGGER.warning("Prescription file not found: " + filePath);
+				alert.errorMessage("Prescription file not found for this appointment!");
+				return;
+			}
+		}
 
-                 
-        if ("Paid".equals(selectedAppointment.getPrescriptionStatus())) {
-             String filePath = "Word/prescription_" + selectedAppointment.getId() + ".docx";
-             File file = new File(filePath);
-             if (file.exists()) {
-                 try {
-                	alert.successMessage("Opening prescription file: " + filePath);
-                     LOGGER.info("Opening prescription file: " + filePath);
-                     Desktop.getDesktop().open(file);
-                 } catch (IOException e) {
-                     LOGGER.severe("Failed to open prescription file: " + e.getMessage());
-                     alert.errorMessage("Failed to open prescription file: " + e.getMessage());
-                 }
-                 return;
-            } else {
-                 LOGGER.warning("Prescription file not found: " + filePath);
-                alert.errorMessage("Prescription file not found for this appointment!");
-                 return;
-             }
-         }
-         
-        try {
-    connect = Database.connectDB();
-    if (connect == null) {
-        throw new SQLException("Failed to establish database connection.");
-    }
+		try {
+			connect = Database.connectDB();
+			if (connect == null) {
+				throw new SQLException("Failed to establish database connection.");
+			}
 
-    // SQL statements
-    String prescriptionSQL = "SELECT p.Id, p.Diagnose, p.Advice, ua.Name AS Doctor_name, pt.Name AS Patient_name, " +
-            "pt.Gender, pt.Address, pt.Date_of_birth, pt.Patient_id " +
-            "FROM PRESCRIPTION p " +
-            "JOIN DOCTOR d ON p.Doctor_id = d.Doctor_id " +
-            "JOIN USER_ACCOUNT ua ON ua.Id = d.Doctor_id " +
-            "JOIN PATIENT pt ON p.Patient_id = pt.Patient_id " +
-            "WHERE p.Appointment_id = ?";
-    String prescriptionDetailsSQL = "SELECT pd.Drug_id, pd.Quantity, pd.Instructions, dr.Name AS Drug_name, dr.Unit, dr.Price " +
-            "FROM PRESCRIPTION_DETAILS pd " +
-            "JOIN DRUG dr ON pd.Drug_id = dr.Id " +
-            "WHERE pd.Prescription_id = ?";
-    String updatePrescriptionStatusSQL = "UPDATE appointment SET Prescription_Status = ? WHERE id = ?";
+			// SQL statements
+			String prescriptionSQL = "SELECT p.Id, p.Diagnose, p.Advice, ua.Name AS Doctor_name, pt.Name AS Patient_name, "
+					+ "pt.Gender, pt.Address, pt.Date_of_birth, pt.Patient_id " + "FROM PRESCRIPTION p "
+					+ "JOIN DOCTOR d ON p.Doctor_id = d.Doctor_id " + "JOIN USER_ACCOUNT ua ON ua.Id = d.Doctor_id "
+					+ "JOIN PATIENT pt ON p.Patient_id = pt.Patient_id " + "WHERE p.Appointment_id = ?";
+			String prescriptionDetailsSQL = "SELECT pd.Drug_id, pd.Quantity, pd.Instructions, dr.Name AS Drug_name, dr.Unit, dr.Price "
+					+ "FROM PRESCRIPTION_DETAILS pd " + "JOIN DRUG dr ON pd.Drug_id = dr.Id "
+					+ "WHERE pd.Prescription_id = ?";
+			String updatePrescriptionStatusSQL = "UPDATE appointment SET Prescription_Status = ? WHERE id = ?";
 
-    PreparedStatement psPrescription = connect.prepareStatement(prescriptionSQL);
-    psPrescription.setString(1, selectedAppointment.getId());
-    ResultSet rsPrescription = psPrescription.executeQuery();
+			PreparedStatement psPrescription = connect.prepareStatement(prescriptionSQL);
+			psPrescription.setString(1, selectedAppointment.getId());
+			ResultSet rsPrescription = psPrescription.executeQuery();
 
-    if (!rsPrescription.next()) {
-        alert.errorMessage("No prescription found!");
-        return;
-    }
+			if (!rsPrescription.next()) {
+				alert.errorMessage("No prescription found!");
+				return;
+			}
 
-    String patientName = rsPrescription.getString("Patient_name");
-    String doctorName = rsPrescription.getString("Doctor_name");
-    String diagnose = rsPrescription.getString("Diagnose");
-    String advice = rsPrescription.getString("Advice");
-    String gender = rsPrescription.getString("Gender");
-    String address = rsPrescription.getString("Address");
-    String patientId = rsPrescription.getString("Patient_id");
-    java.sql.Date dob = rsPrescription.getDate("Date_of_birth");
-    int age = (dob != null) ? Period.between(dob.toLocalDate(), LocalDate.now()).getYears() : 0;
-    String prescriptionId = rsPrescription.getString("Id");
+			String patientName = rsPrescription.getString("Patient_name");
+			String doctorName = rsPrescription.getString("Doctor_name");
+			String diagnose = rsPrescription.getString("Diagnose");
+			String advice = rsPrescription.getString("Advice");
+			String gender = rsPrescription.getString("Gender");
+			String address = rsPrescription.getString("Address");
+			String patientId = rsPrescription.getString("Patient_id");
+			java.sql.Date dob = rsPrescription.getDate("Date_of_birth");
+			int age = (dob != null) ? Period.between(dob.toLocalDate(), LocalDate.now()).getYears() : 0;
+			String prescriptionId = rsPrescription.getString("Id");
 
-    PreparedStatement psDetails = connect.prepareStatement(prescriptionDetailsSQL);
-    psDetails.setString(1, prescriptionId);
-    ResultSet rsDetails = psDetails.executeQuery();
+			PreparedStatement psDetails = connect.prepareStatement(prescriptionDetailsSQL);
+			psDetails.setString(1, prescriptionId);
+			ResultSet rsDetails = psDetails.executeQuery();
 
-    List<Map<String, Object>> drugs = new ArrayList<>();
-    BigDecimal totalPrice = BigDecimal.ZERO;
-    while (rsDetails.next()) {
-        Map<String, Object> drug = new HashMap<>();
-        drug.put("name", rsDetails.getString("Drug_name"));
-        drug.put("instructions", rsDetails.getString("Instructions"));
-        drug.put("quantity", rsDetails.getInt("Quantity"));
-        drug.put("unit", rsDetails.getString("Unit"));
-        drug.put("price", rsDetails.getBigDecimal("Price"));
-        drugs.add(drug);
-        totalPrice = totalPrice.add(rsDetails.getBigDecimal("Price").multiply(BigDecimal.valueOf(rsDetails.getInt("Quantity"))));
-    }
+			List<Map<String, Object>> drugs = new ArrayList<>();
+			BigDecimal totalPrice = BigDecimal.ZERO;
+			while (rsDetails.next()) {
+				Map<String, Object> drug = new HashMap<>();
+				drug.put("name", rsDetails.getString("Drug_name"));
+				drug.put("instructions", rsDetails.getString("Instructions"));
+				drug.put("quantity", rsDetails.getInt("Quantity"));
+				drug.put("unit", rsDetails.getString("Unit"));
+				drug.put("price", rsDetails.getBigDecimal("Price"));
+				drugs.add(drug);
+				totalPrice = totalPrice.add(
+						rsDetails.getBigDecimal("Price").multiply(BigDecimal.valueOf(rsDetails.getInt("Quantity"))));
+			}
 
-    Files.createDirectories(Paths.get("Word"));
-    String destFileName = "Word/prescription_" + selectedAppointment.getId() + ".docx";
-    File srcFile = new File("Word/PRESCRIPTION.docx");
-    Path destPath = Paths.get(destFileName);
+			Files.createDirectories(Paths.get("Word"));
+			String destFileName = "Word/prescription_" + selectedAppointment.getId() + ".docx";
+			File srcFile = new File("Word/PRESCRIPTION.docx");
+			Path destPath = Paths.get(destFileName);
 
-    if (!srcFile.exists()) {
-        throw new IOException("Source file not found.");
-    }
+			if (!srcFile.exists()) {
+				throw new IOException("Source file not found.");
+			}
 
-    if (Files.exists(destPath)) {
-        Files.delete(destPath);
-    }
-    Files.copy(srcFile.toPath(), destPath, StandardCopyOption.REPLACE_EXISTING);
+			if (Files.exists(destPath)) {
+				Files.delete(destPath);
+			}
+			Files.copy(srcFile.toPath(), destPath, StandardCopyOption.REPLACE_EXISTING);
 
-    try (XWPFDocument doc = new XWPFDocument(new FileInputStream(destFileName))) {
-        String formattedDate = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"))
-                .format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+			try (XWPFDocument doc = new XWPFDocument(new FileInputStream(destFileName))) {
+				String formattedDate = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"))
+						.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
 
-        Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("patientId", patientId);
-        placeholders.put("patientName", patientName);
-        placeholders.put("age", String.valueOf(age));
-        placeholders.put("gender", gender);
-        placeholders.put("address", address);
-        placeholders.put("diagnose", diagnose);
-        placeholders.put("advice", advice);
-        placeholders.put("totalPrice", formatCurrencyVND(totalPrice));
-        placeholders.put("date", formattedDate);
-        placeholders.put("doctorName", doctorName);
+				Map<String, String> placeholders = new HashMap<>();
+				placeholders.put("patientId", patientId);
+				placeholders.put("patientName", patientName);
+				placeholders.put("age", String.valueOf(age));
+				placeholders.put("gender", gender);
+				placeholders.put("address", address);
+				placeholders.put("diagnose", diagnose);
+				placeholders.put("advice", advice);
+				placeholders.put("totalPrice", formatCurrencyVND(totalPrice));
+				placeholders.put("date", formattedDate);
+				placeholders.put("doctorName", doctorName);
 
-        replacePlaceholders(doc, placeholders);
-        replaceTablePlaceholders(doc, null, null, drugs, totalPrice, formattedDate, null, doctorName, diagnose, advice);
+				replacePlaceholders(doc, placeholders);
+				replaceTablePlaceholders(doc, null, null, drugs, totalPrice, formattedDate, null, doctorName, diagnose,
+						advice);
 
-        try (FileOutputStream fos = new FileOutputStream(destFileName)) {
-            doc.write(fos);
-        }
+				try (FileOutputStream fos = new FileOutputStream(destFileName)) {
+					doc.write(fos);
+				}
 
-        if (Desktop.isDesktopSupported()) {
-            Desktop.getDesktop().open(new File(destFileName));
-        }
+				if (Desktop.isDesktopSupported()) {
+					Desktop.getDesktop().open(new File(destFileName));
+				}
 
-        alert.successMessage("Prescription document successfully exported to " + destFileName);
+				alert.successMessage("Prescription document successfully exported to " + destFileName);
 
-        // Update status
-        PreparedStatement psUpdate = connect.prepareStatement(updatePrescriptionStatusSQL);
-        psUpdate.setString(1, "Paid");
-        psUpdate.setString(2, selectedAppointment.getId());
-        psUpdate.executeUpdate();
-        selectedAppointment.setPrescriptionStatus("Paid");
-        appointments_tableView.refresh();
-    }
+				// Update status
+				PreparedStatement psUpdate = connect.prepareStatement(updatePrescriptionStatusSQL);
+				psUpdate.setString(1, "Paid");
+				psUpdate.setString(2, selectedAppointment.getId());
+				psUpdate.executeUpdate();
+				selectedAppointment.setPrescriptionStatus("Paid");
+				appointments_tableView.refresh();
+			}
 
-} catch (SQLException e) {
-    e.printStackTrace();
-    alert.errorMessage("❌ Database error: " + e.getMessage());
-} catch (IOException e) {
-    e.printStackTrace();
-    alert.errorMessage("❌ File error: " + e.getMessage());
-} finally {
-    if (connect != null) {
-        try {
-            connect.close();
-        } catch (SQLException e) {
-            LOGGER.severe("Error closing connection: " + e.getMessage());
-        }
+		} catch (SQLException e) {
+			e.printStackTrace();
+			alert.errorMessage("❌ Database error: " + e.getMessage());
+		} catch (IOException e) {
+			e.printStackTrace();
+			alert.errorMessage("❌ File error: " + e.getMessage());
+		} finally {
+			if (connect != null) {
+				try {
+					connect.close();
+				} catch (SQLException e) {
+					LOGGER.severe("Error closing connection: " + e.getMessage());
+				}
+			}
+		}
 	}
-}
-}
-
-
 
 	public void appointmentSelect() {
 		AppointmentData appointmentData = appointments_tableView.getSelectionModel().getSelectedItem();
@@ -2462,8 +2485,8 @@ try {
 		appointment_status.setValue("");
 		appointment_cancelReason.clear();
 		appointment_date.getEditor().clear();
-		spMinute1.getValueFactory().setValue(null); 
-		spHour1.getValueFactory().setValue(null); 
+		spMinute1.getValueFactory().setValue(null);
+		spHour1.getValueFactory().setValue(null);
 
 		appointment_createdDate.setText("");
 		appointment_updatedDate.setText("");
@@ -2609,49 +2632,53 @@ try {
 		appointments_col_contactNumber.setCellValueFactory(new PropertyValueFactory<>("contactNumber"));
 		appointments_col_reason.setCellValueFactory(new PropertyValueFactory<>("cancelReason"));
 
- 		appointments_col_prescription.setCellValueFactory(cellData -> {
- 		String status = cellData.getValue().getPrescriptionStatus();
-		return new SimpleStringProperty(status != null ? status : "");
+		appointments_col_prescription.setCellValueFactory(cellData -> {
+			String status = cellData.getValue().getPrescriptionStatus();
+			return new SimpleStringProperty(status != null ? status : "");
 		});
 
 		appointments_tableView.setItems(appoinmentListData);
 		appointment_status.setItems(FXCollections.observableArrayList(
 				Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
 
-		appointments_searchBy.setItems(FXCollections.observableArrayList("Patient Name", "Doctor Name", "Cancel Reason", "Contact"));
- 		appointments_searchBy.getSelectionModel().selectFirst();
- 		appointments_searchBy.valueProperty().addListener((observable, oldValue, newValue) -> {
- 			onSearchChanged();
+		appointments_searchBy
+				.setItems(FXCollections.observableArrayList("Patient Name", "Doctor Name", "Cancel Reason", "Contact"));
+		appointments_searchBy.getSelectionModel().selectFirst();
+		appointments_searchBy.valueProperty().addListener((observable, oldValue, newValue) -> {
+			onSearchChanged();
 		});
- 		appointments_searchQuery.textProperty().addListener((observable, oldValue, newValue) -> {
- 			onSearchChanged();
- 		});
- 	}
- 
- 	private void onSearchChanged() {
+		appointments_searchQuery.textProperty().addListener((observable, oldValue, newValue) -> {
+			onSearchChanged();
+		});
+	}
+
+	private void onSearchChanged() {
 		String query = appointments_searchQuery.getText().toLowerCase();
- 		String searchBy = appointments_searchBy.getValue();
+		String searchBy = appointments_searchBy.getValue();
 		if (query.isEmpty() || searchBy == null || searchBy.isEmpty()) {
 			appointments_tableView.setItems(appoinmentListData);
-		return;
- 		}
- 
+			return;
+		}
+
 		ObservableList<AppointmentData> filtered = appoinmentListData.filtered(appointment -> {
- 			switch (searchBy) {
- 				case "Patient Name":
- 					return appointment.getPatientName() != null && appointment.getPatientName().toLowerCase().contains(query);
- 				case "Doctor Name":
- 					return appointment.getDoctorName() != null && appointment.getDoctorName().toLowerCase().contains(query);
- 				case "Cancel Reason":
- 					return appointment.getCancelReason() != null && appointment.getCancelReason().toLowerCase().contains(query);
- 				case "Contact":
-					return appointment.getContactNumber() != null && appointment.getContactNumber().toLowerCase().contains(query);
-				default:
-					return false;
- 			}
- 		});
- 
- 		appointments_tableView.setItems(filtered);
+			switch (searchBy) {
+			case "Patient Name":
+				return appointment.getPatientName() != null
+						&& appointment.getPatientName().toLowerCase().contains(query);
+			case "Doctor Name":
+				return appointment.getDoctorName() != null && appointment.getDoctorName().toLowerCase().contains(query);
+			case "Cancel Reason":
+				return appointment.getCancelReason() != null
+						&& appointment.getCancelReason().toLowerCase().contains(query);
+			case "Contact":
+				return appointment.getContactNumber() != null
+						&& appointment.getContactNumber().toLowerCase().contains(query);
+			default:
+				return false;
+			}
+		});
+
+		appointments_tableView.setItems(filtered);
 	}
 
 	public static String formatCurrencyVND(BigDecimal amount) {
