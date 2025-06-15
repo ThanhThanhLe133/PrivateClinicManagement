@@ -36,6 +36,7 @@ import DAO.Database;
 import Enum.Gender;
 import Model.AppointmentData;
 import Model.Data;
+import Model.PatientData;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -43,15 +44,18 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -59,6 +63,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
@@ -74,8 +79,9 @@ import Enum.AppointmentStatus;
  */
 public class DoctorMainFormController implements Initializable {
 
-	@FXML private Button appointment_prescriptionBtn;
-	
+	@FXML
+	private Button appointment_prescriptionBtn;
+
 	@FXML
 	private AnchorPane main_form;
 
@@ -132,6 +138,39 @@ public class DoctorMainFormController implements Initializable {
 
 	@FXML
 	private BarChart<?, ?> dashboad_chart_DD;
+	@FXML
+	private TableView<PatientData> patients_tableView;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_patientID;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_name;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_email;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_gender;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_phone;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_address;
+	@FXML
+	private TableColumn<PatientData, String> patients_col_diagnosis;
+	@FXML
+	private TableColumn<PatientData, BigDecimal> patients_col_height;
+	@FXML
+	private TableColumn<PatientData, BigDecimal> patients_col_weight;
+	@FXML
+	private TableColumn<PatientData, Timestamp> patients_col_create;
+	@FXML
+	private TableColumn<PatientData, Timestamp> patients_col_update;
+	@FXML
+	private TableColumn<PatientData, Void> patients_col_action;
+
+	@FXML
+	private ComboBox<String> cmbPatientSearchBy;
+	@FXML
+	private TextField txtPatientSearch;
+	@FXML
+	private ComboBox<String> cmbPatientGenderFilter;
 
 	public class DashBoardAppointmentData {
 
@@ -152,30 +191,39 @@ public class DoctorMainFormController implements Initializable {
 		public String getId() {
 			return id;
 		}
+
 		public void setId(String id) {
 			this.id = id;
 		}
+
 		public String getName() {
 			return name;
 		}
+
 		public void setName(String name) {
 			this.name = name;
 		}
+
 		public String getDescription() {
 			return description;
 		}
+
 		public void setDescription(String description) {
 			this.description = description;
 		}
+
 		public String getDate() {
 			return date;
 		}
+
 		public void setDate(String date) {
 			this.date = date;
 		}
+
 		public String getStatus() {
 			return status;
 		}
+
 		public void setStatus(String status) {
 			this.status = status;
 		}
@@ -199,64 +247,10 @@ public class DoctorMainFormController implements Initializable {
 	private AnchorPane patients_form;
 
 	@FXML
-	private TextField patients_patientID;
-
-	@FXML
-	private TextField patients_patientName;
-
-	@FXML
-	private TextField patients_mobileNumber;
-
-	@FXML
-	private TextField patients_password;
-
-	@FXML
-	private TextArea patients_address;
-	@FXML
-	private TextField patients_email;
-	@FXML
-	private TextField patients_height;
-	@FXML
-	private TextField patients_weight;
-	@FXML
-	private ComboBox<String> patients_appointmentID;
-
-	@FXML
-	private Button patients_confirmBtn;
-
-	@FXML
-	private Label patients_PA_patientID;
-
-	@FXML
-	private Label patients_PA_password;
-
-	@FXML
-	private Label patients_PA_dateCreated;
-
-	@FXML
-	private Label patients_PI_patientName;
-
-	@FXML
-	private Label patients_PI_gender;
-
-	@FXML
-	private Label patients_PI_mobileNumber;
-
-	@FXML
-	private Label patients_PI_address;
-
-	@FXML
-	private Button patients_PI_addBtn;
-
-	@FXML
-	private Button patients_PI_recordBtn;
-
-	@FXML
 	private AnchorPane appointments_form;
 
-
 	public class DoctorAppointmentData {
-		
+
 		private String id;
 		private String time;
 		private String status;
@@ -268,8 +262,8 @@ public class DoctorMainFormController implements Initializable {
 		private String createdDate;
 		private String lastModifiedDate;
 
-		public DoctorAppointmentData(String id, String time, String status, String patientId, String gender, String name, String contactNumber,
-				String reason, String createdDate, String lastModifiedDate) {
+		public DoctorAppointmentData(String id, String time, String status, String patientId, String gender,
+				String name, String contactNumber, String reason, String createdDate, String lastModifiedDate) {
 			this.id = id;
 			this.time = time;
 			this.status = status;
@@ -281,70 +275,91 @@ public class DoctorMainFormController implements Initializable {
 			this.createdDate = createdDate;
 			this.lastModifiedDate = lastModifiedDate;
 		}
+
 		public String getId() {
 			return id;
 		}
+
 		public void setId(String id) {
 			this.id = id;
 		}
+
 		public String getTime() {
 			return time;
 		}
+
 		public void setTime(String time) {
 			this.time = time;
 		}
+
 		public String getStatus() {
 			return status;
 		}
+
 		public void setStatus(String status) {
 			this.status = status;
 		}
+
 		public String getPatientId() {
 			return patientId;
 		}
+
 		public void setPatientId(String patientId) {
 			this.patientId = patientId;
 		}
+
 		public String getGender() {
 			return gender;
 		}
+
 		public void setGender(String gender) {
 			this.gender = gender;
 		}
+
 		public String getName() {
 			return name;
 		}
+
 		public void setName(String name) {
 			this.name = name;
 		}
+
 		public String getContactNumber() {
 			return contactNumber;
 		}
+
 		public void setContactNumber(String contactNumber) {
 			this.contactNumber = contactNumber;
 		}
+
 		public String getReason() {
 			return reason;
 		}
+
 		public void setReason(String reason) {
 			this.reason = reason;
 		}
+
 		public String getCreatedDate() {
 			return createdDate;
 		}
+
 		public void setCreatedDate(String createdDate) {
 			this.createdDate = createdDate;
 		}
+
 		public String getLastModifiedDate() {
 			return lastModifiedDate;
 		}
+
 		public void setLastModifiedDate(String lastModifiedDate) {
 			this.lastModifiedDate = lastModifiedDate;
 		}
+
 		public String toString() {
-			return "DoctorAppointmentData [id=" + id + ", time=" + time + ", status=" + status + ", patientId=" + patientId
-					+ ", name=" + name + ", contactNumber=" + contactNumber + ", reason=" + reason + ", createdDate="
-					+ createdDate + ", lastModifiedDate=" + lastModifiedDate + "]";
+			return "DoctorAppointmentData [id=" + id + ", time=" + time + ", status=" + status + ", patientId="
+					+ patientId + ", name=" + name + ", contactNumber=" + contactNumber + ", reason=" + reason
+					+ ", createdDate=" + createdDate + ", lastModifiedDate=" + lastModifiedDate + "]";
 		}
 	}
 
@@ -363,10 +378,10 @@ public class DoctorMainFormController implements Initializable {
 	@FXML
 	private TableColumn<DoctorAppointmentData, String> appointments_col_reason;
 	ObservableList<DoctorAppointmentData> appoinmentListData = FXCollections.observableArrayList();
- 	@FXML
+	@FXML
 	private ComboBox<String> appointments_searchBy;
- 	@FXML
- 	private TextField appointments_searchQuery;
+	@FXML
+	private TextField appointments_searchQuery;
 
 	@FXML
 	private TextField appointment_appointmentID;
@@ -431,7 +446,8 @@ public class DoctorMainFormController implements Initializable {
 	private TextArea profile_address;
 
 	@FXML
-	private Label name_doctor, username_doctor, email_doctor, phone_doctor, gender_doctor, specialization_doctor,createdDate_doctor;
+	private Label name_doctor, username_doctor, email_doctor, phone_doctor, gender_doctor, specialization_doctor,
+			createdDate_doctor;
 	@FXML
 	private TextField profile_username;
 	@FXML
@@ -458,193 +474,81 @@ public class DoctorMainFormController implements Initializable {
 		profileDisplayImages();
 	}
 
-	public void patientConfirmBtn() {
-		String name = patients_patientName.getText();
-		String email = patients_email.getText();
-		String gender = patients_gender.getSelectionModel().getSelectedItem();
-		String mobileNumber = patients_mobileNumber.getText();
-		Double height = 0.0;
-		Double weight = 0.0;
-		try  {
-			height = Double.parseDouble(patients_height.getText());
-		} catch (NumberFormatException e) {
-			alert.errorMessage("Height must be a number");
-			return;
-		}
-		try {
-			weight = Double.parseDouble(patients_weight.getText());
-		} catch (NumberFormatException e) {
-			alert.errorMessage("Weight must be a number");
-			return;
-		}
-		String address = patients_address.getText();
-
-		System.out.println("Name: " + name);
-		System.out.println("Email: " + email);
-		System.out.println("Gender: " + gender);
-		System.out.println("Mobile Number: " + mobileNumber);
-		System.out.println("Height: " + height);
-		System.out.println("Weight: " + weight);
-		System.out.println("Address: " + address);
-
-		if (name.isEmpty() || email.isEmpty() || gender.isEmpty() || mobileNumber.isEmpty() || address.isEmpty()) {
-			alert.errorMessage("Please fill all blank fields");
-		} else {
-			String sql = "INSERT INTO patient (Patient_id, name, email, gender, phone, address, Height, Weight) VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?)";
-			connect = Database.connectDB();
-			try {
-				prepare = connect.prepareStatement(sql);
-				prepare.setString(1, name);
-				prepare.setString(2, email);
-				prepare.setString(3, gender);
-				prepare.setString(4, mobileNumber);
-				prepare.setString(5, address);
-				prepare.setDouble(6, height);
-				prepare.setDouble(7, weight);
-				int rowsInserted = prepare.executeUpdate();
-				if (rowsInserted > 0) {
-					alert.successMessage("Patient added successfully.");
-					patients_patientName.clear();
-					patients_email.clear();
-					patients_gender.getSelectionModel().clearSelection();
-					patients_mobileNumber.clear();
-					patients_height.clear();
-					patients_weight.clear();
-					patients_address.clear();
-					loadPatientData();
-				} else {
-					alert.errorMessage("Failed to add patient.");
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-				alert.errorMessage("Error adding patient: " + e.getMessage());
-			}
-		}
-	}
-
-	public void patientAddBtn() {
-
-		if (patients_PA_patientID.getText().isEmpty() || patients_PA_password.getText().isEmpty()
-				|| patients_PA_dateCreated.getText().isEmpty() || patients_PI_patientName.getText().isEmpty()
-				|| patients_PI_gender.getText().isEmpty() || patients_PI_mobileNumber.getText().isEmpty()
-				|| patients_PI_address.getText().isEmpty()) {
-			alert.errorMessage("Something wenr wrong");
-		} else {
-
-			Database.connectDB();
-
-		}
-	}
-
-	public void patientRecordBtn() {
-		try {
-
-			Parent root = FXMLLoader.load(getClass().getResource("RecordPageForm.fxml"));
-			Stage stage = new Stage();
-
-			stage.setTitle("Hospital Management System | Record of Patients");
-			stage.setScene(new Scene(root));
-			stage.show();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			alert.errorMessage(e.getMessage());
-		}
-
-	}
-
-	public void patientClearFields() {
-		patients_patientID.clear();
-		patients_patientName.clear();
-		patients_gender.getSelectionModel().clearSelection();
-		patients_mobileNumber.clear();
-		patients_password.clear();
-		patients_address.clear();
-
-		patients_PA_patientID.setText("");
-		patients_PA_password.setText("");
-		patients_PA_dateCreated.setText("");
-
-		patients_PI_patientName.setText("");
-		patients_PI_gender.setText("");
-		patients_PI_mobileNumber.setText("");
-		patients_PI_address.setText("");
-	}
-	
 	public void appointmentPrescriptionBtn() {
-	    // Get the selected appointment
-	    DoctorAppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
-	    if (selectedAppointment == null) {
-	        alert.errorMessage("Please select an appointment first.");
-	        return;
-	    }
-	    if (selectedAppointment.getStatus().equals(AppointmentStatus.Cancel.toString())) {
-	        alert.errorMessage("Cannot create prescription for cancelled appointment.");
-	        return;
-	    }
-	    if (selectedAppointment.getStatus().equals(AppointmentStatus.Coming.toString())) {
-	        alert.errorMessage("Cannot create prescription for upcoming appointment.");
-	        return;
-	    }
-	    
-	    try {
-	        // Load the PrescriptionDetail.fxml form
-	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/PrescriptionDetail.fxml"));
-	        Parent root = loader.load();
+		// Get the selected appointment
+		DoctorAppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
+		if (selectedAppointment == null) {
+			alert.errorMessage("Please select an appointment first.");
+			return;
+		}
+		if (selectedAppointment.getStatus().equals(AppointmentStatus.Cancel.toString())) {
+			alert.errorMessage("Cannot create prescription for cancelled appointment.");
+			return;
+		}
+		if (selectedAppointment.getStatus().equals(AppointmentStatus.Coming.toString())) {
+			alert.errorMessage("Cannot create prescription for upcoming appointment.");
+			return;
+		}
 
-	        // Get the controller and pass the selected appointment data
-	        PrescriptionDetailController controller = loader.getController();
-	        controller.setAppointmentData(selectedAppointment.getId(), selectedAppointment.getPatientId(), doctor_id);
+		try {
+			// Load the PrescriptionDetail.fxml form
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/PrescriptionDetail.fxml"));
+			Parent root = loader.load();
 
-	        // Show the form in a modal window
-	        Stage stage = new Stage();
-	        stage.initModality(Modality.APPLICATION_MODAL);
-	        stage.setTitle("Prescription Details");
-	        stage.setResizable(false);
-	        stage.setScene(new Scene(root));
+			// Get the controller and pass the selected appointment data
+			PrescriptionDetailController controller = loader.getController();
+			controller.setAppointmentData(selectedAppointment.getId(), selectedAppointment.getPatientId(), doctor_id);
 
-	        stage.setOnHidden(e -> {
-            dashboardDisplayNumPrescriptions(); // Refresh prescription count
-            dashboardLoadAppointmentData(); // Refresh appointment data
+			// Show the form in a modal window
+			Stage stage = new Stage();
+			stage.initModality(Modality.APPLICATION_MODAL);
+			stage.setTitle("Prescription Details");
+			stage.setResizable(false);
+			stage.setScene(new Scene(root));
 
-            // Update Prescription_Status to "Created" after prescription is generated
-            connect = Database.connectDB();
-            if (connect != null) {
-               try {
-                      String updateSql = "UPDATE appointment SET Prescription_Status = ? WHERE id = ?";
-                      prepare = connect.prepareStatement(updateSql);
-                      prepare.setString(1, "Created");
-                      prepare.setString(2, selectedAppointment.getId());
-                      int rowsUpdated = prepare.executeUpdate();
-                    } catch (SQLException ex) 
-					{
-                        ex.printStackTrace();
-                        alert.errorMessage("Error updating Prescription_Status: " + ex.getMessage());
-                    } finally 
-					{
+			stage.setOnHidden(e -> {
+				dashboardDisplayNumPrescriptions(); // Refresh prescription count
+				dashboardLoadAppointmentData(); // Refresh appointment data
+
+				// Update Prescription_Status to "Created" after prescription is generated
+				connect = Database.connectDB();
+				if (connect != null) {
+					try {
+						String updateSql = "UPDATE appointment SET Prescription_Status = ? WHERE id = ?";
+						prepare = connect.prepareStatement(updateSql);
+						prepare.setString(1, "Created");
+						prepare.setString(2, selectedAppointment.getId());
+						int rowsUpdated = prepare.executeUpdate();
+					} catch (SQLException ex) {
+						ex.printStackTrace();
+						alert.errorMessage("Error updating Prescription_Status: " + ex.getMessage());
+					} finally {
 						try {
-							if (prepare != null) prepare.close();
-							if (connect != null) connect.close();
+							if (prepare != null)
+								prepare.close();
+							if (connect != null)
+								connect.close();
 						} catch (SQLException ex) {
 							ex.printStackTrace();
 						}
 					}
-           
-                }
-            });
 
-	        stage.showAndWait();
+				}
+			});
 
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	        alert.errorMessage("Error opening prescription form: " + e.getMessage());
-	    }
+			stage.showAndWait();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+			alert.errorMessage("Error opening prescription form: " + e.getMessage());
+		}
 	}
 
 	public void appointmentUpdateBtn() {
 		String appointmentID = appointment_appointmentID.getText();
 		System.out.println("Appointment ID: " + appointmentID);
-		String time = FormatterUtils.toSQLDate(appointment_time.getText() + " " + appointment_date.getEditor().getText());
+		String time = FormatterUtils
+				.toSQLDate(appointment_time.getText() + " " + appointment_date.getEditor().getText());
 		System.out.println("Time: " + time);
 		String status = appointment_status.getSelectionModel().getSelectedItem();
 		System.out.println("Status: " + status);
@@ -730,10 +634,188 @@ public class DoctorMainFormController implements Initializable {
 		appointment_updatedDate.setText("");
 	}
 
+	// =======================CRUD Patient==================================
+	private ObservableList<PatientData> patientMasterList = FXCollections.observableArrayList();
+
+	private void initializePatientFilters() {
+		cmbPatientSearchBy.setItems(FXCollections.observableArrayList("Name", "Email", "Phone", "Address", "Diagnosis",
+				"Height", "Weight"));
+		cmbPatientSearchBy.setValue("Name");
+
+		txtPatientSearch.clear();
+
+		cmbPatientGenderFilter.setItems(FXCollections.observableArrayList("All", "Male", "Female", "Other"));
+		cmbPatientGenderFilter.setValue("All");
+
+		// Gắn listener
+		txtPatientSearch.textProperty().addListener((obs, oldVal, newVal) -> applyPatientFilters());
+		cmbPatientSearchBy.valueProperty().addListener((obs, o, n) -> applyPatientFilters());
+		cmbPatientGenderFilter.valueProperty().addListener((obs, o, n) -> applyPatientFilters());
+	}
+
+	private void applyPatientFilters() {
+		String keyword = txtPatientSearch.getText().toLowerCase();
+		String searchBy = cmbPatientSearchBy.getValue();
+		String selectedGender = cmbPatientGenderFilter.getValue();
+
+		ObservableList<PatientData> filtered = FXCollections.observableArrayList();
+
+		for (PatientData p : patientMasterList) {
+			// 1. Tìm kiếm theo trường
+			String fieldValue = switch (searchBy) {
+			case "Name" -> p.getName();
+			case "Email" -> p.getEmail();
+			case "Phone" -> p.getPhone();
+			case "Address" -> p.getAddress();
+			case "Diagnosis" -> p.getDiagnosis();
+			case "Height" -> p.getHeight().toPlainString();
+			case "Weight" -> p.getWeight().toPlainString();
+			default -> "";
+			};
+
+			boolean matchesKeyword = fieldValue != null && fieldValue.toLowerCase().contains(keyword);
+			boolean matchesGender = selectedGender.equals("All") || p.getGender().equalsIgnoreCase(selectedGender);
+
+			if (matchesKeyword && matchesGender) {
+				filtered.add(p);
+			}
+		}
+
+		patients_tableView.setItems(filtered);
+	}
+
+	public void loadPatientTable() {
+		patientMasterList.clear();
+
+		String sql = "SELECT Patient_id, Name, Email, Gender, Phone, Address, Diagnosis, Height, Weight, Create_date, Update_date FROM PATIENT";
+
+		try {
+			Connection conn = Database.connectDB();
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ResultSet rs = ps.executeQuery();
+
+			while (rs.next()) {
+				PatientData patient = new PatientData(rs.getString("Patient_Id"), rs.getString("Name"),
+						rs.getString("Email"), rs.getString("Gender"), rs.getString("Phone"), rs.getString("Address"),
+						rs.getString("Diagnosis"), rs.getBigDecimal("Height"), rs.getBigDecimal("Weight"),
+						rs.getTimestamp("Create_date"), rs.getTimestamp("Update_date"));
+				patientMasterList.add(patient);
+			}
+
+			// Gán dữ liệu cho TableView
+			patients_col_patientID.setCellValueFactory(new PropertyValueFactory<>("patientId"));
+			patients_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
+			patients_col_email.setCellValueFactory(new PropertyValueFactory<>("email"));
+			patients_col_gender.setCellValueFactory(new PropertyValueFactory<>("gender"));
+			patients_col_phone.setCellValueFactory(new PropertyValueFactory<>("phone"));
+			patients_col_address.setCellValueFactory(new PropertyValueFactory<>("address"));
+			patients_col_diagnosis.setCellValueFactory(new PropertyValueFactory<>("diagnosis"));
+			patients_col_height.setCellValueFactory(new PropertyValueFactory<>("height"));
+			patients_col_weight.setCellValueFactory(new PropertyValueFactory<>("weight"));
+			patients_col_create.setCellValueFactory(new PropertyValueFactory<>("createDate"));
+			patients_col_update.setCellValueFactory(new PropertyValueFactory<>("updateDate"));
+
+			// Cột hành động
+			patients_col_action.setCellFactory(col -> new TableCell<>() {
+			    private final Button detailBtn = new Button("Detail");
+			    private final HBox hbox = new HBox(5, detailBtn);
+			    {
+			        hbox.setAlignment(Pos.CENTER);
+			        detailBtn.setOnAction(e -> {
+			            PatientData patient = getTableView().getItems().get(getIndex()); 
+			            handleViewPatientDetail(patient.getPatientId()); 
+			        });
+			    }
+			    @Override
+			    protected void updateItem(Void item, boolean empty) {
+			        super.updateItem(item, empty);
+			        setGraphic(empty ? null : hbox);
+			    }
+			});
+
+			patients_tableView.setItems(patientMasterList);
+			conn.close();
+
+//		        // Thêm nút cập nhật và xóa vào mỗi dòng
+//		        patients_col_action.setCellFactory(col -> new TableCell<>() {
+//		            private final Button btnEdit = new Button("Edit");
+//		            private final Button btnDelete = new Button("Delete");
+//		            private final HBox hbox = new HBox(5, btnEdit, btnDelete);
+			//
+//		            {
+//		                btnEdit.getStyleClass().add("btn-2");
+//		                btnDelete.getStyleClass().add("btn-danger");
+			//
+//		                btnEdit.setOnAction(e -> {
+//		                    PatientData patient = getTableView().getItems().get(getIndex());
+//		                    //openEditPatientForm(patient); // Mở form sửa
+//		                });
+			//
+//		                btnDelete.setOnAction(e -> {
+//		                    PatientData patient = getTableView().getItems().get(getIndex());
+//		                    //deletePatient(patient); // Gọi hàm xóa
+//		                });
+//		            }
+			//
+//		            @Override
+//		            protected void updateItem(Void item, boolean empty) {
+//		                super.updateItem(item, empty);
+//		                if (empty) {
+//		                    setGraphic(null);
+//		                } else {
+//		                    setGraphic(hbox);
+//		                }
+//		            }
+//		        });
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			Alert alert = new Alert(Alert.AlertType.ERROR);
+			alert.setContentText("Error loading patient list!");
+			alert.showAndWait();
+		}
+	}
+
+	private void handleViewPatientDetail(String patientId) {
+		try (Connection conn = Database.connectDB()) {
+			String sql = "SELECT * FROM PATIENT WHERE Patient_id = ?";
+			PreparedStatement ps = conn.prepareStatement(sql);
+			ps.setString(1, patientId);
+			ResultSet rs = ps.executeQuery();
+
+			if (rs.next()) {
+				PatientData patient = new PatientData(rs.getString("Patient_id"), rs.getString("Name"),
+						rs.getString("Email"), rs.getString("Gender"), rs.getString("Phone"), rs.getString("Address"),
+						rs.getString("Diagnosis"), rs.getBigDecimal("Height"), rs.getBigDecimal("Weight"),
+						rs.getTimestamp("Create_date"), rs.getTimestamp("Update_date"));
+
+				FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/PatientDetailView.fxml"));
+				Parent root = loader.load();
+
+				PatientDetailController controller = loader.getController();
+				controller.setPatientData(patient); // truyền dữ liệu vào controller
+
+				Stage stage = new Stage();
+				stage.setTitle("Patient Detail");
+				stage.setScene(new Scene(root));
+				stage.show();
+			} else {
+				Alert alert = new Alert(Alert.AlertType.ERROR, "Patient not found.");
+				alert.showAndWait();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			Alert alert = new Alert(Alert.AlertType.ERROR, "Error loading patient detail: " + e.getMessage());
+			alert.showAndWait();
+		}
+	}
+
 	/* =====================LOAD PROFILE======================================== */
 	public void loadDoctorProfile() {
-		String selectData = "SELECT ua.name, ua.username, ua.email, ua.gender, ua.create_date, d.phone, d.address, s.name AS ServiceName " + 
-		"FROM user_account ua " + "JOIN doctor d ON ua.id = d.doctor_id JOIN SERVICE s ON s.Id=d.Service_id " + "WHERE ua.username = ?";
+		String selectData = "SELECT ua.name, ua.username, ua.email, ua.gender, ua.create_date, d.phone, d.address, s.name AS ServiceName "
+				+ "FROM user_account ua " + "JOIN doctor d ON ua.id = d.doctor_id JOIN SERVICE s ON s.Id=d.Service_id "
+				+ "WHERE ua.username = ?";
 
 		connect = Database.connectDB();
 
@@ -763,9 +845,9 @@ public class DoctorMainFormController implements Initializable {
 			phone_doctor.setText(phone != null ? phone : "");
 			email_doctor.setText(email != null ? email : "");
 			createdDate_doctor.setText(createdAt != null ? FormatterUtils.formatTimestamp(createdAt) : "");
-			specialization_doctor.setText(specialization!=null?specialization:"");
+			specialization_doctor.setText(specialization != null ? specialization : "");
 			top_username.setText(name != null ? name : "UNKNOWN");
-		
+
 			profile_name.setText(name != null ? name : "");
 			profile_username.setText(username != null ? username : "");
 			profile_mobileNumber.setText(phone != null ? phone : "");
@@ -778,6 +860,7 @@ public class DoctorMainFormController implements Initializable {
 			e.printStackTrace();
 		}
 	}
+
 	public void profileDisplayImages() {
 
 		String sql = "SELECT Avatar FROM user_account WHERE username = ?";
@@ -788,38 +871,36 @@ public class DoctorMainFormController implements Initializable {
 			prepare.setString(1, username);
 			result = prepare.executeQuery();
 			if (result.next()) {
-			    InputStream inputStream = result.getBinaryStream("Avatar");
+				InputStream inputStream = result.getBinaryStream("Avatar");
 
-			    if (inputStream != null) {
-			        // Đọc toàn bộ dữ liệu từ inputStream vào byte[]
-			        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-			        byte[] data = new byte[1024];
-			        int nRead;
-			        while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
-			            buffer.write(data, 0, nRead);
-			        }
-			        buffer.flush();
-			        byte[] imageBytes = buffer.toByteArray();
-			        inputStream.close();
+				if (inputStream != null) {
+					// Đọc toàn bộ dữ liệu từ inputStream vào byte[]
+					ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+					byte[] data = new byte[1024];
+					int nRead;
+					while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+						buffer.write(data, 0, nRead);
+					}
+					buffer.flush();
+					byte[] imageBytes = buffer.toByteArray();
+					inputStream.close();
 					// Tạo nhiều InputStream từ cùng một mảng byte
-                    InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
-                    InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
+					InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
+					InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
 
-                    Image img1 = new Image(imgStream1, 0, 0, true, true);
-                    Image img2 = new Image(imgStream2, 0, 0, true, true);
+					Image img1 = new Image(imgStream1, 0, 0, true, true);
+					Image img2 = new Image(imgStream2, 0, 0, true, true);
 
-                    profile_circleImage.setFill(new ImagePattern(img1));
-                    top_profile.setFill(new ImagePattern(img2));
+					profile_circleImage.setFill(new ImagePattern(img1));
+					top_profile.setFill(new ImagePattern(img2));
 
-
-
-			    } else {
-			        System.out.println("Ảnh trong DB bị null.");
-			    }
+				} else {
+					System.out.println("Ảnh trong DB bị null.");
+				}
 			}
 
 		} catch (Exception e) {
-			  System.out.println("Lỗi khi xử lý dữ liệu hình ảnh: " + e.getMessage());
+			System.out.println("Lỗi khi xử lý dữ liệu hình ảnh: " + e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -873,7 +954,7 @@ public class DoctorMainFormController implements Initializable {
 			prepare = connect.prepareStatement(updateDoctorSQL);
 			prepare.setString(1, phone);
 			prepare.setString(2, address);
-			prepare.setString(3, email);   
+			prepare.setString(3, email);
 			int rowsReceptionistUpdated = prepare.executeUpdate();
 
 			if (rowsUserUpdated > 0 || rowsReceptionistUpdated > 0) {
@@ -922,7 +1003,7 @@ public class DoctorMainFormController implements Initializable {
 				} else {
 					alert.errorMessage("Failed to update avatar.");
 				}
- 				profileDisplayImages();
+				profileDisplayImages();
 			} catch (Exception e) {
 				e.printStackTrace();
 				alert.errorMessage("Error uploading avatar: " + e.getMessage());
@@ -931,31 +1012,22 @@ public class DoctorMainFormController implements Initializable {
 
 	}
 
-	/* =====================FORMAT AND INTIALIZE======================================== */
+	/*
+	 * =====================FORMAT AND
+	 * INTIALIZE========================================
+	 */
 	public void switchForm(ActionEvent event) {
 		if (event.getSource() == dashboard_btn) {
-			dashboard_form.setVisible(true);
-			patients_form.setVisible(false);
-			appointments_form.setVisible(false);
-			profile_form.setVisible(false);
+			showForm("dashboard");
 		} else if (event.getSource() == patients_btn) {
-			dashboard_form.setVisible(false);
-			patients_form.setVisible(true);
-			appointments_form.setVisible(false);
-			profile_form.setVisible(false);
+			showForm("patients");
 		} else if (event.getSource() == appointments_btn) {
-			dashboard_form.setVisible(false);
-			patients_form.setVisible(false);
-			appointments_form.setVisible(true);
-			profile_form.setVisible(false);
+			showForm("appointments");
 		} else if (event.getSource() == profile_btn) {
-			dashboard_form.setVisible(false);
-			patients_form.setVisible(false);
-			appointments_form.setVisible(false);
-			profile_form.setVisible(true);
+			showForm("profile");
 		}
 	}
-	
+
 	private void showForm(String formName) {
 		dashboard_form.setVisible(false);
 		patients_form.setVisible(false);
@@ -963,23 +1035,24 @@ public class DoctorMainFormController implements Initializable {
 		profile_form.setVisible(false);
 
 		switch (formName) {
-			case "dashboard":
-				dashboard_form.setVisible(true);
-				current_form.setText("Home Form");
-				break;
-			case "patients":
-				patients_form.setVisible(true);
-				current_form.setText("Patients Form");
-				break;
-			case "appointments":
-				appointments_form.setVisible(true);
-				current_form.setText("Appointments Form");
-				break;
+		case "dashboard":
+			dashboard_form.setVisible(true);
+			current_form.setText("Home Form");
+			break;
+		case "patients":
+			patients_form.setVisible(true);
+			current_form.setText("Patients Form");
+			loadPatientTable();
+			break;
+		case "appointments":
+			appointments_form.setVisible(true);
+			current_form.setText("Appointments Form");
+			break;
 
-			case "profile":
-				profile_form.setVisible(true);
-				current_form.setText("Profile Form");
-				break;
+		case "profile":
+			profile_form.setVisible(true);
+			current_form.setText("Profile Form");
+			break;
 		}
 	}
 
@@ -1050,22 +1123,22 @@ public class DoctorMainFormController implements Initializable {
 
 		public static String formatTimestamp(String createdAt) {
 			try {
-		        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		        SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy");
-		        return outputFormat.format(inputFormat.parse(createdAt));
-		    } catch (Exception e) {
-		        return "";
-		    }
+				SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy");
+				return outputFormat.format(inputFormat.parse(createdAt));
+			} catch (Exception e) {
+				return "";
+			}
 		}
 
 		public static String formatTime(String time) {
 			try {
-		        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		        SimpleDateFormat outputFormat = new SimpleDateFormat("HH:mm:ss dd/MM/yyyy");
-		        return outputFormat.format(inputFormat.parse(time));
-		    } catch (Exception e) {
-		        return "";
-		    }
+				SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				SimpleDateFormat outputFormat = new SimpleDateFormat("HH:mm:ss dd/MM/yyyy");
+				return outputFormat.format(inputFormat.parse(time));
+			} catch (Exception e) {
+				return "";
+			}
 		}
 
 		public static String getDate(String time) {
@@ -1108,7 +1181,7 @@ public class DoctorMainFormController implements Initializable {
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		System.out.println("DoctorMainFormController initialized " + username);
-		
+
 		dashboard_form.setVisible(false);
 		patients_form.setVisible(false);
 		appointments_form.setVisible(false);
@@ -1116,7 +1189,7 @@ public class DoctorMainFormController implements Initializable {
 
 		loadComboBox();
 		runTime();
-	
+		initializePatientFilters();
 
 		dashboad_col_appointmentID.setCellValueFactory(new PropertyValueFactory<>("id"));
 		dashboad_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -1125,9 +1198,6 @@ public class DoctorMainFormController implements Initializable {
 		dashboad_col_status.setCellValueFactory(new PropertyValueFactory<>("status"));
 		dashboad_tableView.setItems(dashboad_listData);
 
-		patients_patientID.setEditable(false);
-		patients_gender.setItems(FXCollections.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
-
 		appointments_col_appointmentID.setCellValueFactory(new PropertyValueFactory<>("id"));
 		appointments_col_time.setCellValueFactory(new PropertyValueFactory<>("time"));
 		appointments_col_status.setCellValueFactory(new PropertyValueFactory<>("status"));
@@ -1135,11 +1205,13 @@ public class DoctorMainFormController implements Initializable {
 		appointments_col_contactNumber.setCellValueFactory(new PropertyValueFactory<>("contactNumber"));
 		appointments_col_reason.setCellValueFactory(new PropertyValueFactory<>("reason"));
 		appointments_tableView.setItems(appoinmentListData);
-		//appointment_patientID.setItems(FXCollections.observableArrayList();
-		appointment_gender.setItems(FXCollections.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
-		appointment_status.setItems(FXCollections.observableArrayList(Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
+		// appointment_patientID.setItems(FXCollections.observableArrayList();
+		appointment_gender.setItems(FXCollections
+				.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
+		appointment_status.setItems(FXCollections.observableArrayList(
+				Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
 		appointment_patientID.setItems(patientIds);
-		
+
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 		appointment_date.setConverter(new StringConverter<LocalDate>() {
 			@Override
@@ -1153,36 +1225,39 @@ public class DoctorMainFormController implements Initializable {
 			}
 		});
 
- 		appointments_searchBy.setItems(FXCollections.observableArrayList("Name", "Contact", "Cancel Reason"));
- 		appointments_searchBy.getSelectionModel().selectFirst();
+		appointments_searchBy.setItems(FXCollections.observableArrayList("Name", "Contact", "Cancel Reason"));
+		appointments_searchBy.getSelectionModel().selectFirst();
 		appointments_searchBy.valueProperty().addListener((observable, oldValue, newValue) -> {
- 			onSearchChanged();
- 		});
-		appointments_searchQuery.textProperty().addListener((observable, oldValue, newValue) -> {			
 			onSearchChanged();
 		});
- 	}
- 
- 	private void onSearchChanged() {
+		appointments_searchQuery.textProperty().addListener((observable, oldValue, newValue) -> {
+			onSearchChanged();
+		});
+	}
+
+	private void onSearchChanged() {
 		String searchBy = appointments_searchBy.getSelectionModel().getSelectedItem();
- 		String query = appointments_searchQuery.getText().trim().toLowerCase();
- 
- 		if (query.isEmpty() || searchBy == null || searchBy.isEmpty()) {
- 			appointments_tableView.setItems(appoinmentListData);
-			return; 		}
- 
+		String query = appointments_searchQuery.getText().trim().toLowerCase();
+
+		if (query.isEmpty() || searchBy == null || searchBy.isEmpty()) {
+			appointments_tableView.setItems(appoinmentListData);
+			return;
+		}
+
 		ObservableList<DoctorAppointmentData> filteredData = appoinmentListData.filtered(appointment -> {
- 			switch (searchBy) {
- 				case "Name":
- 					return appointment.getName() != null && appointment.getName().toLowerCase().contains(query);
- 				case "Contact":
- 					return appointment.getContactNumber() != null && appointment.getContactNumber().toLowerCase().contains(query);
-				case "Cancel Reason":
- 					return appointment.getReason() != null && appointment.getReason().toLowerCase().contains(query);
-				default:
-					return false;
- 		}});
- 		appointments_tableView.setItems(filteredData);
+			switch (searchBy) {
+			case "Name":
+				return appointment.getName() != null && appointment.getName().toLowerCase().contains(query);
+			case "Contact":
+				return appointment.getContactNumber() != null
+						&& appointment.getContactNumber().toLowerCase().contains(query);
+			case "Cancel Reason":
+				return appointment.getReason() != null && appointment.getReason().toLowerCase().contains(query);
+			default:
+				return false;
+			}
+		});
+		appointments_tableView.setItems(filteredData);
 	}
 
 	public void setDoctorId(String doctor_id) {
@@ -1190,7 +1265,7 @@ public class DoctorMainFormController implements Initializable {
 		loadDoctorProfile();
 		profileDisplayImages();
 	}
-	
+
 	public void setUsername(String username) {
 		this.username = username;
 		loadDoctorProfile();
@@ -1198,9 +1273,10 @@ public class DoctorMainFormController implements Initializable {
 	}
 
 	ObservableList<String> patientIds = FXCollections.observableArrayList();
+
 	public void load() {
 		System.out.println("DoctorMainFormController load: " + username + " " + doctor_id);
-		
+
 		if (username == null || username.isEmpty() || doctor_id == null || doctor_id.isEmpty()) {
 			alert.errorMessage("Please login first");
 			return;
@@ -1212,8 +1288,10 @@ public class DoctorMainFormController implements Initializable {
 		dashboardDisplayAppointments();
 		dashboardLoadAppointmentData();
 
-		appointment_gender.setItems(FXCollections.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
-		appointment_status.setItems(FXCollections.observableArrayList(Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
+		appointment_gender.setItems(FXCollections
+				.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
+		appointment_status.setItems(FXCollections.observableArrayList(
+				Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
 		appointment_name.setEditable(false);
 		appointment_mobileNumber.setEditable(false);
 
@@ -1324,7 +1402,8 @@ public class DoctorMainFormController implements Initializable {
 				String createdDate = result.getString("create_date");
 				String lastModifiedDate = result.getString("update_date");
 
-				appoinmentListData.add(new DoctorAppointmentData(id, time, status, patientId, gender, name, contactNumber, reason, createdDate, lastModifiedDate));
+				appoinmentListData.add(new DoctorAppointmentData(id, time, status, patientId, gender, name,
+						contactNumber, reason, createdDate, lastModifiedDate));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
