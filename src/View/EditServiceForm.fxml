@@ -52,7 +52,7 @@
                     
                     <!-- Row 1 -->
                     <Label text="Type" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                    <VBox fx:id="cbType" prefHeight="26.0" prefWidth="300.0" spacing="2" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                    <VBox prefHeight="26.0" prefWidth="300.0" spacing="2" GridPane.columnIndex="1" GridPane.rowIndex="1">
                   <children>
                      <ComboBox fx:id="cbType" prefHeight="26.0" prefWidth="303.0" promptText="Select Type" />
                      <Label fx:id="lbTypeError" style="-fx-font-size: 11px;" textFill="RED" visible="false" />
