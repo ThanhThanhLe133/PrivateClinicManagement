@@ -8,6 +8,7 @@ package DAO;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,31 +25,35 @@ public class Database {
         try {
          //cuong url	
             Class.forName("com.mysql.cj.jdbc.Driver");
-//            String url = "jdbc:mysql://localhost:3060/clinic?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh";
-//            // dùng cái này nếu không cài env
+            String url = "jdbc:mysql://localhost:3060/clinic?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh";
+            // dùng cái này nếu không cài env
 ////            String user = "root";
 ////            String password = "";
 //        
 //            
-//         // dùng cái này để bảo mật
-//            String user = System.getenv("DB_USER");
-//            String password = System.getenv("DB_PASS");
-//            // Check if connection exists and is valid before creating a new one
-//            if (connection != null && !connection.isClosed()) {
-//                return connection;
-//            }
-//            // Close existing connection if it exists (to handle stale connections)
-//            if (connection != null) {
-//                connection.close();
-//            }
-//            // Create new connection
-//            connection = DriverManager.getConnection(url, user, password);
-//            return connection;
+         // dùng cái này để bảo mật
+            String user = System.getenv("DB_USER");
+            String password = System.getenv("DB_PASS");
+            // Check if connection exists and is valid before creating a new one
+            if (connection != null && !connection.isClosed()) {
+                return connection;
+            }
+            // Close existing connection if it exists (to handle stale connections)
+            if (connection != null) {
+                connection.close();
+            }
+            // Create new connection
+            connection = DriverManager.getConnection(url, user, password);
+         // Disable ONLY_FULL_GROUP_BY for the session
+            Statement stmt = connection.createStatement();
+            stmt.execute("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));");
+            stmt.close();
+            return connection;
 //            
-            //thanhthanh url cấm xoá
-            String url = "jdbc:mysql://localhost:3306/clinic?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh";
-            Connection connect = DriverManager.getConnection(url, "root", "");
-            return connect;
+//            //thanhthanh url cấm xoá
+//            String url = "jdbc:mysql://localhost:3306/clinic?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh";
+//            Connection connect = DriverManager.getConnection(url, "root", "");
+//            return connect;
 
 
         } catch (Exception e) {
