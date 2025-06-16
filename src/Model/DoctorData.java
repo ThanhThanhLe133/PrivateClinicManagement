@@ -8,6 +8,7 @@ public class DoctorData extends UserAccount {
 	private String serviceName;
 	private String address;
 	private boolean isConfirmed;
+	private boolean status;
 
 	public DoctorData() {
 		super();
@@ -59,5 +60,10 @@ public class DoctorData extends UserAccount {
 
 	public void setConfirmed(boolean confirmed) {
 		isConfirmed = confirmed;
+	}
+
+	public boolean getStatus() {
+		// TODO Auto-generated method stub
+		return status;
 	}
 }

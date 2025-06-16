@@ -7,6 +7,7 @@ public class ReceptionistData extends UserAccount {
 	private String phone;
 	private String address;
 	private boolean isConfirmed;
+	private boolean status;
 
 	public ReceptionistData() {
 		super();
@@ -43,5 +44,9 @@ public class ReceptionistData extends UserAccount {
 
 	public void setConfirmed(boolean confirmed) {
 		isConfirmed = confirmed;
+	}
+
+	public boolean getStatus() {
+		return status;
 	}
 }

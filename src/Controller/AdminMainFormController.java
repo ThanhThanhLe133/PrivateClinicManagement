@@ -97,7 +97,7 @@ public class AdminMainFormController {
 	@FXML
 	private TableColumn<DoctorData, String> doctors_col_specialization;
 	@FXML
-	private TableColumn<DoctorData, String> doctors_col_address;
+	private TableColumn<DoctorData, String> doctors_col_address,doctors_col_status;
 	@FXML
 	private TableColumn<DoctorData, String> doctors_col_confirm;
 	@FXML
@@ -121,7 +121,7 @@ public class AdminMainFormController {
 	@FXML
 	private TableColumn<ReceptionistData, String> receptionist_col_email;
 	@FXML
-	private TableColumn<ReceptionistData, String> receptionist_col_address;
+	private TableColumn<ReceptionistData, String> receptionist_col_address,receptionist_col_status;
 	@FXML
 	private TableColumn<ReceptionistData, Void> receptionist_col_action;
 
@@ -325,11 +325,15 @@ public class AdminMainFormController {
 			doctors_col_specialization
 					.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getServiceName()));
 			doctors_col_address.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAddress()));
+			doctors_col_status.setCellValueFactory(data -> 
+		    new SimpleStringProperty(data.getValue().getStatus() ? "Active" : "Inactive")
+		);
 
 			// Cột hành động
 			doctors_col_action.setCellFactory(col -> new TableCell<>() {
 				private final Button editBtn = new Button("Update");
 				private final Button deleteBtn = new Button("Delete");
+				private final Button confirmBtn = new Button("Confirm");
 				private final HBox hbox = new HBox(5, editBtn, deleteBtn);
 
 				{
@@ -341,14 +345,30 @@ public class AdminMainFormController {
 					deleteBtn.setOnAction(e -> {
 						DoctorData doctor = getTableView().getItems().get(getIndex());
 						deleteDoctor(doctor.getId());
+						loadDoctorTable();
+					});
+					confirmBtn.setOnAction(e -> {
+						DoctorData doctor = getTableView().getItems().get(getIndex());
+						confirmDoctor(doctor.getId());
+						loadDoctorTable();
 					});
 				}
 
-				@Override
-				protected void updateItem(Void item, boolean empty) {
-					super.updateItem(item, empty);
-					setGraphic(empty ? null : hbox);
-				}
+				 @Override
+				    protected void updateItem(Void item, boolean empty) {
+				        super.updateItem(item, empty);
+				        if (empty) {
+				            setGraphic(null);
+				        } else {
+				            DoctorData row = getTableView().getItems().get(getIndex()); 
+				            if (row.isConfirmed()) { 
+				                hbox.getChildren().setAll(editBtn, deleteBtn);
+				            } else { 
+				                hbox.getChildren().setAll(editBtn, deleteBtn, confirmBtn);
+				            }
+				            setGraphic(hbox);
+				        }
+				    }
 			});
 
 			doctors_tableView.setItems(list);
@@ -357,7 +377,36 @@ public class AdminMainFormController {
 			e.printStackTrace();
 		}
 	}
+	
+	private void confirmDoctor(String doctorId) {
+	    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+	    alert.setTitle("Confirm account");
+	    alert.setHeaderText("Are you sure you want to confirm this doctor's account?");
+	    alert.setContentText("This action will activate this account.");
 
+	    Optional<ButtonType> result = alert.showAndWait();
+	    if (result.isPresent() && result.get() == ButtonType.OK) {
+	        try (Connection conn = Database.connectDB()) {
+	            String sql = "UPDATE DOCTOR SET Is_confirmed = TRUE WHERE Doctor_id = ?";
+	            PreparedStatement ps = conn.prepareStatement(sql);
+	            ps.setString(1, doctorId);
+	            ps.executeUpdate();
+
+	            Alert info = new Alert(Alert.AlertType.INFORMATION);
+	            info.setHeaderText("Confirmation successful.");
+	            info.setContentText("The receptionist's account has been confirmed.");
+	            info.showAndWait();
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+
+	            Alert error = new Alert(Alert.AlertType.ERROR);
+	            error.setHeaderText("Confirmation failed.");
+	            error.setContentText("An error occurred while confirming.");
+	            error.showAndWait();
+	        }
+	    }
+	}
 	private void deleteDoctor(String doctorId) {
 		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
 		alert.setTitle("Delete Confirmation");
@@ -369,7 +418,6 @@ public class AdminMainFormController {
 			try {
 				Connection conn = Database.connectDB();
 
-				// Xoá bác sĩ sẽ tự động xoá trong bảng DOCTOR nhờ ON DELETE CASCADE
 				String sql = "DELETE FROM USER_ACCOUNT WHERE Id = ?";
 				PreparedStatement ps = conn.prepareStatement(sql);
 				ps.setString(1, doctorId);
@@ -445,7 +493,6 @@ public class AdminMainFormController {
 						rs.getBoolean("is_active"), rs.getString("phone"), rs.getString("address"),
 						rs.getBoolean("is_confirmed")));
 			}
-
 			receptionist_col_id.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getId()));
 			receptionist_col_name.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
 			receptionist_col_gender.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getGender()));
@@ -454,10 +501,12 @@ public class AdminMainFormController {
 
 			receptionist_col_address
 					.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAddress()));
-
+			receptionist_col_status.setCellValueFactory(data -> 
+		    new SimpleStringProperty(data.getValue().getStatus() ? "Active" : "Inactive"));
 			receptionist_col_action.setCellFactory(col -> new TableCell<>() {
 				private final Button editBtn = new Button("Update");
 				private final Button deleteBtn = new Button("Delete");
+				private final Button confirmBtn = new Button("Confirm");
 				private final HBox hbox = new HBox(5, editBtn, deleteBtn);
 
 				{
@@ -471,13 +520,28 @@ public class AdminMainFormController {
 						deleteReceptionist(selected.getId());
 						loadReceptionistTable();
 					});
+					confirmBtn.setOnAction(e -> {
+						ReceptionistData selected = getTableView().getItems().get(getIndex());
+						confirmReceptionist(selected.getId());
+						loadReceptionistTable();
+					});
 				}
 
-				@Override
-				protected void updateItem(Void item, boolean empty) {
-					super.updateItem(item, empty);
-					setGraphic(empty ? null : hbox);
-				}
+				 @Override
+				    protected void updateItem(Void item, boolean empty) {
+				        super.updateItem(item, empty);
+				        if (empty) {
+				            setGraphic(null);
+				        } else {
+				            ReceptionistData row = getTableView().getItems().get(getIndex()); 
+				            if (row.isConfirmed()) { 
+				                hbox.getChildren().setAll(editBtn, deleteBtn);
+				            } else { 
+				                hbox.getChildren().setAll(editBtn, deleteBtn, confirmBtn);
+				            }
+				            setGraphic(hbox);
+				        }
+				    }
 			});
 
 			receptionist_tableView.setItems(list);
@@ -485,7 +549,37 @@ public class AdminMainFormController {
 			e.printStackTrace();
 		}
 	}
+	
+	private void confirmReceptionist(String receptionistId) {
+	    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+	    alert.setTitle("Confirm account");
+	    alert.setHeaderText("Are you sure you want to confirm this receptionist's account?");
+	    alert.setContentText("This action will activate this account.");
 
+	    Optional<ButtonType> result = alert.showAndWait();
+	    if (result.isPresent() && result.get() == ButtonType.OK) {
+	        try (Connection conn = Database.connectDB()) {
+	            String sql = "UPDATE RECEPTIONIST SET Is_confirmed = TRUE WHERE Receptionist_id = ?";
+	            PreparedStatement ps = conn.prepareStatement(sql);
+	            ps.setString(1, receptionistId);
+	            ps.executeUpdate();
+
+	            Alert info = new Alert(Alert.AlertType.INFORMATION);
+	            info.setHeaderText("Confirmation successful.");
+	            info.setContentText("The receptionist's account has been confirmed.");
+	            info.showAndWait();
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+
+	            Alert error = new Alert(Alert.AlertType.ERROR);
+	            error.setHeaderText("Confirmation failed.");
+	            error.setContentText("An error occurred while confirming.");
+	            error.showAndWait();
+	        }
+	    }
+	}
+	
 	private void deleteReceptionist(String receptionistId) {
 		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
 		alert.setTitle("Delete Confirmation");
