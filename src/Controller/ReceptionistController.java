@@ -8,25 +8,16 @@ package Controller;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import org.apache.poi.xwpf.usermodel.*;
 
 import Model.AppointmentData;
 import Model.PatientData;
 
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
-import org.apache.poi.xwpf.usermodel.*;
-import org.apache.poi.util.Units;
-import java.io.*;
-import java.nio.file.*;
-import java.sql.*;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import java.awt.Checkbox;
 import java.awt.Desktop;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -49,7 +40,6 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -65,42 +55,29 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTP;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTR;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTText;
-
-import com.microsoft.schemas.vml.CTTextbox;
-
 import Alert.AlertMessage;
-import Controller.DoctorMainFormController.DashBoardAppointmentData;
-import Controller.DoctorMainFormController.DoctorAppointmentData;
 import Controller.DoctorMainFormController.FormatterUtils;
 import DAO.Database;
 import Enum.AppointmentStatus;
 import Enum.Gender;
 import Enum.UrgencyLevel;
-import Model.AppointmentData;
 import Model.AppointmentSuggester;
 import Model.Data;
 import Model.DoctorData;
-import Model.PatientData;
-import Model.ReceptionistData;
-import Model.RevenueService;
 import Model.ServiceData;
-import Model.ReceptionistData;
 import Model.DrugData;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.chart.AreaChart;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -108,7 +85,6 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TableCell;
@@ -119,10 +95,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
@@ -248,49 +222,37 @@ public class ReceptionistController implements Initializable {
 	private AnchorPane home_form;
 
 	@FXML
-	private Circle home_doctor_circle;
+	private AreaChart home_chart_drugs, home_chart_patients;
 
 	@FXML
-	private Label home_doctor_name;
+	private BarChart home_chart_appointments;
 
 	@FXML
-	private Label home_doctor_specialization;
+	private AnchorPane panel_total_appointments, panel_active_patients, panel_total_patients, panel_total_drugs;
 
 	@FXML
-	private Label home_doctor_email;
-
-	@FXML
-	private Label home_doctor_mobileNumber;
+	private Label label_total_appointments, label_active_patients, label_total_patients, label_total_drugs;
 
 	@FXML
 	private TableView<AppointmentData> home_appointment_tableView;
 
 	@FXML
+	private TableColumn<AppointmentData, String> home_appointment_col_patient;
+
+	@FXML
+	private TableColumn<AppointmentData, String> home_appointment_col_date;
+
+	@FXML
+	private TableColumn<AppointmentData, String> home_appointment_col_status;
+
+	@FXML
 	private TableColumn<AppointmentData, String> home_appointment_col_appointmenID;
-
-	@FXML
-	private TableColumn<AppointmentData, String> home_appointment_col_description;
-
-	@FXML
-	private TableColumn<AppointmentData, String> home_appointment_col_diagnosis;
-
-	@FXML
-	private TableColumn<AppointmentData, String> home_appointment_col_treatment;
 
 	@FXML
 	private TableColumn<AppointmentData, String> home_appointment_col_doctor;
 
 	@FXML
-	private TableColumn<AppointmentData, String> home_appointment_col_schedule;
-
-	@FXML
 	private AnchorPane patients_form;
-
-	@FXML
-	private ScrollPane doctors_scrollPane;
-
-	@FXML
-	private GridPane doctors_gridPane;
 
 	@FXML
 	private AnchorPane appointments_form;
@@ -298,8 +260,6 @@ public class ReceptionistController implements Initializable {
 	private AnchorPane choose_service_form;
 	@FXML
 	private VBox vboxContainer;
-	@FXML
-	private TextArea appointment_d_description;
 
 	@FXML
 	private ComboBox<DoctorData> cb_doctor;
@@ -336,7 +296,7 @@ public class ReceptionistController implements Initializable {
 	@FXML
 	private Button btn_create;
 	@FXML
-	private Button bnt_suggest,bnt_reset;
+	private Button bnt_suggest, bnt_reset;
 	@FXML
 	private Button btn_check;
 
@@ -451,7 +411,6 @@ public class ReceptionistController implements Initializable {
 		profileDisplayImages();
 	}
 
-	// =======================CRUD Drug==================================
 	private ObservableList<DrugData> drugMasterList = FXCollections.observableArrayList();
 
 	private void initializeDrugFilters() {
@@ -485,6 +444,7 @@ public class ReceptionistController implements Initializable {
 			String sql = "SELECT Id, Name, Manufacturer, Expiry_date, Unit, Price, Stock, Create_date, Update_date "
 					+ "FROM DRUG ";
 
+			// Truy vấn dữ liệu thuốc từ cơ sở dữ liệu
 			PreparedStatement ps = conn.prepareStatement(sql);
 			ResultSet rs = ps.executeQuery();
 
@@ -511,7 +471,7 @@ public class ReceptionistController implements Initializable {
 			drug_col_update
 					.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getUpdateDate().toString()));
 
-			// Cột hành động
+			// Cột hành động (edit/delete)
 			drug_col_action.setCellFactory(col -> new TableCell<>() {
 				private final Button editBtn = new Button("Update");
 				private final Button deleteBtn = new Button("Delete");
@@ -560,21 +520,23 @@ public class ReceptionistController implements Initializable {
 			boolean matchesKeyword = true;
 
 			switch (searchBy) {
-			case "Name":
-				matchesKeyword = drug.getName().toLowerCase().contains(keyword);
-				break;
-			case "Manufacturer":
-				matchesKeyword = drug.getManufacturer().toLowerCase().contains(keyword);
-				break;
-			case "Unit":
-				matchesKeyword = drug.getUnit().toLowerCase().contains(keyword);
-				break;
+				case "Name":
+					matchesKeyword = drug.getName().toLowerCase().contains(keyword);
+					break;
+				case "Manufacturer":
+					matchesKeyword = drug.getManufacturer().toLowerCase().contains(keyword);
+					break;
+				case "Unit":
+					matchesKeyword = drug.getUnit().toLowerCase().contains(keyword);
+					break;
 			}
 
+			// Lọc theo hạn sử dụng
 			boolean matchesExpiry = expiryFilter.equals("All")
 					|| (expiryFilter.equals("Valid") && drug.getExpiryDate().isAfter(LocalDate.now()))
 					|| (expiryFilter.equals("Expired") && !drug.getExpiryDate().isAfter(LocalDate.now()));
 
+			// Lọc theo tồn kho
 			boolean matchesStock = stockFilter.equals("All") || (stockFilter.equals("In Stock") && drug.getStock() > 0)
 					|| (stockFilter.equals("Out of Stock") && drug.getStock() <= 0);
 
@@ -583,7 +545,7 @@ public class ReceptionistController implements Initializable {
 			}
 		}
 
-		// Sort theo giá
+		// Sắp xếp theo giá
 		if (priceSort.equals("Low to High")) {
 			FXCollections.sort(filtered, Comparator.comparing(DrugData::getPrice));
 		} else if (priceSort.equals("High to Low")) {
@@ -599,6 +561,7 @@ public class ReceptionistController implements Initializable {
 		alert.setHeaderText("Are you sure you want to delete this drug?");
 		alert.setContentText("This action cannot be undone.");
 
+		// Xác nhận xóa thuốc
 		Optional<ButtonType> result = alert.showAndWait();
 		if (result.isPresent() && result.get() == ButtonType.OK) {
 			try {
@@ -610,7 +573,7 @@ public class ReceptionistController implements Initializable {
 				ps.executeUpdate();
 
 				conn.close();
-				loadDrugTable(); // Refresh lại bảng sau khi xoá
+				loadDrugTable(); // Refresh lại bảng sau khi xóa
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -643,6 +606,7 @@ public class ReceptionistController implements Initializable {
 	@FXML
 	private void openAddDrugForm() {
 		try {
+			// Mở form thêm thuốc mới
 			FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/AddDrugForm.fxml"));
 			Parent root = loader.load();
 
@@ -688,14 +652,14 @@ public class ReceptionistController implements Initializable {
 		for (PatientData p : patientMasterList) {
 			// 1. Tìm kiếm theo trường
 			String fieldValue = switch (searchBy) {
-			case "Name" -> p.getName();
-			case "Email" -> p.getEmail();
-			case "Phone" -> p.getPhone();
-			case "Address" -> p.getAddress();
-			case "Diagnosis" -> p.getDiagnosis();
-			case "Height" -> p.getHeight().toPlainString();
-			case "Weight" -> p.getWeight().toPlainString();
-			default -> "";
+				case "Name" -> p.getName();
+				case "Email" -> p.getEmail();
+				case "Phone" -> p.getPhone();
+				case "Address" -> p.getAddress();
+				case "Diagnosis" -> p.getDiagnosis();
+				case "Height" -> p.getHeight().toPlainString();
+				case "Weight" -> p.getWeight().toPlainString();
+				default -> "";
 			};
 
 			boolean matchesKeyword = fieldValue != null && fieldValue.toLowerCase().contains(keyword);
@@ -771,38 +735,6 @@ public class ReceptionistController implements Initializable {
 
 			patients_tableView.setItems(patientMasterList);
 			conn.close();
-
-//	        // Thêm nút cập nhật và xóa vào mỗi dòng
-//	        patients_col_action.setCellFactory(col -> new TableCell<>() {
-//	            private final Button btnEdit = new Button("Edit");
-//	            private final Button btnDelete = new Button("Delete");
-//	            private final HBox hbox = new HBox(5, btnEdit, btnDelete);
-//
-//	            {
-//	                btnEdit.getStyleClass().add("btn-2");
-//	                btnDelete.getStyleClass().add("btn-danger");
-//
-//	                btnEdit.setOnAction(e -> {
-//	                    PatientData patient = getTableView().getItems().get(getIndex());
-//	                    //openEditPatientForm(patient); // Mở form sửa
-//	                });
-//
-//	                btnDelete.setOnAction(e -> {
-//	                    PatientData patient = getTableView().getItems().get(getIndex());
-//	                    //deletePatient(patient); // Gọi hàm xóa
-//	                });
-//	            }
-//
-//	            @Override
-//	            protected void updateItem(Void item, boolean empty) {
-//	                super.updateItem(item, empty);
-//	                if (empty) {
-//	                    setGraphic(null);
-//	                } else {
-//	                    setGraphic(hbox);
-//	                }
-//	            }
-//	        });
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -927,10 +859,11 @@ public class ReceptionistController implements Initializable {
 
 			ResultSet result = prepare.executeQuery();
 
-//			if (!result.next() || result.getInt(1) <= 0) {
-//				alert.errorMessage("Username does not match data.");
-//				return;
-//			}
+			// if (!result.next() || result.getInt(1) <= 0) {
+			// alert.errorMessage("Username does not match data.");
+			// return;
+			// }
+
 			if (!result.next()) {
 				alert.errorMessage("Username does not match data.");
 				return;
@@ -957,7 +890,7 @@ public class ReceptionistController implements Initializable {
 
 			txt_name_recept.setText(name != null ? name : "");
 			txt_username_recept.setText(username != null ? username : "");
-//			txt_email_recept.setText(email != null ? email : "");
+			// txt_email_recept.setText(email != null ? email : "");
 			txt_phone_recept.setText(phone != null ? phone : "");
 			gender_cb.setValue(gender != null ? gender : "");
 			txt_address_recept.setText(address != null ? address : "");
@@ -1054,7 +987,7 @@ public class ReceptionistController implements Initializable {
 			prepare.setString(2, usernameEdit);
 			prepare.setString(3, gender);
 			prepare.setString(4, email);
-			System.out.println(name +" "+usernameEdit +" "+gender+" "+email);
+			System.out.println(name + " " + usernameEdit + " " + gender + " " + email);
 			int rowsUserUpdated = prepare.executeUpdate();
 
 			// Cập nhật receptionist
@@ -1258,25 +1191,25 @@ public class ReceptionistController implements Initializable {
 		}
 
 	}
-	
+
 	@FXML
 	private void resetForm(ActionEvent event) {
 		List<Node> toRemove = new ArrayList<>();
-	    // Giả sử 2 nút ở cuối luôn luôn ở 2 vị trí cuối cùng
-	    int limit = vboxContainer.getChildren().size() - 1;
+		// Giả sử 2 nút ở cuối luôn luôn ở 2 vị trí cuối cùng
+		int limit = vboxContainer.getChildren().size() - 1;
 
-	    for (int i = 0; i < limit; i++) {
-	        Node node = vboxContainer.getChildren().get(i);
-	        if (node instanceof AnchorPane) {
-	            AnchorPane pane = (AnchorPane) node;
-	            ComboBox<ServiceData> cbService = (ComboBox<ServiceData>) pane.lookup("#cb_service");
+		for (int i = 0; i < limit; i++) {
+			Node node = vboxContainer.getChildren().get(i);
+			if (node instanceof AnchorPane) {
+				AnchorPane pane = (AnchorPane) node;
+				ComboBox<ServiceData> cbService = (ComboBox<ServiceData>) pane.lookup("#cb_service");
 
-	            if (cbService != null) { 
-	                toRemove.add(pane);
-	            }
-	        }
-	    }
-	    vboxContainer.getChildren().removeAll(toRemove);
+				if (cbService != null) {
+					toRemove.add(pane);
+				}
+			}
+		}
+		vboxContainer.getChildren().removeAll(toRemove);
 		lb_patient_name.setText("");
 		lb_patient_gender.setText("");
 		lb_patient_address.setText("");
@@ -1290,8 +1223,8 @@ public class ReceptionistController implements Initializable {
 
 		checkbox_followUp.setSelected(false);
 
-	}	
-	
+	}
+
 	@FXML
 	private void addNewForm(ActionEvent event) {
 		try {
@@ -1304,7 +1237,7 @@ public class ReceptionistController implements Initializable {
 			}
 
 			vboxContainer.getChildren().add(insertPos, newForm);
-//	        updateRemoveButtons();
+			// updateRemoveButtons();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -1317,28 +1250,28 @@ public class ReceptionistController implements Initializable {
 
 		VBox vboxContainer = (VBox) pane.getParent();
 
-//		if (vboxContainer.getChildren().size() <= 1) {
-//			return;
-//		}
+		// if (vboxContainer.getChildren().size() <= 1) {
+		// return;
+		// }
 
 		vboxContainer.getChildren().remove(pane);
-//		updateRemoveButtons();
+		// updateRemoveButtons();
 	}
 
-//	private void updateRemoveButtons() {
-//		ObservableList<Node> children = vboxContainer.getChildren();
-//
-//		for (int i = 0; i < children.size(); i++) {
-//			Node node = children.get(i);
-//			if (node instanceof AnchorPane) {
-//				AnchorPane pane = (AnchorPane) node;
-//				Button btnRemove = (Button) pane.lookup("#btn_remove");
-//				if (btnRemove != null) {
-//					btnRemove.setVisible(i != 0);
-//				}
-//			}
-//		}
-//	}
+	// private void updateRemoveButtons() {
+	// ObservableList<Node> children = vboxContainer.getChildren();
+	//
+	// for (int i = 0; i < children.size(); i++) {
+	// Node node = children.get(i);
+	// if (node instanceof AnchorPane) {
+	// AnchorPane pane = (AnchorPane) node;
+	// Button btnRemove = (Button) pane.lookup("#btn_remove");
+	// if (btnRemove != null) {
+	// btnRemove.setVisible(i != 0);
+	// }
+	// }
+	// }
+	// }
 
 	// lấy danh sách các serviceId
 	private List<String> getSelectedServiceIdsFromVBox() {
@@ -1876,12 +1809,12 @@ public class ReceptionistController implements Initializable {
 		try {
 			List<ServiceData> selectedServices = new ArrayList<>();
 			for (Node node : vboxContainer.getChildren()) {
-			    if (node instanceof AnchorPane) {
-			        ComboBox<ServiceData> cbService = (ComboBox<ServiceData>) ((AnchorPane) node).lookup("#cb_service");
-			        if (cbService != null && cbService.getValue() != null) {
-			            selectedServices.add(cbService.getValue());
-			        }
-			    }
+				if (node instanceof AnchorPane) {
+					ComboBox<ServiceData> cbService = (ComboBox<ServiceData>) ((AnchorPane) node).lookup("#cb_service");
+					if (cbService != null && cbService.getValue() != null) {
+						selectedServices.add(cbService.getValue());
+					}
+				}
 			}
 			if (selectedServices.isEmpty()) {
 				alert.errorMessage("Please select at least one service!");
@@ -1920,7 +1853,7 @@ public class ReceptionistController implements Initializable {
 					// 2. Thêm lịch hẹn
 					psInsertAppointment.setString(1, appointmentId);
 					psInsertAppointment.setTimestamp(2, Timestamp.valueOf(appointmentDateTime));
-					psInsertAppointment.setString(3, "Scheduled");
+					psInsertAppointment.setString(3, "Coming");
 					psInsertAppointment.setString(4, "");
 					psInsertAppointment.setString(5, doctorId);
 					psInsertAppointment.setString(6, selectedPatient.getPatientId());
@@ -2091,7 +2024,9 @@ public class ReceptionistController implements Initializable {
 				        a.create_date,
 				        a.update_date
 				    FROM appointment a
+
 				             JOIN doctor d ON a.Doctor_id = d.Doctor_id
+
 				    JOIN user_account ua ON ua.id = a.Doctor_id
 				    JOIN patient pt ON pt.Patient_id = a.Patient_id
 				    JOIN service s ON d.service_id = s.id
@@ -2101,54 +2036,32 @@ public class ReceptionistController implements Initializable {
 		connect = Database.connectDB();
 
 		try {
-
 			prepare = connect.prepareStatement(sql);
-
 			result = prepare.executeQuery();
-
 			appoinmentListData.clear();
 
 			while (result.next()) {
-
 				String id = result.getString("id");
-
 				Timestamp time = result.getTimestamp("time");
-
 				String status = result.getString("appointment_status");
-
 				String doctorId = result.getString("Doctor_id");
-
 				String doctorName = result.getString("doctor_name");
-
 				String patientId = result.getString("patient_id");
-
 				String patientName = result.getString("patient_name");
-
 				String contactNumber = result.getString("contact_number");
-
 				String serviceId = result.getString("service_id");
-
 				String serviceName = result.getString("service_name");
-
 				String reason = result.getString("cancel_reason");
-
 				String prescriptionStatus = result.getString("Prescription_Status"); // New field
-
 				Timestamp createdDate = result.getTimestamp("create_date");
-
 				Timestamp lastModifiedDate = result.getTimestamp("update_date");
 
 				appoinmentListData.add(new AppointmentData(id, time, status, reason, doctorId, patientId, serviceId,
-
 						serviceName, prescriptionStatus, createdDate, lastModifiedDate, patientName, doctorName,
-
 						contactNumber));
 			}
-
 		} catch (SQLException e) {
-
 			e.printStackTrace();
-
 		} finally {
 			try {
 				if (connect != null)
@@ -2260,17 +2173,14 @@ public class ReceptionistController implements Initializable {
 	@FXML
 	public void appointmentPrescriptionBtn() {
 		// Get the selected appointment
-
 		AppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
 
 		if (selectedAppointment == null) {
-
 			alert.errorMessage("Please select an appointment first.");
 			return;
 		}
 
 		if (!selectedAppointment.getStatus().equals(AppointmentStatus.Finish.toString())) {
-
 			alert.errorMessage("This appointment has not finished yet.");
 			return;
 		}
@@ -2512,6 +2422,157 @@ public class ReceptionistController implements Initializable {
 	 * =====================FORMAT AND
 	 * INTIALIZE========================================
 	 */
+	private void loadDashboardData() {
+		Connection connect = null;
+		PreparedStatement prepare = null;
+		ResultSet result = null;
+
+		try {
+			connect = Database.connectDB();
+
+			// Tổng số cuộc hẹn
+			String sqlAppointments = "SELECT COUNT(*) FROM appointment";
+			prepare = connect.prepareStatement(sqlAppointments);
+			result = prepare.executeQuery();
+			int totalAppointments = result.next() ? result.getInt(1) : 0;
+			label_total_appointments.setText(String.valueOf(totalAppointments));
+
+			// Tổng số bệnh nhân đang hoạt động (ví dụ: dựa trên trạng thái hoặc ngày tạo
+			// gần đây)
+			String sqlActivePatients = "SELECT COUNT(DISTINCT Patient_id) FROM appointment WHERE status = 'Coming'";
+			prepare = connect.prepareStatement(sqlActivePatients);
+			result = prepare.executeQuery();
+			int activePatients = result.next() ? result.getInt(1) : 0;
+			label_active_patients.setText(String.valueOf(activePatients));
+
+			// Tổng số bệnh nhân
+			String sqlTotalPatients = "SELECT COUNT(*) FROM patient";
+			prepare = connect.prepareStatement(sqlTotalPatients);
+			result = prepare.executeQuery();
+			int totalPatients = result.next() ? result.getInt(1) : 0;
+			label_total_patients.setText(String.valueOf(totalPatients));
+
+			// Tổng số loại thuốc
+			String sqlTotalDrugs = "SELECT COUNT(*) FROM drug";
+			prepare = connect.prepareStatement(sqlTotalDrugs);
+			result = prepare.executeQuery();
+			int totalDrugs = result.next() ? result.getInt(1) : 0;
+			label_total_drugs.setText(String.valueOf(totalDrugs));
+
+			// Load dữ liệu cho home_appointment_tableView
+			String sqlRecentAppointments = "SELECT a.Id AS appointment_id, a.Time AS appointment_date, a.Status AS appointment_status, "
+					+ "p.Name AS patient_name, ua.Name AS doctor_name, a.Create_date, a.Update_date "
+					+ "FROM appointment a "
+					+ "JOIN patient p ON a.Patient_id = p.Patient_id "
+					+ "JOIN doctor d ON a.Doctor_id = d.Doctor_id "
+					+ "JOIN user_account ua ON d.Doctor_id = ua.Id ";
+			// + "ORDER BY a.Time DESC LIMIT 5"; // Lấy 5 cuộc hẹn gần nhất
+			prepare = connect.prepareStatement(sqlRecentAppointments);
+			result = prepare.executeQuery();
+
+			ObservableList<AppointmentData> appointmentList = FXCollections.observableArrayList();
+			while (result.next()) {
+				AppointmentData appointment = new AppointmentData(
+						result.getString("appointment_id"),
+						result.getTimestamp("appointment_date"),
+						result.getString("appointment_status"),
+						"", // cancel_reason (không cần trong trường hợp này)
+						"", // doctor_id (không cần trong trường hợp này)
+						"", // patient_id (không cần trong trường hợp này)
+						"", // service_id (không cần trong trường hợp này)
+						"", // service_name (không cần trong trường hợp này)
+						"", // prescription_status (không cần trong trường hợp này)
+						result.getTimestamp("create_date"),
+						result.getTimestamp("update_date"),
+						result.getString("patient_name"), // Lấy từ patient
+						result.getString("doctor_name"), // Lấy từ user_account
+						"" // contact_number (không cần trong trường hợp này)
+				);
+				appointmentList.add(appointment);
+			}
+
+			// Cấu hình cột cho home_appointment_tableView
+			home_appointment_col_appointmenID.setCellValueFactory(new PropertyValueFactory<>("id"));
+			home_appointment_col_patient.setCellValueFactory(new PropertyValueFactory<>("patientName"));
+			home_appointment_col_date.setCellValueFactory(new PropertyValueFactory<>("time"));
+			home_appointment_col_status.setCellValueFactory(new PropertyValueFactory<>("status"));
+			home_appointment_col_doctor.setCellValueFactory(new PropertyValueFactory<>("doctorName"));
+
+			home_appointment_tableView.setItems(appointmentList);
+
+			// Load data for charts
+			// 1. AreaChart for Drugs (cumulative count for last 6 months including current
+			// month, ascending order)
+			String sqlDrugs = "SELECT DATE_FORMAT(dates.month_start, '%c/%Y') AS month, "
+					+ "COALESCE((SELECT COUNT(*) FROM drug d2 WHERE d2.Create_date <= dates.month_end), 0) AS drug_count "
+					+ "FROM (SELECT DATE_ADD(DATE_SUB(CURDATE(), INTERVAL (MONTH(CURDATE()) - 1) MONTH), INTERVAL n MONTH) AS month_start, "
+					+ "             LAST_DAY(DATE_ADD(DATE_SUB(CURDATE(), INTERVAL (MONTH(CURDATE()) - 1) MONTH), INTERVAL n MONTH)) AS month_end "
+					+ "      FROM (SELECT 0 AS n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5) numbers "
+					+ "      WHERE DATE_ADD(DATE_SUB(CURDATE(), INTERVAL (MONTH(CURDATE()) - 1) MONTH), INTERVAL n MONTH) <= CURDATE()) dates "
+					+ "ORDER BY dates.month_start ASC";
+			prepare = connect.prepareStatement(sqlDrugs);
+			result = prepare.executeQuery();
+			XYChart.Series<String, Number> drugsSeries = new XYChart.Series<>();
+			drugsSeries.setName("Total Drugs");
+			while (result.next()) {
+				drugsSeries.getData().add(new XYChart.Data<>(result.getString("month"), result.getInt("drug_count")));
+			}
+			home_chart_drugs.getData().clear();
+			home_chart_drugs.getData().add(drugsSeries);
+
+			// 2. AreaChart for Patients (cumulative count for last 6 months including
+			// current month, ascending order)
+			String sqlPatients = "SELECT DATE_FORMAT(dates.month_start, '%c/%Y') AS month, "
+					+ "COALESCE((SELECT COUNT(*) FROM patient p2 WHERE p2.Create_date <= dates.month_end), 0) AS patient_count "
+					+ "FROM (SELECT DATE_ADD(DATE_SUB(CURDATE(), INTERVAL (MONTH(CURDATE()) - 1) MONTH), INTERVAL n MONTH) AS month_start, "
+					+ "             LAST_DAY(DATE_ADD(DATE_SUB(CURDATE(), INTERVAL (MONTH(CURDATE()) - 1) MONTH), INTERVAL n MONTH)) AS month_end "
+					+ "      FROM (SELECT 0 AS n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5) numbers "
+					+ "      WHERE DATE_ADD(DATE_SUB(CURDATE(), INTERVAL (MONTH(CURDATE()) - 1) MONTH), INTERVAL n MONTH) <= CURDATE()) dates "
+					+ "ORDER BY dates.month_start ASC";
+			prepare = connect.prepareStatement(sqlPatients);
+			result = prepare.executeQuery();
+			XYChart.Series<String, Number> patientsSeries = new XYChart.Series<>();
+			patientsSeries.setName("Total Patients");
+			while (result.next()) {
+				patientsSeries.getData()
+						.add(new XYChart.Data<>(result.getString("month"), result.getInt("patient_count")));
+			}
+			home_chart_patients.getData().clear();
+			home_chart_patients.getData().add(patientsSeries);
+
+			// 3. BarChart for Appointments (count by status, unchanged)
+			String sqlAppointmentsChart = "SELECT Status, COUNT(*) AS appointment_count "
+					+ "FROM appointment GROUP BY Status";
+			prepare = connect.prepareStatement(sqlAppointmentsChart);
+			result = prepare.executeQuery();
+			XYChart.Series<String, Number> appointmentsSeries = new XYChart.Series<>();
+			appointmentsSeries.setName("Appointments by Status");
+			while (result.next()) {
+				appointmentsSeries.getData()
+						.add(new XYChart.Data<>(result.getString("Status"), result.getInt("appointment_count")));
+			}
+			home_chart_appointments.getData().clear();
+			home_chart_appointments.getData().add(appointmentsSeries);
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			Alert alert = new Alert(Alert.AlertType.ERROR);
+			alert.setContentText("Error loading dashboard data!");
+			alert.showAndWait();
+		} finally {
+			try {
+				if (result != null)
+					result.close();
+				if (prepare != null)
+					prepare.close();
+				if (connect != null)
+					connect.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	@FXML
 	private void switchForm(ActionEvent event) {
 
@@ -2539,33 +2600,34 @@ public class ReceptionistController implements Initializable {
 		profile_form.setVisible(false);
 
 		switch (formName) {
-		case "dashboard":
-			home_form.setVisible(true);
-			current_form.setText("Home Form");
-			break;
-		case "drugs":
-			drugs_form.setVisible(true);
-			current_form.setText("Drugs Form");
-			loadDrugTable();
-			break;
-		case "patients":
-			patients_form.setVisible(true);
-			current_form.setText("Patients Form");
-			loadPatientTable();
-			break;
-		case "appointments":
-			appointments_form.setVisible(true);
-			current_form.setText("Appointments Form");
-			break;
-		case "appointments_manage":
-			loadAppointmentData();
-			appointments_manage_form.setVisible(true);
-			current_form.setText("Appointments Manage Form");
-			break;
-		case "profile":
-			profile_form.setVisible(true);
-			current_form.setText("Profile Form");
-			break;
+			case "dashboard":
+				home_form.setVisible(true);
+				current_form.setText("Home Form");
+				loadDashboardData();
+				break;
+			case "drugs":
+				drugs_form.setVisible(true);
+				current_form.setText("Drugs Form");
+				loadDrugTable();
+				break;
+			case "patients":
+				patients_form.setVisible(true);
+				current_form.setText("Patients Form");
+				loadPatientTable();
+				break;
+			case "appointments":
+				appointments_form.setVisible(true);
+				current_form.setText("Appointments Form");
+				break;
+			case "appointments_manage":
+				loadAppointmentData();
+				appointments_manage_form.setVisible(true);
+				current_form.setText("Appointments Manage Form");
+				break;
+			case "profile":
+				profile_form.setVisible(true);
+				current_form.setText("Profile Form");
+				break;
 		}
 	}
 
@@ -2647,6 +2709,7 @@ public class ReceptionistController implements Initializable {
 		appointments_col_doctor.setCellValueFactory(new PropertyValueFactory<>("doctorName"));
 		appointments_col_contactNumber.setCellValueFactory(new PropertyValueFactory<>("contactNumber"));
 		appointments_col_reason.setCellValueFactory(new PropertyValueFactory<>("cancelReason"));
+		appointments_col_time.setCellValueFactory(new PropertyValueFactory<>("time"));
 
 		appointments_col_prescription.setCellValueFactory(cellData -> {
 			String status = cellData.getValue().getPrescriptionStatus();
@@ -2678,19 +2741,20 @@ public class ReceptionistController implements Initializable {
 
 		ObservableList<AppointmentData> filtered = appoinmentListData.filtered(appointment -> {
 			switch (searchBy) {
-			case "Patient Name":
-				return appointment.getPatientName() != null
-						&& appointment.getPatientName().toLowerCase().contains(query);
-			case "Doctor Name":
-				return appointment.getDoctorName() != null && appointment.getDoctorName().toLowerCase().contains(query);
-			case "Cancel Reason":
-				return appointment.getCancelReason() != null
-						&& appointment.getCancelReason().toLowerCase().contains(query);
-			case "Contact":
-				return appointment.getContactNumber() != null
-						&& appointment.getContactNumber().toLowerCase().contains(query);
-			default:
-				return false;
+				case "Patient Name":
+					return appointment.getPatientName() != null
+							&& appointment.getPatientName().toLowerCase().contains(query);
+				case "Doctor Name":
+					return appointment.getDoctorName() != null
+							&& appointment.getDoctorName().toLowerCase().contains(query);
+				case "Cancel Reason":
+					return appointment.getCancelReason() != null
+							&& appointment.getCancelReason().toLowerCase().contains(query);
+				case "Contact":
+					return appointment.getContactNumber() != null
+							&& appointment.getContactNumber().toLowerCase().contains(query);
+				default:
+					return false;
 			}
 		});
 

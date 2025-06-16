@@ -43,6 +43,15 @@ public class AppointmentData {
 		this.patientId = "";
 		this.serviceId = "";
 	}
+	
+	public AppointmentData(String id, Timestamp time, String status, String doctorId,
+			String patientId) {
+		this.id = id;
+		this.time = time;
+		this.status = status;
+		this.doctorId = doctorId;
+		this.patientId = patientId;
+	}
 
 	public AppointmentData(String id, Timestamp time, String status, String cancelReason, String doctorId,
 			String patientId, String serviceId) {
