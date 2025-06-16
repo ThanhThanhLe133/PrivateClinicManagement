@@ -689,3 +689,68 @@ DELIMITER ;
 ALTER EVENT add_daily_slots
 ON SCHEDULE EVERY 1 DAY
 STARTS CURRENT_TIMESTAMP;
+
+
+-- DELIMITER $$
+
+-- DROP PROCEDURE IF EXISTS GenerateDailySlots $$
+
+-- CREATE PROCEDURE GenerateDailySlots()
+-- BEGIN
+--     DECLARE done INT DEFAULT FALSE;
+--     DECLARE doc_id CHAR(36);
+--     DECLARE start_time TIME;
+--     DECLARE slot_date DATE;
+
+--     DECLARE cur CURSOR FOR SELECT Doctor_id FROM DOCTOR;
+--     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+--     SET slot_date = CURDATE();
+
+--     INSERT INTO DEBUG_LOG (message) VALUES (CONCAT('Bắt đầu tại ', slot_date));
+
+--     OPEN cur;
+
+--     read_loop: LOOP
+--         FETCH cur INTO doc_id;
+--         IF done THEN
+--             LEAVE read_loop;
+--         END IF;
+
+--         INSERT INTO DEBUG_LOG (message) VALUES (CONCAT('Xử lý Doctor ', doc_id));
+
+--         SET start_time = '08:00:00';
+
+--         WHILE start_time < '16:00:00' DO
+
+--             -- ghi debug kiểm thời gian
+--             INSERT INTO DEBUG_LOG (message) VALUES (CONCAT('Kiểm khung ', start_time, ' tại ', slot_date, ' cho Doctor ', doc_id));
+
+--             IF NOT EXISTS (
+--                 SELECT 1 FROM AVAILABLE_SLOT 
+--                 WHERE Doctor_id = doc_id 
+--                    AND Slot_time = start_time 
+--                    AND Slot_date = slot_date
+--             )
+--             THEN
+--                 INSERT INTO AVAILABLE_SLOT (Id, Doctor_id, Slot_time, Slot_date, Duration_minutes, Is_booked)
+--                 VALUES (UUID(), doc_id, start_time, slot_date, 15, 0);
+                
+--                 INSERT INTO DEBUG_LOG (message) VALUES (CONCAT('Đã thêm khung ', start_time, ' tại ', slot_date, ' cho Doctor ', doc_id)); 
+--             ELSE
+--                 INSERT INTO DEBUG_LOG (message) VALUES (CONCAT('Đã tồn tại khung ', start_time, ' tại ', slot_date, ' cho Doctor ', doc_id)); 
+--             END IF;
+
+--             SET start_time = ADDTIME(start_time, '00:15:00');    
+
+--         END WHILE;
+
+--     END LOOP;
+
+--     CLOSE cur;
+
+--     INSERT INTO DEBUG_LOG (message) VALUES ('Hoàn tất thủ tục.');
+
+-- END $$
+
+-- DELIMITER ;

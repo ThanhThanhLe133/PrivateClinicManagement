@@ -496,6 +496,11 @@
                                                                   <Font name="System Bold" size="12.0" />
                                                                </font>
                                                             </Button>
+                                                            <Button fx:id="bnt_reset" mnemonicParsing="false" onAction="#resetForm" prefHeight="35.0" prefWidth="95.0" styleClass="btn-3" stylesheets="@../design/ReceptionistMainFormDesign.css" text="Reset" textFill="WHITE">
+                                                               <font>
+                                                                  <Font name="System Bold" size="12.0" />
+                                                               </font>
+                                                            </Button>
                                                          </children>
                                                          <VBox.margin>
                                                             <Insets top="50.0" />
@@ -696,7 +701,7 @@
                         </AnchorPane>
                         <AnchorPane fx:id="profile_form" layoutX="114.0" layoutY="102.0" prefHeight="560.0" prefWidth="886.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
-                              <AnchorPane layoutX="14.0" layoutY="17.0" prefHeight="527.0" prefWidth="274.0" stylesheets="@../design/MainFormDesign.css" AnchorPane.bottomAnchor="16.0" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="17.0">
+                              <AnchorPane layoutX="14.0" layoutY="17.0" prefHeight="527.0" prefWidth="274.0" stylesheets="@../design/MainFormDesign.css" visible="false" AnchorPane.bottomAnchor="16.0" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="17.0">
                                  <styleClass>
                                     <String fx:value="white-bg" />
                                     <String fx:value="shadow" />
@@ -725,7 +730,7 @@
                                           <Font size="13.0" />
                                        </font>
                                     </Label>
-                                    <Label fx:id="username_recept" layoutX="124.0" layoutY="276.0" prefHeight="19.0" prefWidth="135.0">
+                                    <Label fx:id="username_recept" layoutX="124.0" layoutY="276.0" prefHeight="19.0" prefWidth="135.0" visible="false">
                                        <font>
                                           <Font name="System Bold" size="13.0" />
                                        </font>
@@ -792,12 +797,6 @@
                                        </font>
                                     </Label>
                                     <TextField fx:id="txt_username_recept" layoutX="177.0" layoutY="143.0" prefHeight="25.0" prefWidth="306.0" styleClass="textfield-1" stylesheets="@../design/PageDesign.css" />
-                                    <Label layoutX="126.0" layoutY="343.0" text="Email:">
-                                       <font>
-                                          <Font size="15.0" />
-                                       </font>
-                                    </Label>
-                                    <TextField fx:id="txt_email_recept" layoutX="177.0" layoutY="341.0" prefHeight="25.0" prefWidth="307.0" styleClass="textfield-2" stylesheets="@../design/ReceptionistMainFormDesign.css" AnchorPane.leftAnchor="175.0" AnchorPane.rightAnchor="85.0" AnchorPane.topAnchor="341.0" />
                                  </children>
                               </AnchorPane>
                               <Label layoutX="50.0" layoutY="292.0" text="Username:">

@@ -336,7 +336,7 @@ public class ReceptionistController implements Initializable {
 	@FXML
 	private Button btn_create;
 	@FXML
-	private Button bnt_suggest;
+	private Button bnt_suggest,bnt_reset;
 	@FXML
 	private Button btn_check;
 
@@ -957,7 +957,7 @@ public class ReceptionistController implements Initializable {
 
 			txt_name_recept.setText(name != null ? name : "");
 			txt_username_recept.setText(username != null ? username : "");
-			txt_email_recept.setText(email != null ? email : "");
+//			txt_email_recept.setText(email != null ? email : "");
 			txt_phone_recept.setText(phone != null ? phone : "");
 			gender_cb.setValue(gender != null ? gender : "");
 			txt_address_recept.setText(address != null ? address : "");
@@ -1018,7 +1018,7 @@ public class ReceptionistController implements Initializable {
 		String phone = txt_phone_recept.getText();
 		String usernameEdit = txt_username_recept.getText();
 		String address = txt_address_recept.getText();
-		String email = txt_email_recept.getText();
+		String email = email_recept.getText();
 		String gender = (String) gender_cb.getSelectionModel().getSelectedItem();
 
 		if (usernameEdit.isEmpty() || name.isEmpty() || phone.isEmpty() || address.isEmpty()) {
@@ -1054,6 +1054,7 @@ public class ReceptionistController implements Initializable {
 			prepare.setString(2, usernameEdit);
 			prepare.setString(3, gender);
 			prepare.setString(4, email);
+			System.out.println(name +" "+usernameEdit +" "+gender+" "+email);
 			int rowsUserUpdated = prepare.executeUpdate();
 
 			// Cập nhật receptionist
@@ -1065,6 +1066,7 @@ public class ReceptionistController implements Initializable {
 
 			if (rowsUserUpdated > 0 || rowsReceptionistUpdated > 0) {
 				alert.successMessage("Profile updated successfully.");
+				this.username = usernameEdit;
 				loadReceptionistProfile();
 			} else {
 				alert.errorMessage("No user found.");
@@ -1256,7 +1258,40 @@ public class ReceptionistController implements Initializable {
 		}
 
 	}
+	
+	@FXML
+	private void resetForm(ActionEvent event) {
+		List<Node> toRemove = new ArrayList<>();
+	    // Giả sử 2 nút ở cuối luôn luôn ở 2 vị trí cuối cùng
+	    int limit = vboxContainer.getChildren().size() - 1;
 
+	    for (int i = 0; i < limit; i++) {
+	        Node node = vboxContainer.getChildren().get(i);
+	        if (node instanceof AnchorPane) {
+	            AnchorPane pane = (AnchorPane) node;
+	            ComboBox<ServiceData> cbService = (ComboBox<ServiceData>) pane.lookup("#cb_service");
+
+	            if (cbService != null) { 
+	                toRemove.add(pane);
+	            }
+	        }
+	    }
+	    vboxContainer.getChildren().removeAll(toRemove);
+		lb_patient_name.setText("");
+		lb_patient_gender.setText("");
+		lb_patient_address.setText("");
+
+		lb_patient_age.setText("");
+		txt_suggest.setText("");
+		txt_details.setText("");
+		lb_check.setText("Please check all the required fields carefully before creating appointments");
+		cb_patient.getSelectionModel().clearSelection();
+		cb_urgency.getSelectionModel().clearSelection();
+
+		checkbox_followUp.setSelected(false);
+
+	}	
+	
 	@FXML
 	private void addNewForm(ActionEvent event) {
 		try {
@@ -2041,46 +2076,26 @@ public class ReceptionistController implements Initializable {
 
 		String sql = """
 				    SELECT
-
 				       a.id,
 				        a.time,
-
 				        a.status AS appointment_status,
-
 				        a.Doctor_id,
-
 				        ua.name AS doctor_name,
-
 				        a.Patient_id AS patient_id,
-
 				        pt.name AS patient_name,
-
 				        pt.phone AS contact_number,
-
 				        s.id AS service_id,
-
 				        s.name AS service_name,
-
 				        a.cancel_reason,
-
 				        a.Prescription_Status,
-
 				        a.create_date,
-
 				        a.update_date
-
 				    FROM appointment a
-
 				             JOIN doctor d ON a.Doctor_id = d.Doctor_id
-
 				    JOIN user_account ua ON ua.id = a.Doctor_id
-
 				    JOIN patient pt ON pt.Patient_id = a.Patient_id
-
 				    JOIN service s ON d.service_id = s.id
-
 				    LEFT JOIN prescription p ON p.Appointment_id = a.id
-
 				""";
 
 		connect = Database.connectDB();
