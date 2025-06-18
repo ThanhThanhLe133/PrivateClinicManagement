@@ -432,28 +432,76 @@ public class AdminMainFormController {
 	}
 
 	private void deleteDoctor(String doctorId) {
-	    // Tạo hộp thoại xác nhận xóa
-	    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-	    alert.setTitle("Delete Confirmation");
-	    alert.setHeaderText("Are you sure you want to delete this receptionist?");
-	    alert.setContentText("This action cannot be undone.");
+	    // Initial confirmation alert
+	    Alert initialAlert = new Alert(Alert.AlertType.CONFIRMATION);
+	    initialAlert.setTitle("Delete Confirmation");
+	    initialAlert.setHeaderText("Are you sure you want to delete this doctor?");
+	    initialAlert.setContentText("This action cannot be undone.");
+	    
+	    Optional<ButtonType> initialResult = initialAlert.showAndWait();
+	    if (initialResult.isEmpty() || initialResult.get() != ButtonType.OK) {
+	        return; // User canceled
+	    }
 
-	    // Chờ người dùng xác nhận
-	    Optional<ButtonType> result = alert.showAndWait();
-	    if (result.isPresent() && result.get() == ButtonType.OK) {
+	    Connection conn = null;
+	    try {
+	        conn = Database.connectDB();
+	        // Check for associated appointments
+	        String checkAppointmentsSQL = "SELECT COUNT(*) AS count FROM APPOINTMENT WHERE Doctor_id = ?";
+	        PreparedStatement psCheck = conn.prepareStatement(checkAppointmentsSQL);
+	        psCheck.setString(1, doctorId);
+	        ResultSet rs = psCheck.executeQuery();
+	        int appointmentCount = 0;
+	        if (rs.next()) {
+	            appointmentCount = rs.getInt("count");
+	        }
+
+	        // If appointments exist, show second warning alert
+	        if (appointmentCount > 0) {
+	            Alert warningAlert = new Alert(Alert.AlertType.WARNING);
+	            warningAlert.setTitle("Warning: Associated Appointments");
+	            warningAlert.setHeaderText("This doctor has " + appointmentCount + " appointment(s).");
+	            warningAlert.setContentText("Deleting this doctor will also delete all related appointments, appointment services, prescriptions, prescription details, and available slots. Do you want to proceed?");
+	            ButtonType proceedButton = new ButtonType("Proceed");
+	            ButtonType cancelButton = new ButtonType("Cancel");
+	            warningAlert.getButtonTypes().setAll(proceedButton, cancelButton);
+
+	            Optional<ButtonType> warningResult = warningAlert.showAndWait();
+	            if (warningResult.isEmpty() || warningResult.get() != proceedButton) {
+	                conn.close();
+	                return; // User canceled
+	            }
+	        }
+
+	        // Proceed with deletion
+	        conn.setAutoCommit(false); // Start transaction
+
+	        // Delete USER_ACCOUNT record (cascades to DOCTOR, APPOINTMENT, etc.)
+	        String deleteUserSQL = "DELETE FROM USER_ACCOUNT WHERE Id = ?";
+	        PreparedStatement psDelete = conn.prepareStatement(deleteUserSQL);
+	        psDelete.setString(1, doctorId);
+	        int rowsDeleted = psDelete.executeUpdate();
+
+	        if (rowsDeleted > 0) {
+	            conn.commit(); // Commit transaction
+	            loadDoctorTable(); // Refresh table
+	            alert.successMessage("Doctor deleted successfully.");
+	        } else {
+	            conn.rollback();
+	            alert.errorMessage("No doctor found with ID: " + doctorId);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
 	        try {
-	            Connection conn = Database.connectDB();
-
-	            // Xóa tài khoản bác sĩ
-	            String sql = "DELETE FROM USER_ACCOUNT WHERE Id = ?";
-	            PreparedStatement ps = conn.prepareStatement(sql);
-	            ps.setString(1, doctorId);
-	            ps.executeUpdate();
-
-	            // Đóng kết nối và tải lại bảng
-	            conn.close();
-	            loadDoctorTable();
-	        } catch (Exception e) {
+	            if (conn != null) conn.rollback();
+	        } catch (SQLException rollbackEx) {
+	            rollbackEx.printStackTrace();
+	        }
+	        alert.errorMessage("Error deleting doctor: " + e.getMessage());
+	    } finally {
+	        try {
+	            if (conn != null) conn.close();
+	        } catch (SQLException e) {
 	            e.printStackTrace();
 	        }
 	    }
