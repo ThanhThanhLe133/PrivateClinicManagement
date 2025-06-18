@@ -22,18 +22,20 @@ public class AddPrescriptionDrugFormController {
 
     @FXML private Label lblDrugNameError, lblManufacturerError, lblQuantityError, lblInstructionError;
     
+    // ID của đơn thuốc
     private String prescriptionId;
 
     public void setPrescriptionId(String id) {
+        // Gán ID đơn thuốc
         this.prescriptionId = id;
     }
 
     @FXML
     private void initialize() {
-        // Load drugs into cmbDrugName
+        // Tải danh sách thuốc
         loadDrugs();
 
-        // Restrict txtQuantity to positive integers
+        // Giới hạn txtQuantity chỉ nhận số nguyên dương
         if (txtQuantity != null) {
             txtQuantity.textProperty().addListener((obs, oldVal, newVal) -> {
                 if (!newVal.matches("\\d*")) {
@@ -42,7 +44,7 @@ public class AddPrescriptionDrugFormController {
             });
         }
 
-        // Load manufacturers when a drug is selected
+        // Tải danh sách nhà sản xuất khi chọn thuốc
         if (cmbDrugName != null) {
             cmbDrugName.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal != null) {
@@ -58,6 +60,7 @@ public class AddPrescriptionDrugFormController {
     }
 
     private void loadDrugs() {
+        // Tải danh sách thuốc còn tồn kho và chưa có trong đơn thuốc
         if (cmbDrugName == null) return;
         try (Connection conn = Database.connectDB()) {
             String sql = """
@@ -73,7 +76,7 @@ public class AddPrescriptionDrugFormController {
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, prescriptionId);
                 ResultSet rs = ps.executeQuery();
-                Set<String> drugNames = new HashSet<>(); // Use Set to avoid duplicates
+                Set<String> drugNames = new HashSet<>(); // Sử dụng Set để tránh trùng lặp
                 while (rs.next()) {
                     drugNames.add(rs.getString("Name"));
                 }
@@ -85,6 +88,7 @@ public class AddPrescriptionDrugFormController {
     }
 
     private void loadManufacturers(String drugName) {
+        // Tải danh sách nhà sản xuất cho thuốc được chọn
         if (cmbManufacturer == null) return;
         cmbManufacturer.getItems().clear();
         try (Connection conn = Database.connectDB()) {
@@ -114,6 +118,7 @@ public class AddPrescriptionDrugFormController {
 
     @FXML
     private void handleSave() {
+        // Xử lý lưu thuốc vào đơn
         if (validateAllFields()) {
             saveDrug();
         }
@@ -121,15 +126,17 @@ public class AddPrescriptionDrugFormController {
 
     @FXML
     private void handleCancel() {
+        // Đóng cửa sổ khi hủy
         if (btnCancel != null) {
             ((Stage) btnCancel.getScene().getWindow()).close();
         }
     }
 
     private boolean validateAllFields() {
+        // Kiểm tra tất cả các trường nhập liệu
         boolean isValid = true;
 
-        // Validate Drug Name
+        // Kiểm tra tên thuốc
         if (cmbDrugName != null && (cmbDrugName.getValue() == null || cmbDrugName.getValue().trim().isEmpty())) {
             showError(lblDrugNameError, "Drug name is required");
             isValid = false;
@@ -137,7 +144,7 @@ public class AddPrescriptionDrugFormController {
             hideError(lblDrugNameError);
         }
 
-        // Validate Manufacturer
+        // Kiểm tra nhà sản xuất
         if (cmbManufacturer != null && (cmbManufacturer.getValue() == null || cmbManufacturer.getValue().trim().isEmpty() || 
                 cmbManufacturer.getValue().equals("No Manufacturer Available"))) {
             showError(lblManufacturerError, "Manufacturer is required");
@@ -146,7 +153,7 @@ public class AddPrescriptionDrugFormController {
             hideError(lblManufacturerError);
         }
 
-        // Validate Quantity
+        // Kiểm tra số lượng
         if (txtQuantity != null) {
             try {
                 int value = Integer.parseInt(txtQuantity.getText().trim());
@@ -165,7 +172,7 @@ public class AddPrescriptionDrugFormController {
             isValid = false;
         }
 
-        // Validate Instructions
+        // Kiểm tra hướng dẫn sử dụng
         if (txtInstruction != null && txtInstruction.getText().trim().isEmpty()) {
             showError(lblInstructionError, "Instructions are required");
             isValid = false;
@@ -177,11 +184,12 @@ public class AddPrescriptionDrugFormController {
     }
 
     private void saveDrug() {
+        // Lưu thuốc vào đơn thuốc
         try (Connection conn = Database.connectDB()) {
-            // Begin transaction for consistency
+            // Bắt đầu giao dịch
             conn.setAutoCommit(false);
 
-            // Find the drug ID based on selected name and manufacturer
+            // Tìm ID thuốc dựa trên tên và nhà sản xuất
             String sql = "SELECT Id FROM DRUG WHERE Name = ? AND Manufacturer = ? AND Stock > 0 LIMIT 1";
             String drugId = null;
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -199,7 +207,7 @@ public class AddPrescriptionDrugFormController {
                 return;
             }
 
-            // Check if the (Prescription_id, Drug_id) pair already exists
+            // Kiểm tra xem thuốc đã có trong đơn thuốc chưa
             sql = "SELECT COUNT(*) FROM PRESCRIPTION_DETAILS WHERE Prescription_id = ? AND Drug_id = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, prescriptionId);
@@ -215,7 +223,7 @@ public class AddPrescriptionDrugFormController {
                 }
             }
 
-            // Check if quantity exceeds stock
+            // Kiểm tra số lượng tồn kho
             int availableStock = 0;
             sql = "SELECT Stock FROM DRUG WHERE Id = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -233,7 +241,7 @@ public class AddPrescriptionDrugFormController {
                 return;
             }
 
-            // Insert into PRESCRIPTION_DETAILS
+            // Thêm vào bảng PRESCRIPTION_DETAILS
             sql = """
                 INSERT INTO PRESCRIPTION_DETAILS (Prescription_id, Drug_id, Quantity, Instructions)
                 VALUES (?, ?, ?, ?)
@@ -246,7 +254,7 @@ public class AddPrescriptionDrugFormController {
 
                 ps.executeUpdate();
 
-                // Update stock in DRUG table
+                // Cập nhật tồn kho
                 sql = "UPDATE DRUG SET Stock = Stock - ? WHERE Id = ?";
                 try (PreparedStatement psUpdate = conn.prepareStatement(sql)) {
                     psUpdate.setInt(1, requestedQuantity);
@@ -254,6 +262,7 @@ public class AddPrescriptionDrugFormController {
                     psUpdate.executeUpdate();
                 }
 
+                // Cam kết giao dịch
                 conn.commit();
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Success");
@@ -261,6 +270,7 @@ public class AddPrescriptionDrugFormController {
                 alert.setContentText("Drug added to prescription successfully!");
                 alert.showAndWait();
 
+                // Đóng form
                 if (btnSave != null) {
                     ((Stage) btnSave.getScene().getWindow()).close();
                 }
@@ -272,12 +282,14 @@ public class AddPrescriptionDrugFormController {
             } catch (SQLException rollbackEx) {
                 rollbackEx.printStackTrace();
             }
+            // Hiển thị thông báo lỗi
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Database Error");
             alert.setHeaderText(null);
             alert.setContentText("Failed to add drug to prescription: " + e.getMessage());
             alert.showAndWait();
         } finally {
+            // Khôi phục trạng thái tự động cam kết
             try (Connection conn = Database.connectDB()) {
                 conn.setAutoCommit(true);
             } catch (SQLException e) {
@@ -287,11 +299,13 @@ public class AddPrescriptionDrugFormController {
     }
 
     private void showError(String message) {
+        // Hiển thị thông báo lỗi chung
         Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
         alert.showAndWait();
     }
 
     private void showError(Label label, String message) {
+        // Hiển thị thông báo lỗi trên nhãn
         if (label != null) {
             label.setText(message);
             label.setVisible(true);
@@ -299,6 +313,7 @@ public class AddPrescriptionDrugFormController {
     }
 
     private void hideError(Label label) {
+        // Ẩn thông báo lỗi trên nhãn
         if (label != null) {
             label.setVisible(false);
         }

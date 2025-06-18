@@ -467,1010 +467,1046 @@ public class DoctorMainFormController implements Initializable {
 	private String doctor_id;
 
 	public void setUserData(String username, String id) {
-		this.username = username;
-		this.doctor_id = id;
+	    // Gán thông tin người dùng
+	    this.username = username;
+	    this.doctor_id = id;
 
-		loadDoctorProfile();
-		profileDisplayImages();
+	    // Tải hồ sơ bác sĩ và hiển thị ảnh đại diện
+	    loadDoctorProfile();
+	    profileDisplayImages();
 	}
 
 	public void appointmentPrescriptionBtn() {
-		// Get the selected appointment
-		DoctorAppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
-		if (selectedAppointment == null) {
-			alert.errorMessage("Please select an appointment first.");
-			return;
-		}
-		if (selectedAppointment.getStatus().equals(AppointmentStatus.Cancel.toString())) {
-			alert.errorMessage("Cannot create prescription for cancelled appointment.");
-			return;
-		}
-		if (selectedAppointment.getStatus().equals(AppointmentStatus.Coming.toString())) {
-			alert.errorMessage("Cannot create prescription for upcoming appointment.");
-			return;
-		}
+	    // Xử lý nút tạo đơn thuốc cho cuộc hẹn
+	    DoctorAppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
+	    // Kiểm tra xem có chọn cuộc hẹn nào không
+	    if (selectedAppointment == null) {
+	        alert.errorMessage("Please select an appointment first.");
+	        return;
+	    }
+	    // Kiểm tra trạng thái cuộc hẹn
+	    if (selectedAppointment.getStatus().equals(AppointmentStatus.Cancel.toString())) {
+	        alert.errorMessage("Cannot create prescription for cancelled appointment.");
+	        return;
+	    }
+	    if (selectedAppointment.getStatus().equals(AppointmentStatus.Coming.toString())) {
+	        alert.errorMessage("Cannot create prescription for upcoming appointment.");
+	        return;
+	    }
 
-		try {
-			// Load the PrescriptionDetail.fxml form
-			FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/PrescriptionDetail.fxml"));
-			Parent root = loader.load();
+	    try {
+	        // Tải giao diện chi tiết đơn thuốc
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/PrescriptionDetail.fxml"));
+	        Parent root = loader.load();
 
-			// Get the controller and pass the selected appointment data
-			PrescriptionDetailController controller = loader.getController();
-			controller.setAppointmentData(selectedAppointment.getId(), selectedAppointment.getPatientId(), doctor_id);
+	        // Truyền dữ liệu cuộc hẹn sang controller
+	        PrescriptionDetailController controller = loader.getController();
+	        controller.setAppointmentData(selectedAppointment.getId(), selectedAppointment.getPatientId(), doctor_id);
 
-			// Show the form in a modal window
-			Stage stage = new Stage();
-			stage.initModality(Modality.APPLICATION_MODAL);
-			stage.setTitle("Prescription Details");
-			stage.setResizable(false);
-			stage.setScene(new Scene(root));
+	        // Hiển thị form trong cửa sổ modal
+	        Stage stage = new Stage();
+	        stage.initModality(Modality.APPLICATION_MODAL);
+	        stage.setTitle("Prescription Details");
+	        stage.setResizable(false);
+	        stage.setScene(new Scene(root));
 
-			stage.setOnHidden(e -> {
-				dashboardDisplayNumPrescriptions(); // Refresh prescription count
-				dashboardLoadAppointmentData(); // Refresh appointment data
+	        // Xử lý khi form đóng
+	        stage.setOnHidden(e -> {
+	            // Cập nhật số lượng đơn thuốc và dữ liệu cuộc hẹn trên dashboard
+	            dashboardDisplayNumPrescriptions();
+	            dashboardLoadAppointmentData();
 
-				// Update Prescription_Status to "Created" after prescription is generated
-				connect = Database.connectDB();
-				if (connect != null) {
-					try {
-						String updateSql = "UPDATE appointment SET Prescription_Status = ? WHERE id = ?";
-						prepare = connect.prepareStatement(updateSql);
-						prepare.setString(1, "Created");
-						prepare.setString(2, selectedAppointment.getId());
-						int rowsUpdated = prepare.executeUpdate();
-					} catch (SQLException ex) {
-						ex.printStackTrace();
-						alert.errorMessage("Error updating Prescription_Status: " + ex.getMessage());
-					} finally {
-						try {
-							if (prepare != null)
-								prepare.close();
-							if (connect != null)
-								connect.close();
-						} catch (SQLException ex) {
-							ex.printStackTrace();
-						}
-					}
+	            // Cập nhật trạng thái đơn thuốc thành "Created"
+	            connect = Database.connectDB();
+	            if (connect != null) {
+	                try {
+	                    String updateSql = "UPDATE appointment SET Prescription_Status = ? WHERE id = ?";
+	                    prepare = connect.prepareStatement(updateSql);
+	                    prepare.setString(1, "Created");
+	                    prepare.setString(2, selectedAppointment.getId());
+	                    int rowsUpdated = prepare.executeUpdate();
+	                } catch (SQLException ex) {
+	                    ex.printStackTrace();
+	                    alert.errorMessage("Error updating Prescription_Status: " + ex.getMessage());
+	                } finally {
+	                    // Đóng tài nguyên
+	                    try {
+	                        if (prepare != null)
+	                            prepare.close();
+	                        if (connect != null)
+	                            connect.close();
+	                    } catch (SQLException ex) {
+	                        ex.printStackTrace();
+	                    }
+	                }
+	            }
+	        });
 
-				}
-			});
+	        stage.showAndWait();
 
-			stage.showAndWait();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-			alert.errorMessage("Error opening prescription form: " + e.getMessage());
-		}
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	        alert.errorMessage("Error opening prescription form: " + e.getMessage());
+	    }
 	}
 
 	public void appointmentUpdateBtn() {
-		String appointmentID = appointment_appointmentID.getText();
-		System.out.println("Appointment ID: " + appointmentID);
-		String time = FormatterUtils
-				.toSQLDate(appointment_time.getText() + " " + appointment_date.getEditor().getText());
-		System.out.println("Time: " + time);
-		String status = appointment_status.getSelectionModel().getSelectedItem();
-		System.out.println("Status: " + status);
-		String cancelReason = appointment_cancelReason.getText();
-		System.out.println("Cancel Reason: " + cancelReason);
-		String patientID = appointment_patientID.getSelectionModel().getSelectedItem();
-		System.out.println("Patient ID: " + patientID);
+	    // Cập nhật thông tin cuộc hẹn
+	    String appointmentID = appointment_appointmentID.getText();
+	    System.out.println("Appointment ID: " + appointmentID);
+	    String time = FormatterUtils
+	            .toSQLDate(appointment_time.getText() + " " + appointment_date.getEditor().getText());
+	    System.out.println("Time: " + time);
+	    String status = appointment_status.getSelectionModel().getSelectedItem();
+	    System.out.println("Status: " + status);
+	    String cancelReason = appointment_cancelReason.getText();
+	    System.out.println("Cancel Reason: " + cancelReason);
+	    String patientID = appointment_patientID.getSelectionModel().getSelectedItem();
+	    System.out.println("Patient ID: " + patientID);
 
-		if (appointmentID.isEmpty() || time.isEmpty() || status.isEmpty() || patientID.isEmpty()) {
-			alert.errorMessage("Please fill all blank fields");
-			return;
-		}
+	    // Kiểm tra các trường bắt buộc
+	    if (appointmentID.isEmpty() || time.isEmpty() || status.isEmpty() || patientID.isEmpty()) {
+	        alert.errorMessage("Please fill all blank fields");
+	        return;
+	    }
 
-		String sql = "UPDATE appointment SET time = ?, status = ?, cancel_reason = ?, patient_id = ? WHERE id = ?";
-		connect = Database.connectDB();
-		try {
-			prepare = connect.prepareStatement(sql);
-			prepare.setString(1, time);
-			prepare.setString(2, status);
-			prepare.setString(3, cancelReason);
-			prepare.setString(4, patientID);
-			prepare.setString(5, appointmentID);
+	    // Câu truy vấn cập nhật cuộc hẹn
+	    String sql = "UPDATE appointment SET time = ?, status = ?, cancel_reason = ?, patient_id = ? WHERE id = ?";
+	    connect = Database.connectDB();
+	    try {
+	        prepare = connect.prepareStatement(sql);
+	        prepare.setString(1, time);
+	        prepare.setString(2, status);
+	        prepare.setString(3, cancelReason);
+	        prepare.setString(4, patientID);
+	        prepare.setString(5, appointmentID);
 
-			int rowsUpdated = prepare.executeUpdate();
-			if (rowsUpdated > 0) {
-				alert.successMessage("Appointment updated successfully.");
-				appointmentClearBtn();
-				loadAppointmentData();
-				dashboardLoadAppointmentData();
-			} else {
-				alert.errorMessage("No appointment found with ID: " + appointmentID);
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-			alert.errorMessage("Error updating appointment: " + e.getMessage());
-		}
+	        int rowsUpdated = prepare.executeUpdate();
+	        // Kiểm tra kết quả cập nhật
+	        if (rowsUpdated > 0) {
+	            alert.successMessage("Appointment updated successfully.");
+	            appointmentClearBtn(); // Xóa form
+	            loadAppointmentData(); // Tải lại dữ liệu
+	            dashboardLoadAppointmentData(); // Cập nhật dashboard
+	        } else {
+	            alert.errorMessage("No appointment found with ID: " + appointmentID);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        alert.errorMessage("Error updating appointment: " + e.getMessage());
+	    }
 	}
 
 	public void appointmentDeleteBtn() {
-		String appointmentID = appointment_appointmentID.getText();
-		System.out.println("Appointment ID: " + appointmentID);
+	    // Xóa cuộc hẹn
+	    String appointmentID = appointment_appointmentID.getText();
+	    System.out.println("Appointment ID: " + appointmentID);
 
-		if (appointmentID.isEmpty()) {
-			alert.errorMessage("Please select an appointment to delete.");
-			return;
-		}
+	    // Kiểm tra ID cuộc hẹn
+	    if (appointmentID.isEmpty()) {
+	        alert.errorMessage("Please select an appointment to delete.");
+	        return;
+	    }
 
-		String sql = "DELETE FROM appointment WHERE id = ?";
-		connect = Database.connectDB();
-		try {
-			prepare = connect.prepareStatement(sql);
-			prepare.setString(1, appointmentID);
+	    // Câu truy vấn xóa cuộc hẹn
+	    String sql = "DELETE FROM appointment WHERE id = ?";
+	    connect = Database.connectDB();
+	    try {
+	        prepare = connect.prepareStatement(sql);
+	        prepare.setString(1, appointmentID);
 
-			int rowsDeleted = prepare.executeUpdate();
-			if (rowsDeleted > 0) {
-				alert.successMessage("Appointment deleted successfully.");
-				appointmentClearBtn();
-				loadAppointmentData();
-				dashboardLoadAppointmentData();
-			} else {
-				alert.errorMessage("No appointment found with ID: " + appointmentID);
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-			alert.errorMessage("Error deleting appointment: " + e.getMessage());
-		}
+	        int rowsDeleted = prepare.executeUpdate();
+	        // Kiểm tra kết quả xóa
+	        if (rowsDeleted > 0) {
+	            alert.successMessage("Appointment deleted successfully.");
+	            appointmentClearBtn(); // Xóa form
+	            loadAppointmentData(); // Tải lại dữ liệu
+	            dashboardLoadAppointmentData(); // Cập nhật dashboard
+	        } else {
+	            alert.errorMessage("No appointment found with ID: " + appointmentID);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        alert.errorMessage("Error deleting appointment: " + e.getMessage());
+	    }
 	}
 
 	public void appointmentClearBtn() {
-		appointment_appointmentID.clear();
-		appointment_name.clear();
-		appointment_gender.getSelectionModel().clearSelection();
-		appointment_gender.setValue("");
-		appointment_mobileNumber.clear();
-		appointment_patientID.getSelectionModel().clearSelection();
-		appointment_patientID.setValue("");
-		appointment_status.getSelectionModel().clearSelection();
-		appointment_status.setValue("");
-		appointment_cancelReason.clear();
-		appointment_date.getEditor().clear();
-		appointment_time.clear();
-		appointment_createdDate.setText("");
-		appointment_updatedDate.setText("");
+	    // Xóa dữ liệu trên form nhập liệu
+	    appointment_appointmentID.clear();
+	    appointment_name.clear();
+	    appointment_gender.getSelectionModel().clearSelection();
+	    appointment_gender.setValue("");
+	    appointment_mobileNumber.clear();
+	    appointment_patientID.getSelectionModel().clearSelection();
+	    appointment_patientID.setValue("");
+	    appointment_status.getSelectionModel().clearSelection();
+	    appointment_status.setValue("");
+	    appointment_cancelReason.clear();
+	    appointment_date.getEditor().clear();
+	    appointment_time.clear();
+	    appointment_createdDate.setText("");
+	    appointment_updatedDate.setText("");
 	}
 
 	// =======================CRUD Patient==================================
 	private ObservableList<PatientData> patientMasterList = FXCollections.observableArrayList();
 
 	private void initializePatientFilters() {
-		cmbPatientSearchBy.setItems(FXCollections.observableArrayList("Name", "Email", "Phone", "Address", "Diagnosis",
-				"Height", "Weight"));
-		cmbPatientSearchBy.setValue("Name");
+	    // Khởi tạo bộ lọc bệnh nhân
+	    cmbPatientSearchBy.setItems(FXCollections.observableArrayList("Name", "Email", "Phone", "Address", "Diagnosis",
+	            "Height", "Weight"));
+	    cmbPatientSearchBy.setValue("Name");
 
-		txtPatientSearch.clear();
+	    txtPatientSearch.clear();
 
-		cmbPatientGenderFilter.setItems(FXCollections.observableArrayList("All", "Male", "Female", "Other"));
-		cmbPatientGenderFilter.setValue("All");
+	    cmbPatientGenderFilter.setItems(FXCollections.observableArrayList("All", "Male", "Female", "Other"));
+	    cmbPatientGenderFilter.setValue("All");
 
-		// Gắn listener
-		txtPatientSearch.textProperty().addListener((obs, oldVal, newVal) -> applyPatientFilters());
-		cmbPatientSearchBy.valueProperty().addListener((obs, o, n) -> applyPatientFilters());
-		cmbPatientGenderFilter.valueProperty().addListener((obs, o, n) -> applyPatientFilters());
+	    // Gắn sự kiện thay đổi cho các bộ lọc
+	    txtPatientSearch.textProperty().addListener((obs, oldVal, newVal) -> applyPatientFilters());
+	    cmbPatientSearchBy.valueProperty().addListener((obs, o, n) -> applyPatientFilters());
+	    cmbPatientGenderFilter.valueProperty().addListener((obs, o, n) -> applyPatientFilters());
 	}
 
 	private void applyPatientFilters() {
-		String keyword = txtPatientSearch.getText().toLowerCase();
-		String searchBy = cmbPatientSearchBy.getValue();
-		String selectedGender = cmbPatientGenderFilter.getValue();
+	    // Áp dụng bộ lọc cho danh sách bệnh nhân
+	    String keyword = txtPatientSearch.getText().toLowerCase();
+	    String searchBy = cmbPatientSearchBy.getValue();
+	    String selectedGender = cmbPatientGenderFilter.getValue();
 
-		ObservableList<PatientData> filtered = FXCollections.observableArrayList();
+	    ObservableList<PatientData> filtered = FXCollections.observableArrayList();
 
-		for (PatientData p : patientMasterList) {
-			// 1. Tìm kiếm theo trường
-			String fieldValue = switch (searchBy) {
-			case "Name" -> p.getName();
-			case "Email" -> p.getEmail();
-			case "Phone" -> p.getPhone();
-			case "Address" -> p.getAddress();
-			case "Diagnosis" -> p.getDiagnosis();
-			case "Height" -> p.getHeight().toPlainString();
-			case "Weight" -> p.getWeight().toPlainString();
-			default -> "";
-			};
+	    // Lọc dữ liệu theo từ khóa và giới tính
+	    for (PatientData p : patientMasterList) {
+	        String fieldValue = switch (searchBy) {
+	        case "Name" -> p.getName();
+	        case "Email" -> p.getEmail();
+	        case "Phone" -> p.getPhone();
+	        case "Address" -> p.getAddress();
+	        case "Diagnosis" -> p.getDiagnosis();
+	        case "Height" -> p.getHeight().toPlainString();
+	        case "Weight" -> p.getWeight().toPlainString();
+	        default -> "";
+	        };
 
-			boolean matchesKeyword = fieldValue != null && fieldValue.toLowerCase().contains(keyword);
-			boolean matchesGender = selectedGender.equals("All") || p.getGender().equalsIgnoreCase(selectedGender);
+	        boolean matchesKeyword = fieldValue != null && fieldValue.toLowerCase().contains(keyword);
+	        boolean matchesGender = selectedGender.equals("All") || p.getGender().equalsIgnoreCase(selectedGender);
 
-			if (matchesKeyword && matchesGender) {
-				filtered.add(p);
-			}
-		}
+	        if (matchesKeyword && matchesGender) {
+	            filtered.add(p);
+	        }
+	    }
 
-		patients_tableView.setItems(filtered);
+	    patients_tableView.setItems(filtered);
 	}
 
 	public void loadPatientTable() {
-		patientMasterList.clear();
+	    // Tải danh sách bệnh nhân
+	    patientMasterList.clear();
 
-		String sql = "SELECT Patient_id, Name, Email, Gender, Phone, Address, Diagnosis, Height, Weight, Create_date, Update_date FROM PATIENT";
+	    String sql = "SELECT Patient_id, Name, Email, Gender, Phone, Address, Diagnosis, Height, Weight, Create_date, Update_date FROM PATIENT";
 
-		try {
-			Connection conn = Database.connectDB();
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ResultSet rs = ps.executeQuery();
+	    try {
+	        Connection conn = Database.connectDB();
+	        PreparedStatement ps = conn.prepareStatement(sql);
+	        ResultSet rs = ps.executeQuery();
 
-			while (rs.next()) {
-				PatientData patient = new PatientData(rs.getString("Patient_Id"), rs.getString("Name"),
-						rs.getString("Email"), rs.getString("Gender"), rs.getString("Phone"), rs.getString("Address"),
-						rs.getString("Diagnosis"), rs.getBigDecimal("Height"), rs.getBigDecimal("Weight"),
-						rs.getTimestamp("Create_date"), rs.getTimestamp("Update_date"));
-				patientMasterList.add(patient);
-			}
+	        // Thêm dữ liệu vào danh sách
+	        while (rs.next()) {
+	            PatientData patient = new PatientData(rs.getString("Patient_Id"), rs.getString("Name"),
+	                    rs.getString("Email"), rs.getString("Gender"), rs.getString("Phone"), rs.getString("Address"),
+	                    rs.getString("Diagnosis"), rs.getBigDecimal("Height"), rs.getBigDecimal("Weight"),
+	                    rs.getTimestamp("Create_date"), rs.getTimestamp("Update_date"));
+	            patientMasterList.add(patient);
+	        }
 
-			// Gán dữ liệu cho TableView
-			patients_col_patientID.setCellValueFactory(new PropertyValueFactory<>("patientId"));
-			patients_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
-			patients_col_email.setCellValueFactory(new PropertyValueFactory<>("email"));
-			patients_col_gender.setCellValueFactory(new PropertyValueFactory<>("gender"));
-			patients_col_phone.setCellValueFactory(new PropertyValueFactory<>("phone"));
-			patients_col_address.setCellValueFactory(new PropertyValueFactory<>("address"));
-			patients_col_diagnosis.setCellValueFactory(new PropertyValueFactory<>("diagnosis"));
-			patients_col_height.setCellValueFactory(new PropertyValueFactory<>("height"));
-			patients_col_weight.setCellValueFactory(new PropertyValueFactory<>("weight"));
-			patients_col_create.setCellValueFactory(new PropertyValueFactory<>("createDate"));
-			patients_col_update.setCellValueFactory(new PropertyValueFactory<>("updateDate"));
+	        // Gán dữ liệu cho các cột
+	        patients_col_patientID.setCellValueFactory(new PropertyValueFactory<>("patientId"));
+	        patients_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
+	        patients_col_email.setCellValueFactory(new PropertyValueFactory<>("email"));
+	        patients_col_gender.setCellValueFactory(new PropertyValueFactory<>("gender"));
+	        patients_col_phone.setCellValueFactory(new PropertyValueFactory<>("phone"));
+	        patients_col_address.setCellValueFactory(new PropertyValueFactory<>("address"));
+	        patients_col_diagnosis.setCellValueFactory(new PropertyValueFactory<>("diagnosis"));
+	        patients_col_height.setCellValueFactory(new PropertyValueFactory<>("height"));
+	        patients_col_weight.setCellValueFactory(new PropertyValueFactory<>("weight"));
+	        patients_col_create.setCellValueFactory(new PropertyValueFactory<>("createDate"));
+	        patients_col_update.setCellValueFactory(new PropertyValueFactory<>("updateDate"));
 
-			// Cột hành động
-			patients_col_action.setCellFactory(col -> new TableCell<>() {
-			    private final Button detailBtn = new Button("Detail");
-			    private final HBox hbox = new HBox(5, detailBtn);
-			    {
-			        hbox.setAlignment(Pos.CENTER);
-			        detailBtn.setOnAction(e -> {
-			            PatientData patient = getTableView().getItems().get(getIndex()); 
-			            handleViewPatientDetail(patient.getPatientId()); 
-			        });
-			    }
-			    @Override
-			    protected void updateItem(Void item, boolean empty) {
-			        super.updateItem(item, empty);
-			        setGraphic(empty ? null : hbox);
-			    }
-			});
+	        // Tạo cột hành động với nút chi tiết
+	        patients_col_action.setCellFactory(col -> new TableCell<>() {
+	            private final Button detailBtn = new Button("Detail");
+	            private final HBox hbox = new HBox(5, detailBtn);
+	            {
+	                hbox.setAlignment(Pos.CENTER);
+	                detailBtn.setOnAction(e -> {
+	                    PatientData patient = getTableView().getItems().get(getIndex()); 
+	                    handleViewPatientDetail(patient.getPatientId()); 
+	                });
+	            }
+	            @Override
+	            protected void updateItem(Void item, boolean empty) {
+	                super.updateItem(item, empty);
+	                setGraphic(empty ? null : hbox);
+	            }
+	        });
 
-			patients_tableView.setItems(patientMasterList);
-			conn.close();
+	        patients_tableView.setItems(patientMasterList);
+	        conn.close();
 
-//		        // Thêm nút cập nhật và xóa vào mỗi dòng
-//		        patients_col_action.setCellFactory(col -> new TableCell<>() {
-//		            private final Button btnEdit = new Button("Edit");
-//		            private final Button btnDelete = new Button("Delete");
-//		            private final HBox hbox = new HBox(5, btnEdit, btnDelete);
-			//
-//		            {
-//		                btnEdit.getStyleClass().add("btn-2");
-//		                btnDelete.getStyleClass().add("btn-danger");
-			//
-//		                btnEdit.setOnAction(e -> {
-//		                    PatientData patient = getTableView().getItems().get(getIndex());
-//		                    //openEditPatientForm(patient); // Mở form sửa
-//		                });
-			//
-//		                btnDelete.setOnAction(e -> {
-//		                    PatientData patient = getTableView().getItems().get(getIndex());
-//		                    //deletePatient(patient); // Gọi hàm xóa
-//		                });
-//		            }
-			//
-//		            @Override
-//		            protected void updateItem(Void item, boolean empty) {
-//		                super.updateItem(item, empty);
-//		                if (empty) {
-//		                    setGraphic(null);
-//		                } else {
-//		                    setGraphic(hbox);
-//		                }
-//		            }
-//		        });
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			Alert alert = new Alert(Alert.AlertType.ERROR);
-			alert.setContentText("Error loading patient list!");
-			alert.showAndWait();
-		}
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        // Hiển thị thông báo lỗi
+	        Alert alert = new Alert(Alert.AlertType.ERROR);
+	        alert.setContentText("Error loading patient list!");
+	        alert.showAndWait();
+	    }
 	}
 
 	private void handleViewPatientDetail(String patientId) {
-		try (Connection conn = Database.connectDB()) {
-			String sql = "SELECT * FROM PATIENT WHERE Patient_id = ?";
-			PreparedStatement ps = conn.prepareStatement(sql);
-			ps.setString(1, patientId);
-			ResultSet rs = ps.executeQuery();
+	    // Xem chi tiết thông tin bệnh nhân
+	    try (Connection conn = Database.connectDB()) {
+	        String sql = "SELECT * FROM PATIENT WHERE Patient_id = ?";
+	        PreparedStatement ps = conn.prepareStatement(sql);
+	        ps.setString(1, patientId);
+	        ResultSet rs = ps.executeQuery();
 
-			if (rs.next()) {
-				PatientData patient = new PatientData(rs.getString("Patient_id"), rs.getString("Name"),
-						rs.getString("Email"), rs.getString("Gender"), rs.getString("Phone"), rs.getString("Address"),
-						rs.getString("Diagnosis"), rs.getBigDecimal("Height"), rs.getBigDecimal("Weight"),
-						rs.getTimestamp("Create_date"), rs.getTimestamp("Update_date"));
+	        if (rs.next()) {
+	            // Tạo đối tượng bệnh nhân từ dữ liệu
+	            PatientData patient = new PatientData(rs.getString("Patient_id"), rs.getString("Name"),
+	                    rs.getString("Email"), rs.getString("Gender"), rs.getString("Phone"), rs.getString("Address"),
+	                    rs.getString("Diagnosis"), rs.getBigDecimal("Height"), rs.getBigDecimal("Weight"),
+	                    rs.getTimestamp("Create_date"), rs.getTimestamp("Update_date"));
 
-				FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/PatientDetailView.fxml"));
-				Parent root = loader.load();
+	            // Tải giao diện chi tiết bệnh nhân
+	            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/DoctorPatientDetailView.fxml"));
+	            Parent root = loader.load();
 
-				PatientDetailController controller = loader.getController();
-				controller.setPatientData(patient); // truyền dữ liệu vào controller
+	            // Truyền dữ liệu sang controller
+	            PatientDetailController controller = loader.getController();
+	            controller.setPatientData(patient);
 
-				Stage stage = new Stage();
-				stage.setTitle("Patient Detail");
-				stage.setScene(new Scene(root));
-				stage.show();
-			} else {
-				Alert alert = new Alert(Alert.AlertType.ERROR, "Patient not found.");
-				alert.showAndWait();
-			}
+	            // Hiển thị cửa sổ
+	            Stage stage = new Stage();
+	            stage.setTitle("Patient Detail");
+	            stage.setScene(new Scene(root));
+	            stage.show();
+	        } else {
+	            Alert alert = new Alert(Alert.AlertType.ERROR, "Patient not found.");
+	            alert.showAndWait();
+	        }
 
-		} catch (Exception e) {
-			e.printStackTrace();
-			Alert alert = new Alert(Alert.AlertType.ERROR, "Error loading patient detail: " + e.getMessage());
-			alert.showAndWait();
-		}
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        alert.errorMessage("Error loading patient detail: " + e.getMessage());
+	    }
 	}
 
 	/* =====================LOAD PROFILE======================================== */
 	public void loadDoctorProfile() {
-		String selectData = "SELECT ua.name, ua.username, ua.email, ua.gender, ua.create_date, d.phone, d.address, s.name AS ServiceName "
-				+ "FROM user_account ua " + "JOIN doctor d ON ua.id = d.doctor_id JOIN SERVICE s ON s.Id=d.Service_id "
-				+ "WHERE ua.username = ?";
+	    // Tải thông tin hồ sơ bác sĩ
+	    String selectData = "SELECT ua.name, ua.username, ua.email, ua.gender, ua.create_date, d.phone, d.address, s.name AS ServiceName "
+	            + "FROM user_account ua " + "JOIN doctor d ON ua.id = d.doctor_id JOIN SERVICE s ON s.Id=d.Service_id "
+	            + "WHERE ua.username = ?";
 
-		connect = Database.connectDB();
+	    connect = Database.connectDB();
 
-		try {
-			prepare = connect.prepareStatement(selectData);
-			prepare.setString(1, username);
-			result = prepare.executeQuery();
+	    try {
+	        prepare = connect.prepareStatement(selectData);
+	        prepare.setString(1, username);
+	        result = prepare.executeQuery();
 
-			if (!result.next()) {
-				alert.errorMessage("No data found!");
-				return;
-			}
+	        // Kiểm tra dữ liệu
+	        if (!result.next()) {
+	            alert.errorMessage("No data found!");
+	            return;
+	        }
 
-			String name = result.getString("name");
-			String username = result.getString("username");
-			String email = result.getString("email");
-			String phone = result.getString("phone");
-			String address = result.getString("address");
-			String gender = result.getString("gender");
-			String createdAt = result.getString("create_date");
-			String specialization = result.getString("ServiceName");
+	        // Lấy thông tin từ cơ sở dữ liệu
+	        String name = result.getString("name");
+	        String username = result.getString("username");
+	        String email = result.getString("email");
+	        String phone = result.getString("phone");
+	        String address = result.getString("address");
+	        String gender = result.getString("gender");
+	        String createdAt = result.getString("create_date");
+	        String specialization = result.getString("ServiceName");
 
-			// Gán cho các Label
-			name_doctor.setText(name != null ? name : "UNKNOWN");
-			username_doctor.setText(username != null ? username : "");
-			gender_doctor.setText(gender != null ? gender : "");
-			phone_doctor.setText(phone != null ? phone : "");
-			email_doctor.setText(email != null ? email : "");
-			createdDate_doctor.setText(createdAt != null ? FormatterUtils.formatTimestamp(createdAt) : "");
-			specialization_doctor.setText(specialization != null ? specialization : "");
-			top_username.setText(name != null ? name : "UNKNOWN");
+	        // Gán thông tin cho các nhãn
+	        name_doctor.setText(name != null ? name : "UNKNOWN");
+	        username_doctor.setText(username != null ? username : "");
+	        gender_doctor.setText(gender != null ? gender : "");
+	        phone_doctor.setText(phone != null ? phone : "");
+	        email_doctor.setText(email != null ? email : "");
+	        createdDate_doctor.setText(createdAt != null ? FormatterUtils.formatTimestamp(createdAt) : "");
+	        specialization_doctor.setText(specialization != null ? specialization : "");
+	        top_username.setText(name != null ? name : "UNKNOWN");
 
-			profile_name.setText(name != null ? name : "");
-			profile_username.setText(username != null ? username : "");
-			profile_mobileNumber.setText(phone != null ? phone : "");
-			profile_gender.setValue(gender != null ? gender : "");
-			profile_address.setText(address != null ? address : "");
+	        // Gán thông tin cho các ô nhập liệu
+	        profile_name.setText(name != null ? name : "");
+	        profile_username.setText(username != null ? username : "");
+	        profile_mobileNumber.setText(phone != null ? phone : "");
+	        profile_gender.setValue(gender != null ? gender : "");
+	        profile_address.setText(address != null ? address : "");
 
-			nav_adminID.setText(username != null ? username : "");
-			nav_username.setText(name != null ? name : "");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	        nav_adminID.setText(username != null ? username : "");
+	        nav_username.setText(name != null ? name : "");
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	public void profileDisplayImages() {
+	    // Hiển thị ảnh đại diện từ cơ sở dữ liệu
+	    String sql = "SELECT Avatar FROM user_account WHERE username = ?";
+	    connect = Database.connectDB();
 
-		String sql = "SELECT Avatar FROM user_account WHERE username = ?";
-		connect = Database.connectDB();
+	    try {
+	        prepare = connect.prepareStatement(sql);
+	        prepare.setString(1, username);
+	        result = prepare.executeQuery();
+	        if (result.next()) {
+	            InputStream inputStream = result.getBinaryStream("Avatar");
 
-		try {
-			prepare = connect.prepareStatement(sql);
-			prepare.setString(1, username);
-			result = prepare.executeQuery();
-			if (result.next()) {
-				InputStream inputStream = result.getBinaryStream("Avatar");
+	            if (inputStream != null) {
+	                // Đọc dữ liệu ảnh
+	                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+	                byte[] data = new byte[1024];
+	                int nRead;
+	                while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+	                    buffer.write(data, 0, nRead);
+	                }
+	                buffer.flush();
+	                byte[] imageBytes = buffer.toByteArray();
+	                inputStream.close();
 
-				if (inputStream != null) {
-					// Đọc toàn bộ dữ liệu từ inputStream vào byte[]
-					ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-					byte[] data = new byte[1024];
-					int nRead;
-					while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
-						buffer.write(data, 0, nRead);
-					}
-					buffer.flush();
-					byte[] imageBytes = buffer.toByteArray();
-					inputStream.close();
-					// Tạo nhiều InputStream từ cùng một mảng byte
-					InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
-					InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
+	                // Tạo ảnh và hiển thị
+	                InputStream imgStream1 = new ByteArrayInputStream(imageBytes);
+	                InputStream imgStream2 = new ByteArrayInputStream(imageBytes);
 
-					Image img1 = new Image(imgStream1, 0, 0, true, true);
-					Image img2 = new Image(imgStream2, 0, 0, true, true);
+	                Image img1 = new Image(imgStream1, 0, 0, true, true);
+	                Image img2 = new Image(imgStream2, 0, 0, true, true);
 
-					profile_circleImage.setFill(new ImagePattern(img1));
-					top_profile.setFill(new ImagePattern(img2));
-
-				} else {
-					System.out.println("Ảnh trong DB bị null.");
-				}
-			}
-
-		} catch (Exception e) {
-			System.out.println("Lỗi khi xử lý dữ liệu hình ảnh: " + e.getMessage());
-			e.printStackTrace();
-		}
+	                profile_circleImage.setFill(new ImagePattern(img1));
+	                top_profile.setFill(new ImagePattern(img2));
+	            } else {
+	                System.out.println("Ảnh trong DB bị null.");
+	            }
+	        }
+	    } catch (Exception e) {
+	        System.out.println("Lỗi khi xử lý dữ liệu hình ảnh: " + e.getMessage());
+	        e.printStackTrace();
+	    }
 	}
 
 	/* =====================EDIT PROFILE======================================== */
 	public void profileUpdateBtn() {
+	    // Cập nhật hồ sơ bác sĩ
+	    String name = profile_name.getText();
+	    String phone = profile_mobileNumber.getText();
+	    String usernameEdit = profile_username.getText();
+	    String address = profile_address.getText();
+	    String email = email_doctor.getText();
+	    String gender = (String) profile_gender.getSelectionModel().getSelectedItem();
 
-		String name = profile_name.getText();
-		String phone = profile_mobileNumber.getText();
-		String usernameEdit = profile_username.getText();
-		String address = profile_address.getText();
-		String email = email_doctor.getText();
-		String gender = (String) profile_gender.getSelectionModel().getSelectedItem();
+	    // Kiểm tra dữ liệu đầu vào
+	    if (usernameEdit.isEmpty() || name.isEmpty() || phone.isEmpty() || address.isEmpty()) {
+	        alert.errorMessage("Please fill in all the fields.");
+	        return;
+	    } else if (gender == null || gender.isEmpty()) {
+	        alert.errorMessage("Please select a gender.");
+	        return;
+	    }
 
-		if (usernameEdit.isEmpty() || name.isEmpty() || phone.isEmpty() || address.isEmpty()) {
-			alert.errorMessage("Please fill in all the fields.");
-			return;
-		} else if (gender == null || gender.isEmpty()) {
-			alert.errorMessage("Please select a gender.");
-			return;
-		}
+	    // Câu truy vấn kiểm tra và cập nhật
+	    String checkUsernameSQL = "SELECT * FROM user_account WHERE username = ?";
+	    String updateUserSQL = "UPDATE user_account SET name = ?, username = ?, gender = ? WHERE email = ?";
+	    String updateDoctorSQL = "UPDATE doctor SET phone = ?, address = ?  WHERE doctor_id = (SELECT id FROM user_account WHERE email = ?)";
 
-		String checkUsernameSQL = "SELECT * FROM user_account WHERE username = ?";
-		String updateUserSQL = "UPDATE user_account SET name = ?, username = ?, gender = ? WHERE email = ?";
-		String updateDoctorSQL = "UPDATE doctor SET phone = ?, address = ?  WHERE doctor_id = (SELECT id FROM user_account WHERE email = ?)";
+	    connect = Database.connectDB();
 
-		connect = Database.connectDB();
+	    try {
+	        // Kiểm tra username trùng
+	        if (!username.equals(usernameEdit)) {
+	            prepare = connect.prepareStatement(checkUsernameSQL);
+	            prepare.setString(1, usernameEdit);
+	            result = prepare.executeQuery();
 
-		try {
-			// Kiểm tra username đã tồn tại (trừ chính mình)
-			if (!username.equals(usernameEdit)) {
-				prepare = connect.prepareStatement(checkUsernameSQL);
-				prepare.setString(1, usernameEdit);
-				result = prepare.executeQuery();
+	            if (result.next()) {
+	                alert.errorMessage("Username \"" + usernameEdit + "\" already exists!");
+	                return;
+	            }
+	        }
 
-				if (result.next()) {
-					alert.errorMessage("Username \"" + usernameEdit + "\" already exists!");
-					return;
-				}
-			}
+	        // Cập nhật thông tin user_account
+	        prepare = connect.prepareStatement(updateUserSQL);
+	        prepare.setString(1, name);
+	        prepare.setString(2, usernameEdit);
+	        prepare.setString(3, gender);
+	        prepare.setString(4, email);
+	        int rowsUserUpdated = prepare.executeUpdate();
 
-			// Cập nhật user_account
-			prepare = connect.prepareStatement(updateUserSQL);
-			prepare.setString(1, name);
-			prepare.setString(2, usernameEdit);
-			prepare.setString(3, gender);
-			prepare.setString(4, email);
-			int rowsUserUpdated = prepare.executeUpdate();
+	        // Cập nhật thông tin doctor
+	        prepare = connect.prepareStatement(updateDoctorSQL);
+	        prepare.setString(1, phone);
+	        prepare.setString(2, address);
+	        prepare.setString(3, email);
+	        int rowsReceptionistUpdated = prepare.executeUpdate();
 
-			// Cập nhật doctor
-			prepare = connect.prepareStatement(updateDoctorSQL);
-			prepare.setString(1, phone);
-			prepare.setString(2, address);
-			prepare.setString(3, email);
-			int rowsReceptionistUpdated = prepare.executeUpdate();
-
-			if (rowsUserUpdated > 0 || rowsReceptionistUpdated > 0) {
-				alert.successMessage("Profile updated successfully.");
-				this.username = usernameEdit;
-				loadDoctorProfile();
-			} else {
-				alert.errorMessage("No update.");
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-			alert.errorMessage("Error updating profile: " + e.getMessage());
-		}
+	        // Kiểm tra kết quả cập nhật
+	        if (rowsUserUpdated > 0 || rowsReceptionistUpdated > 0) {
+	            alert.successMessage("Profile updated successfully.");
+	            this.username = usernameEdit;
+	            loadDoctorProfile();
+	        } else {
+	            alert.errorMessage("No update.");
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        alert.errorMessage("Error updating profile: " + e.getMessage());
+	    }
 	}
 
 	public void profileInsertImage() {
-		FileChooser open = new FileChooser();
-		open.getExtensionFilters().add(new ExtensionFilter("Open Image", "*jpg", "*jpeg", "*png"));
+	    // Thêm ảnh đại diện
+	    FileChooser open = new FileChooser();
+	    open.getExtensionFilters().add(new ExtensionFilter("Open Image", "*jpg", "*jpeg", "*png"));
 
-		File file = open.showOpenDialog(profile_importBtn.getScene().getWindow());
+	    // Chọn file ảnh
+	    File file = open.showOpenDialog(profile_importBtn.getScene().getWindow());
 
-		if (file.exists()) {
-			// Hiển thị ảnh lên UI
-			image = new Image(file.toURI().toString(), 0, 0, true, true);
-			if (image == null || image.isError()) {
-				alert.errorMessage("Error loading image: " + image.getException().getMessage());
-				return;
-			}
-			profile_circleImage.setFill(new ImagePattern(image));
+	    if (file.exists()) {
+	        // Hiển thị ảnh lên giao diện
+	        image = new Image(file.toURI().toString(), 0, 0, true, true);
+	        if (image == null || image.isError()) {
+	            alert.errorMessage("Error loading image: " + image.getException().getMessage());
+	            return;
+	        }
+	        profile_circleImage.setFill(new ImagePattern(image));
 
-			Data.path = file.getAbsolutePath();
+	        Data.path = file.getAbsolutePath();
 
-			// Lưu ảnh vào DB
-			try {
-				connect = Database.connectDB();
-				String updateAvatarSQL = "UPDATE user_account SET avatar = ? WHERE email = ?";
+	        // Lưu ảnh vào cơ sở dữ liệu
+	        try {
+	            connect = Database.connectDB();
+	            String updateAvatarSQL = "UPDATE user_account SET avatar = ? WHERE email = ?";
 
-				FileInputStream input = new FileInputStream(file);
-				prepare = connect.prepareStatement(updateAvatarSQL);
-				prepare.setBinaryStream(1, input, (int) file.length());
-				prepare.setString(2, email_doctor.getText());
+	            FileInputStream input = new FileInputStream(file);
+	            prepare = connect.prepareStatement(updateAvatarSQL);
+	            prepare.setBinaryStream(1, input, (int) file.length());
+	            prepare.setString(2, email_doctor.getText());
 
-				int rows = prepare.executeUpdate();
-				if (rows > 0) {
-					alert.successMessage("Avatar updated successfully.");
-				} else {
-					alert.errorMessage("Failed to update avatar.");
-				}
-				profileDisplayImages();
-			} catch (Exception e) {
-				e.printStackTrace();
-				alert.errorMessage("Error uploading avatar: " + e.getMessage());
-			}
-		}
-
+	            int rows = prepare.executeUpdate();
+	            // Kiểm tra kết quả cập nhật
+	            if (rows > 0) {
+	                alert.successMessage("Avatar updated successfully.");
+	            } else {
+	                alert.errorMessage("Failed to update avatar.");
+	            }
+	            profileDisplayImages();
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            alert.errorMessage("Error uploading avatar: " + e.getMessage());
+	        }
+	    }
 	}
 
-	/*
-	 * =====================FORMAT AND
-	 * INTIALIZE========================================
-	 */
+	/* =====================FORMAT AND INTIALIZE======================================== */
 	public void switchForm(ActionEvent event) {
-		if (event.getSource() == dashboard_btn) {
-			showForm("dashboard");
-		} else if (event.getSource() == patients_btn) {
-			showForm("patients");
-		} else if (event.getSource() == appointments_btn) {
-			showForm("appointments");
-		} else if (event.getSource() == profile_btn) {
-			showForm("profile");
-		}
+	    // Chuyển đổi giữa các form
+	    if (event.getSource() == dashboard_btn) {
+	        showForm("dashboard");
+	    } else if (event.getSource() == patients_btn) {
+	        showForm("patients");
+	    } else if (event.getSource() == appointments_btn) {
+	        showForm("appointments");
+	    } else if (event.getSource() == profile_btn) {
+	        showForm("profile");
+	    }
 	}
 
 	private void showForm(String formName) {
-		dashboard_form.setVisible(false);
-		patients_form.setVisible(false);
-		appointments_form.setVisible(false);
-		profile_form.setVisible(false);
+	    // Hiển thị form tương ứng
+	    dashboard_form.setVisible(false);
+	    patients_form.setVisible(false);
+	    appointments_form.setVisible(false);
+	    profile_form.setVisible(false);
 
-		switch (formName) {
-		case "dashboard":
-			dashboard_form.setVisible(true);
-			current_form.setText("Home Form");
-			break;
-		case "patients":
-			patients_form.setVisible(true);
-			current_form.setText("Patients Form");
-			loadPatientTable();
-			break;
-		case "appointments":
-			appointments_form.setVisible(true);
-			current_form.setText("Appointments Form");
-			break;
-
-		case "profile":
-			profile_form.setVisible(true);
-			current_form.setText("Profile Form");
-			break;
-		}
+	    switch (formName) {
+	    case "dashboard":
+	        dashboard_form.setVisible(true);
+	        current_form.setText("Home Form");
+	        break;
+	    case "patients":
+	        patients_form.setVisible(true);
+	        current_form.setText("Patients Form");
+	        loadPatientTable();
+	        break;
+	    case "appointments":
+	        appointments_form.setVisible(true);
+	        current_form.setText("Appointments Form");
+	        break;
+	    case "profile":
+	        profile_form.setVisible(true);
+	        current_form.setText("Profile Form");
+	        break;
+	    }
 	}
 
 	public void logoutBtn() {
+	    // Đăng xuất
+	    try {
+	        // Xác nhận đăng xuất
+	        if (alert.confirmationMessage("Are you sure you want to logout?")) {
+	            // Mở form đăng nhập
+	            Parent root = FXMLLoader.load(getClass().getResource("/View/Login.fxml"));
+	            Stage stage = new Stage();
+	            stage.setOnCloseRequest(e -> {
+	                Platform.exit();
+	                System.exit(0);
+	            });
+	            stage.setScene(new Scene(root));
+	            stage.setTitle("Login");
+	            stage.show();
 
-		try {
-			if (alert.confirmationMessage("Are you sure you want to logout?")) {
-				Parent root = FXMLLoader.load(getClass().getResource("/View/Login.fxml"));
-				Stage stage = new Stage();
-				stage.setOnCloseRequest(e -> {
-					Platform.exit();
-					System.exit(0);
-				});
-				stage.setScene(new Scene(root));
-				stage.setTitle("Login");
-				stage.show();
+	            // Đóng cửa sổ hiện tại
+	            logout_btn.getScene().getWindow().hide();
 
-				logout_btn.getScene().getWindow().hide();
-
-				Data.doctor_id = "";
-				Data.doctor_name = "";
-				Data.temp_PatientID = 0;
-				Data.temp_name = "";
-				Data.temp_gender = "";
-				Data.temp_number = Long.parseLong("0");
-				Data.temp_address = "";
-				Data.temp_status = "";
-				Data.temp_date = "";
-				Data.temp_path = "";
-
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
+	            // Xóa dữ liệu tạm
+	            Data.doctor_id = "";
+	            Data.doctor_name = "";
+	            Data.temp_PatientID = 0;
+	            Data.temp_name = "";
+	            Data.temp_gender = "";
+	            Data.temp_number = Long.parseLong("0");
+	            Data.temp_address = "";
+	            Data.temp_status = "";
+	            Data.temp_date = "";
+	            Data.temp_path = "";
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	public void runTime() {
-		new Thread() {
-			public void run() {
-				SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
-				while (true) {
-					try {
-						Thread.sleep(1000);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					Platform.runLater(() -> {
-						date_time.setText(format.format(new Date()));
-					});
-				}
-			}
-		}.start();
+	    // Cập nhật thời gian thực
+	    new Thread() {
+	        public void run() {
+	            SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
+	            while (true) {
+	                try {
+	                    Thread.sleep(1000);
+	                } catch (Exception e) {
+	                    e.printStackTrace();
+	                }
+	                Platform.runLater(() -> {
+	                    date_time.setText(format.format(new Date()));
+	                });
+	            }
+	        }
+	    }.start();
 	}
 
 	public void loadComboBox() {
-		profile_gender.setItems(FXCollections
-				.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
+	    // Tải danh sách giới tính vào ComboBox
+	    profile_gender.setItems(FXCollections
+	            .observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
 	}
 
 	public class FormatterUtils {
-		public static String formatCurrencyVND(BigDecimal amount) {
-			if (amount == null)
-				return "0 VNĐ";
-			NumberFormat formatter = NumberFormat.getInstance(new Locale("vi", "VN"));
-			return formatter.format(amount) + " VNĐ";
-		}
+	    // Định dạng tiền tệ VNĐ
+	    public static String formatCurrencyVND(BigDecimal amount) {
+	        if (amount == null)
+	            return "0 VNĐ";
+	        NumberFormat formatter = NumberFormat.getInstance(new Locale("vi", "VN"));
+	        return formatter.format(amount) + " VNĐ";
+	    }
 
-		public static String formatTimestamp(String createdAt) {
-			try {
-				SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-				SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy");
-				return outputFormat.format(inputFormat.parse(createdAt));
-			} catch (Exception e) {
-				return "";
-			}
-		}
+	    // Định dạng ngày giờ
+	    public static String formatTimestamp(String createdAt) {
+	        try {
+	            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	            SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy");
+	            return outputFormat.format(inputFormat.parse(createdAt));
+	        } catch (Exception e) {
+	            return "";
+	        }
+	    }
 
-		public static String formatTime(String time) {
-			try {
-				SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-				SimpleDateFormat outputFormat = new SimpleDateFormat("HH:mm:ss dd/MM/yyyy");
-				return outputFormat.format(inputFormat.parse(time));
-			} catch (Exception e) {
-				return "";
-			}
-		}
+	    // Định dạng thời gian
+	    public static String formatTime(String time) {
+	        try {
+	            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	            SimpleDateFormat outputFormat = new SimpleDateFormat("HH:mm:ss dd/MM/yyyy");
+	            return outputFormat.format(inputFormat.parse(time));
+	        } catch (Exception e) {
+	            return "";
+	        }
+	    }
 
-		public static String getDate(String time) {
-			try {
-				SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-				SimpleDateFormat outputFormat = new SimpleDateFormat("dd-MM-yyyy");
-				return outputFormat.format(inputFormat.parse(time));
-			} catch (Exception e) {
-				return "";
-			}
-		}
+	    // Lấy ngày
+	    public static String getDate(String time) {
+	        try {
+	            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	            SimpleDateFormat outputFormat = new SimpleDateFormat("dd-MM-yyyy");
+	            return outputFormat.format(inputFormat.parse(time));
+	        } catch (Exception e) {
+	            return "";
+	        }
+	    }
 
-		public static String getTime(String time) {
-			try {
-				SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-				SimpleDateFormat outputFormat = new SimpleDateFormat("HH:mm");
-				return outputFormat.format(inputFormat.parse(time));
-			} catch (Exception e) {
-				return "";
-			}
-		}
+	    // Lấy giờ
+	    public static String getTime(String time) {
+	        try {
+	            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	            SimpleDateFormat outputFormat = new SimpleDateFormat("HH:mm");
+	            return outputFormat.format(inputFormat.parse(time));
+	        } catch (Exception e) {
+	            return "";
+	        }
+	    }
 
-		public static String toSQLDate(String date) {
-			try {
-				SimpleDateFormat inputFormat = new SimpleDateFormat("HH:mm dd-MM-yyyy");
-				SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-				return outputFormat.format(inputFormat.parse(date));
-			} catch (Exception e) {
-				return "";
-			}
-		}
+	    // Chuyển đổi sang định dạng SQL
+	    public static String toSQLDate(String date) {
+	        try {
+	            SimpleDateFormat inputFormat = new SimpleDateFormat("HH:mm dd-MM-yyyy");
+	            SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	            return outputFormat.format(inputFormat.parse(date));
+	        } catch (Exception e) {
+	            return "";
+	        }
+	    }
 
-		public static LocalDate localDate(String dateString) {
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-			LocalDate localDate = LocalDate.parse(dateString, formatter);
-			return localDate;
-		}
+	    // Chuyển đổi thành LocalDate
+	    public static LocalDate localDate(String dateString) {
+	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+	        LocalDate localDate = LocalDate.parse(dateString, formatter);
+	        return localDate;
+	    }
 	}
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		System.out.println("DoctorMainFormController initialized " + username);
+	    // Khởi tạo controller
+	    System.out.println("DoctorMainFormController initialized " + username);
 
-		dashboard_form.setVisible(false);
-		patients_form.setVisible(false);
-		appointments_form.setVisible(false);
-		profile_form.setVisible(true);
+	    // Ẩn tất cả form ban đầu
+	    dashboard_form.setVisible(false);
+	    patients_form.setVisible(false);
+	    appointments_form.setVisible(false);
+	    profile_form.setVisible(true);
 
-		loadComboBox();
-		runTime();
-		initializePatientFilters();
+	    // Tải dữ liệu ban đầu
+	    loadComboBox();
+	    runTime();
+	    initializePatientFilters();
 
-		dashboad_col_appointmentID.setCellValueFactory(new PropertyValueFactory<>("id"));
-		dashboad_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
-		dashboad_col_description.setCellValueFactory(new PropertyValueFactory<>("description"));
-		dashboad_col_appointmentDate.setCellValueFactory(new PropertyValueFactory<>("date"));
-		dashboad_col_status.setCellValueFactory(new PropertyValueFactory<>("status"));
-		dashboad_tableView.setItems(dashboad_listData);
+	    // Gán giá trị cho các cột bảng
+	    dashboad_col_appointmentID.setCellValueFactory(new PropertyValueFactory<>("id"));
+	    dashboad_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
+	    dashboad_col_description.setCellValueFactory(new PropertyValueFactory<>("description"));
+	    dashboad_col_appointmentDate.setCellValueFactory(new PropertyValueFactory<>("date"));
+	    dashboad_col_status.setCellValueFactory(new PropertyValueFactory<>("status"));
+	    dashboad_tableView.setItems(dashboad_listData);
 
-		appointments_col_appointmentID.setCellValueFactory(new PropertyValueFactory<>("id"));
-		appointments_col_time.setCellValueFactory(new PropertyValueFactory<>("time"));
-		appointments_col_status.setCellValueFactory(new PropertyValueFactory<>("status"));
-		appointments_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
-		appointments_col_contactNumber.setCellValueFactory(new PropertyValueFactory<>("contactNumber"));
-		appointments_col_reason.setCellValueFactory(new PropertyValueFactory<>("reason"));
-		appointments_tableView.setItems(appoinmentListData);
-		// appointment_patientID.setItems(FXCollections.observableArrayList();
-		appointment_gender.setItems(FXCollections
-				.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
-		appointment_status.setItems(FXCollections.observableArrayList(
-				Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
-		appointment_patientID.setItems(patientIds);
+	    appointments_col_appointmentID.setCellValueFactory(new PropertyValueFactory<>("id"));
+	    appointments_col_time.setCellValueFactory(new PropertyValueFactory<>("time"));
+	    appointments_col_status.setCellValueFactory(new PropertyValueFactory<>("status"));
+	    appointments_col_name.setCellValueFactory(new PropertyValueFactory<>("name"));
+	    appointments_col_contactNumber.setCellValueFactory(new PropertyValueFactory<>("contactNumber"));
+	    appointments_col_reason.setCellValueFactory(new PropertyValueFactory<>("reason"));
+	    appointments_tableView.setItems(appoinmentListData);
 
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-		appointment_date.setConverter(new StringConverter<LocalDate>() {
-			@Override
-			public String toString(LocalDate date) {
-				return (date != null) ? formatter.format(date) : appointment_date.getEditor().getText();
-			}
+	    // Tải danh sách vào ComboBox
+	    appointment_gender.setItems(FXCollections
+	            .observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
+	    appointment_status.setItems(FXCollections.observableArrayList(
+	            Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
+	    appointment_patientID.setItems(patientIds);
 
-			@Override
-			public LocalDate fromString(String string) {
-				return (string != null && !string.isEmpty()) ? LocalDate.parse(string, formatter) : null;
-			}
-		});
+	    // Định dạng ngày cho DatePicker
+	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+	    appointment_date.setConverter(new StringConverter<LocalDate>() {
+	        @Override
+	        public String toString(LocalDate date) {
+	            return (date != null) ? formatter.format(date) : appointment_date.getEditor().getText();
+	        }
 
-		appointments_searchBy.setItems(FXCollections.observableArrayList("Name", "Contact", "Cancel Reason"));
-		appointments_searchBy.getSelectionModel().selectFirst();
-		appointments_searchBy.valueProperty().addListener((observable, oldValue, newValue) -> {
-			onSearchChanged();
-		});
-		appointments_searchQuery.textProperty().addListener((observable, oldValue, newValue) -> {
-			onSearchChanged();
-		});
+	        @Override
+	        public LocalDate fromString(String string) {
+	            return (string != null && !string.isEmpty()) ? LocalDate.parse(string, formatter) : null;
+	        }
+	    });
+
+	    // Khởi tạo bộ lọc tìm kiếm
+	    appointments_searchBy.setItems(FXCollections.observableArrayList("Name", "Contact", "Cancel Reason"));
+	    appointments_searchBy.getSelectionModel().selectFirst();
+	    appointments_searchBy.valueProperty().addListener((observable, oldValue, newValue) -> {
+	        onSearchChanged();
+	    });
+	    appointments_searchQuery.textProperty().addListener((observable, oldValue, newValue) -> {
+	        onSearchChanged();
+	    });
 	}
 
 	private void onSearchChanged() {
-		String searchBy = appointments_searchBy.getSelectionModel().getSelectedItem();
-		String query = appointments_searchQuery.getText().trim().toLowerCase();
+	    // Xử lý tìm kiếm cuộc hẹn
+	    String searchBy = appointments_searchBy.getSelectionModel().getSelectedItem();
+	    String query = appointments_searchQuery.getText().trim().toLowerCase();
 
-		if (query.isEmpty() || searchBy == null || searchBy.isEmpty()) {
-			appointments_tableView.setItems(appoinmentListData);
-			return;
-		}
+	    // Nếu không có từ khóa hoặc tiêu chí, hiển thị toàn bộ dữ liệu
+	    if (query.isEmpty() || searchBy == null || searchBy.isEmpty()) {
+	        appointments_tableView.setItems(appoinmentListData);
+	        return;
+	    }
 
-		ObservableList<DoctorAppointmentData> filteredData = appoinmentListData.filtered(appointment -> {
-			switch (searchBy) {
-			case "Name":
-				return appointment.getName() != null && appointment.getName().toLowerCase().contains(query);
-			case "Contact":
-				return appointment.getContactNumber() != null
-						&& appointment.getContactNumber().toLowerCase().contains(query);
-			case "Cancel Reason":
-				return appointment.getReason() != null && appointment.getReason().toLowerCase().contains(query);
-			default:
-				return false;
-			}
-		});
-		appointments_tableView.setItems(filteredData);
+	    // Lọc dữ liệu theo tiêu chí
+	    ObservableList<DoctorAppointmentData> filteredData = appoinmentListData.filtered(appointment -> {
+	        switch (searchBy) {
+	        case "Name":
+	            return appointment.getName() != null && appointment.getName().toLowerCase().contains(query);
+	        case "Contact":
+	            return appointment.getContactNumber() != null
+	                    && appointment.getContactNumber().toLowerCase().contains(query);
+	        case "Cancel Reason":
+	            return appointment.getReason() != null && appointment.getReason().toLowerCase().contains(query);
+	        default:
+	            return false;
+	        }
+	    });
+	    appointments_tableView.setItems(filteredData);
 	}
 
 	public void setDoctorId(String doctor_id) {
-		this.doctor_id = doctor_id;
-		loadDoctorProfile();
-		profileDisplayImages();
+	    // Gán ID bác sĩ
+	    this.doctor_id = doctor_id;
+	    loadDoctorProfile();
+	    profileDisplayImages();
 	}
 
 	public void setUsername(String username) {
-		this.username = username;
-		loadDoctorProfile();
-		profileDisplayImages();
+	    // Gán username
+	    this.username = username;
+	    loadDoctorProfile();
+	    profileDisplayImages();
 	}
 
 	ObservableList<String> patientIds = FXCollections.observableArrayList();
 
 	public void load() {
-		System.out.println("DoctorMainFormController load: " + username + " " + doctor_id);
+	    // Tải dữ liệu ban đầu
+	    System.out.println("DoctorMainFormController load: " + username + " " + doctor_id);
 
-		if (username == null || username.isEmpty() || doctor_id == null || doctor_id.isEmpty()) {
-			alert.errorMessage("Please login first");
-			return;
-		}
+	    // Kiểm tra thông tin đăng nhập
+	    if (username == null || username.isEmpty() || doctor_id == null || doctor_id.isEmpty()) {
+	        alert.errorMessage("Please login first");
+	        return;
+	    }
 
-		dashboardDisplayNumDrugs();
-		dashboardDisplayNumPatients();
-		dashboardDisplayNumPrescriptions();
-		dashboardDisplayAppointments();
-		dashboardLoadAppointmentData();
+	    // Tải dữ liệu dashboard
+	    dashboardDisplayNumDrugs();
+	    dashboardDisplayNumPatients();
+	    dashboardDisplayNumPrescriptions();
+	    dashboardDisplayAppointments();
+	    dashboardLoadAppointmentData();
 
-		appointment_gender.setItems(FXCollections
-				.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
-		appointment_status.setItems(FXCollections.observableArrayList(
-				Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
-		appointment_name.setEditable(false);
-		appointment_mobileNumber.setEditable(false);
+	    // Tải danh sách vào ComboBox
+	    appointment_gender.setItems(FXCollections
+	            .observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
+	    appointment_status.setItems(FXCollections.observableArrayList(
+	            Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
+	    appointment_name.setEditable(false);
+	    appointment_mobileNumber.setEditable(false);
 
-		loadAppointmentData();
-		appointment_appointmentID.setEditable(false);
+	    loadAppointmentData();
+	    appointment_appointmentID.setEditable(false);
 
-		appointment_patientID.setItems(patientIds);
-		loadPatientData();
+	    appointment_patientID.setItems(patientIds);
+	    loadPatientData();
 	}
 
 	private void dashboardDisplayNumDrugs() {
-		String sql = "SELECT COUNT(*) AS total FROM drug";
-		connect = Database.connectDB();
-		try {
-			prepare = connect.prepareStatement(sql);
-			result = prepare.executeQuery();
-			if (result.next()) {
-				dashboard_IP.setText(result.getString("total"));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+	    // Hiển thị số lượng thuốc
+	    String sql = "SELECT COUNT(*) AS total FROM drug";
+	    connect = Database.connectDB();
+	    try {
+	        prepare = connect.prepareStatement(sql);
+	        result = prepare.executeQuery();
+	        if (result.next()) {
+	            dashboard_IP.setText(result.getString("total"));
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	private void dashboardDisplayNumPatients() {
-		String sql = "SELECT COUNT(*) AS total FROM patient";
-		connect = Database.connectDB();
-		try {
-			prepare = connect.prepareStatement(sql);
-			result = prepare.executeQuery();
-			if (result.next()) {
-				dashboard_TP.setText(result.getString("total"));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+	    // Hiển thị số lượng bệnh nhân
+	    String sql = "SELECT COUNT(*) AS total FROM patient";
+	    connect = Database.connectDB();
+	    try {
+	        prepare = connect.prepareStatement(sql);
+	        result = prepare.executeQuery();
+	        if (result.next()) {
+	            dashboard_TP.setText(result.getString("total"));
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	private void dashboardDisplayNumPrescriptions() {
-		String sql = "SELECT COUNT(*) AS total FROM prescription WHERE doctor_id = ?";
-		connect = Database.connectDB();
-		try {
-			prepare = connect.prepareStatement(sql);
-			prepare.setString(1, doctor_id);
-			result = prepare.executeQuery();
-			if (result.next()) {
-				dashboard_AP.setText(result.getString("total"));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+	    // Hiển thị số lượng đơn thuốc
+	    String sql = "SELECT COUNT(*) AS total FROM prescription WHERE doctor_id = ?";
+	    connect = Database.connectDB();
+	    try {
+	        prepare = connect.prepareStatement(sql);
+	        prepare.setString(1, doctor_id);
+	        result = prepare.executeQuery();
+	        if (result.next()) {
+	            dashboard_AP.setText(result.getString("total"));
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	private void dashboardDisplayAppointments() {
-		String sql = "SELECT COUNT(*) AS total FROM appointment WHERE doctor_id = ?";
-		connect = Database.connectDB();
-		try {
-			prepare = connect.prepareStatement(sql);
-			prepare.setString(1, doctor_id);
-			result = prepare.executeQuery();
-			if (result.next()) {
-				dashboard_tA.setText(result.getString("total"));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+	    // Hiển thị số lượng cuộc hẹn
+	    String sql = "SELECT COUNT(*) AS total FROM appointment WHERE doctor_id = ?";
+	    connect = Database.connectDB();
+	    try {
+	        prepare = connect.prepareStatement(sql);
+	        prepare.setString(1, doctor_id);
+	        result = prepare.executeQuery();
+	        if (result.next()) {
+	            dashboard_tA.setText(result.getString("total"));
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	private void dashboardLoadAppointmentData() {
-		String sql = "SELECT *, p.Name AS Name FROM appointment JOIN patient p ON p.Patient_id = appointment.Patient_id WHERE doctor_id = ?";
-		connect = Database.connectDB();
-		try {
-			prepare = connect.prepareStatement(sql);
-			prepare.setString(1, doctor_id);
-			result = prepare.executeQuery();
-			dashboad_listData.clear();
-			while (result.next()) {
-				String id = result.getString("id");
-				String name = result.getString("name");
-				String description = result.getString("cancel_reason");
-				String date = result.getString("time");
-				String status = result.getString("status");
+	    // Tải dữ liệu cuộc hẹn cho dashboard
+	    String sql = "SELECT *, p.Name AS Name FROM appointment JOIN patient p ON p.Patient_id = appointment.Patient_id WHERE doctor_id = ?";
+	    connect = Database.connectDB();
+	    try {
+	        prepare = connect.prepareStatement(sql);
+	        prepare.setString(1, doctor_id);
+	        result = prepare.executeQuery();
+	        dashboad_listData.clear();
+	        while (result.next()) {
+	            String id = result.getString("id");
+	            String name = result.getString("name");
+	            String description = result.getString("cancel_reason");
+	            String date = result.getString("time");
+	            String status = result.getString("status");
 
-				dashboad_listData.add(new DashBoardAppointmentData(id, name, description, date, status));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+	            dashboad_listData.add(new DashBoardAppointmentData(id, name, description, date, status));
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	private void loadAppointmentData() {
-		String sql = "SELECT *, p.Patient_id AS Patient_ID, p.Name AS Name, p.Phone AS Contact_Number FROM appointment JOIN patient p ON p.Patient_id = appointment.Patient_id WHERE doctor_id = ?";
-		connect = Database.connectDB();
-		try {
-			prepare = connect.prepareStatement(sql);
-			prepare.setString(1, doctor_id);
-			result = prepare.executeQuery();
-			appoinmentListData.clear();
-			while (result.next()) {
-				String id = result.getString("id");
-				String time = result.getString("time");
-				String status = result.getString("status");
-				String patientId = result.getString("Patient_ID");
-				String gender = result.getString("Gender");
-				String name = result.getString("name");
-				String contactNumber = result.getString("contact_number");
-				String reason = result.getString("cancel_reason");
-				String createdDate = result.getString("create_date");
-				String lastModifiedDate = result.getString("update_date");
+	    // Tải dữ liệu cuộc hẹn
+	    String sql = "SELECT *, p.Patient_id AS Patient_ID, p.Name AS Name, p.Phone AS Contact_Number FROM appointment JOIN patient p ON p.Patient_id = appointment.Patient_id WHERE doctor_id = ?";
+	    connect = Database.connectDB();
+	    try {
+	        prepare = connect.prepareStatement(sql);
+	        prepare.setString(1, doctor_id);
+	        result = prepare.executeQuery();
+	        appoinmentListData.clear();
+	        while (result.next()) {
+	            String id = result.getString("id");
+	            String time = result.getString("time");
+	            String status = result.getString("status");
+	            String patientId = result.getString("Patient_ID");
+	            String gender = result.getString("Gender");
+	            String name = result.getString("name");
+	            String contactNumber = result.getString("contact_number");
+	            String reason = result.getString("cancel_reason");
+	            String createdDate = result.getString("create_date");
+	            String lastModifiedDate = result.getString("update_date");
 
-				appoinmentListData.add(new DoctorAppointmentData(id, time, status, patientId, gender, name,
-						contactNumber, reason, createdDate, lastModifiedDate));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+	            appoinmentListData.add(new DoctorAppointmentData(id, time, status, patientId, gender, name,
+	                    contactNumber, reason, createdDate, lastModifiedDate));
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	private void loadPatientData() {
-		String sql = "SELECT * FROM patient";
-		connect = Database.connectDB();
-		try {
-			prepare = connect.prepareStatement(sql);
-			result = prepare.executeQuery();
-			patientIds.clear();
-			while (result.next()) {
-				String id = result.getString("patient_id");
-				patientIds.add(id);
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+	    // Tải danh sách ID bệnh nhân
+	    String sql = "SELECT * FROM patient";
+	    connect = Database.connectDB();
+	    try {
+	        prepare = connect.prepareStatement(sql);
+	        result = prepare.executeQuery();
+	        patientIds.clear();
+	        while (result.next()) {
+	            String id = result.getString("patient_id");
+	            patientIds.add(id);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	public void appointmentSelect() {
-		DoctorAppointmentData appointmentData = appointments_tableView.getSelectionModel().getSelectedItem();
-		int index = appointments_tableView.getSelectionModel().getSelectedIndex();
-		if (index <= -1 || appointmentData == null) {
-			System.out.println("No appointment selected");
-			return;
-		}
+	    // Chọn cuộc hẹn từ bảng
+	    DoctorAppointmentData appointmentData = appointments_tableView.getSelectionModel().getSelectedItem();
+	    int index = appointments_tableView.getSelectionModel().getSelectedIndex();
+	    if (index <= -1 || appointmentData == null) {
+	        System.out.println("No appointment selected");
+	        return;
+	    }
 
-		appointment_appointmentID.setText(appointmentData.getId());
-		appointment_name.setText(appointmentData.getName());
-		appointment_gender.setValue(appointmentData.getGender());
-		appointment_mobileNumber.setText(appointmentData.getContactNumber());
-		appointment_patientID.setValue(appointmentData.getPatientId());
-		appointment_status.setValue(appointmentData.getStatus());
-		appointment_cancelReason.setText(appointmentData.getReason());
-		appointment_date.setValue(FormatterUtils.localDate(FormatterUtils.getDate(appointmentData.getTime())));
-		appointment_time.setText(FormatterUtils.getTime(appointmentData.getTime()));
-		appointment_createdDate.setText(FormatterUtils.formatTime(appointmentData.getCreatedDate()));
-		appointment_updatedDate.setText(FormatterUtils.formatTime(appointmentData.getLastModifiedDate()));
+	    // Gán dữ liệu cuộc hẹn vào form
+	    appointment_appointmentID.setText(appointmentData.getId());
+	    appointment_name.setText(appointmentData.getName());
+	    appointment_gender.setValue(appointmentData.getGender());
+	    appointment_mobileNumber.setText(appointmentData.getContactNumber());
+	    appointment_patientID.setValue(appointmentData.getPatientId());
+	    appointment_status.setValue(appointmentData.getStatus());
+	    appointment_cancelReason.setText(appointmentData.getReason());
+	    appointment_date.setValue(FormatterUtils.localDate(FormatterUtils.getDate(appointmentData.getTime())));
+	    appointment_time.setText(FormatterUtils.getTime(appointmentData.getTime()));
+	    appointment_createdDate.setText(FormatterUtils.formatTime(appointmentData.getCreatedDate()));
+	    appointment_updatedDate.setText(FormatterUtils.formatTime(appointmentData.getLastModifiedDate()));
 	}
 
 	public void patientsSelect() {
-		int index = appointment_patientID.getSelectionModel().getSelectedIndex();
-		String patientId = appointment_patientID.getSelectionModel().getSelectedItem();
-		if (index <= -1 || patientId == null) {
-			System.out.println("No patient selected");
-			return;
-		}
+	    // Chọn bệnh nhân từ ComboBox
+	    int index = appointment_patientID.getSelectionModel().getSelectedIndex();
+	    String patientId = appointment_patientID.getSelectionModel().getSelectedItem();
+	    if (index <= -1 || patientId == null) {
+	        System.out.println("No patient selected");
+	        return;
+	    }
 
-		String sql = "SELECT * FROM patient WHERE patient_id = ?";
-		connect = Database.connectDB();
-		try {
-			prepare = connect.prepareStatement(sql);
-			prepare.setString(1, patientId);
-			result = prepare.executeQuery();
-			if (result.next()) {
-				String name = result.getString("name");
-				String phone = result.getString("phone");
-				String gender = result.getString("gender");
-				appointment_name.setText(name);
-				appointment_mobileNumber.setText(phone);
-				appointment_gender.setValue(gender);
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+	    // Lấy thông tin bệnh nhân
+	    String sql = "SELECT * FROM patient WHERE patient_id = ?";
+	    connect = Database.connectDB();
+	    try {
+	        prepare = connect.prepareStatement(sql);
+	        prepare.setString(1, patientId);
+	        result = prepare.executeQuery();
+	        if (result.next()) {
+	            String name = result.getString("name");
+	            String phone = result.getString("phone");
+	            String gender = result.getString("gender");
+	            appointment_name.setText(name);
+	            appointment_mobileNumber.setText(phone);
+	            appointment_gender.setValue(gender);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
 }

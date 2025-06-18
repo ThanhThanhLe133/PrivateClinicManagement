@@ -143,6 +143,7 @@ public class ForgotPassController implements Initializable {
 	}
 
 	public String generateOTP() {
+		// Tạo mã OTP ngẫu nhiên 6 chữ số
 		Random rand = new Random();
 		int otp = 100000 + rand.nextInt(900000);
 		return String.valueOf(otp);
@@ -150,6 +151,7 @@ public class ForgotPassController implements Initializable {
 
 	public void sendVerificationCode(String to, String codeSend) {
 		// Xác nhận người dùng
+		// Gửi mã OTP qua email
 		Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
 		confirmAlert.setTitle("Notice!");
 		confirmAlert.setHeaderText(null);
@@ -200,6 +202,7 @@ public class ForgotPassController implements Initializable {
 
 	@FXML
 	public void sendOTP() {
+		// Gửi OTP đến email người dùng
 		String emailOTP = email.getText();
 		if (emailOTP == null || emailOTP.isEmpty()) {
 			alert.errorMessage("Please input your email!");
@@ -229,6 +232,7 @@ public class ForgotPassController implements Initializable {
 
 	@FXML
 	public void verifyOTP() {
+		// Xác minh mã OTP người dùng nhập
 		String userInput = input_otp.getText();
 
 		if (userInput.isEmpty()) {
@@ -257,6 +261,7 @@ public class ForgotPassController implements Initializable {
 
 	@FXML
 	public void createNewPass() {
+		// Tạo mật khẩu mới
 		String newPass = input_pass.getText();
 		String confirmPass = retype_pass.getText();
 
@@ -304,7 +309,7 @@ public class ForgotPassController implements Initializable {
 
 	@FXML
 	public void showPass() {
-
+		// Hiển thị/ẩn mật khẩu
 		if (show_pass.isSelected()) {
 			input_showPass.setText(input_pass.getText());
 			input_showPass.setVisible(true);
@@ -326,6 +331,7 @@ public class ForgotPassController implements Initializable {
 	}
 
 	public void openLogin() throws IOException {
+		//Mở form đăng nhập
 		FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/Login.fxml"));
 		Parent root = loader.load();
 
@@ -338,6 +344,7 @@ public class ForgotPassController implements Initializable {
 		create_new.getScene().getWindow().hide();
 	}
 
+	// Khởi tạo form, đặt focus vào panel quên mật khẩu
 	@Override
 	public void initialize(URL arg0, ResourceBundle arg1) {
 		// TODO Auto-generated method stub

@@ -21,7 +21,8 @@ public class PatientDetailController {
     private String patientId;
 
     public void setPatientData(PatientData patient) {
-        this.patientId = patient.getPatientId();
+    	// Gán dữ liệu bệnh nhân vào các nhãn hiển thị
+    	this.patientId = patient.getPatientId();
 
         lblName.setText(patient.getName());
         lblEmail.setText(patient.getEmail());
@@ -32,6 +33,7 @@ public class PatientDetailController {
         lblWeight.setText(String.valueOf(patient.getWeight()));
         lblAddress.setText(patient.getAddress());
 
+        // Tải lịch sử cuộc hẹn
         loadAppointmentHistory();
     }
 

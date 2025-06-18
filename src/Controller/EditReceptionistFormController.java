@@ -6,7 +6,6 @@ import javafx.stage.Stage;
 import javafx.event.ActionEvent;
 import DAO.Database;
 
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.regex.Pattern;
@@ -17,21 +16,24 @@ public class EditReceptionistFormController {
     @FXML private Button btnUpdate, btnCancel;
     
     // Validation error labels
+    // Nhãn hiển thị lỗi xác thực
     @FXML private Label lblNameError, lblEmailError, lblGenderError, lblPhoneError, lblAddressError;
     
     // Data fields
+    // ID của lễ tân
     private String receptionistId;
     
     // Regex patterns for validation
+    // Mẫu regex để kiểm tra định dạng
     private final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     private final Pattern PHONE_PATTERN = Pattern.compile("^[0-9]{10,15}$");
     
     @FXML
     private void initialize() {
-        // Initialize gender options
+        // Khởi tạo danh sách giới tính
         cmbGender.getItems().addAll("Male", "Female", "Other");
         
-        // Add focus listeners for real-time validation
+        // Thêm listener để xác thực thời gian thực
         txtName.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) validateName();
         });
@@ -59,6 +61,7 @@ public class EditReceptionistFormController {
      * @param address The receptionist address
      */
     public void setReceptionistData(String id, String name, String email, String gender, String phone, String address) {
+        // Gán dữ liệu lễ tân vào các trường hiển thị
         this.receptionistId = id;
         txtName.setText(name);
         txtEmail.setText(email);
@@ -69,6 +72,7 @@ public class EditReceptionistFormController {
     
     @FXML
     private void updateReceptionist() {
+        // Cập nhật thông tin lễ tân nếu các trường hợp lệ
         if (validateAllFields()) {
             saveReceptionist();
         }
@@ -76,10 +80,12 @@ public class EditReceptionistFormController {
     
     @FXML
     private void handleCancel() {
+        // Đóng cửa sổ khi nhấn hủy
         ((Stage) btnCancel.getScene().getWindow()).close();
     }
     
     private boolean validateAllFields() {
+        // Kiểm tra tất cả các trường nhập liệu
         boolean isValid = validateName();
         isValid = validateEmail() && isValid;
         isValid = validateGender() && isValid;
@@ -90,6 +96,7 @@ public class EditReceptionistFormController {
     }
     
     private boolean validateName() {
+        // Kiểm tra tên
         String name = txtName.getText().trim();
         if (name.isEmpty()) {
             showError(lblNameError, "Name is required");
@@ -100,6 +107,7 @@ public class EditReceptionistFormController {
     }
     
     private boolean validateEmail() {
+        // Kiểm tra email
         String email = txtEmail.getText().trim();
         if (email.isEmpty()) {
             showError(lblEmailError, "Email is required");
@@ -113,6 +121,7 @@ public class EditReceptionistFormController {
     }
     
     private boolean validateGender() {
+        // Kiểm tra giới tính
         if (cmbGender.getValue() == null) {
             showError(lblGenderError, "Please select a gender");
             return false;
@@ -122,6 +131,7 @@ public class EditReceptionistFormController {
     }
     
     private boolean validatePhone() {
+        // Kiểm tra số điện thoại
         String phone = txtPhone.getText().trim();
         if (phone.isEmpty()) {
             showError(lblPhoneError, "Phone number is required");
@@ -135,6 +145,7 @@ public class EditReceptionistFormController {
     }
     
     private boolean validateAddress() {
+        // Kiểm tra địa chỉ
         String address = txtAddress.getText().trim();
         if (address.isEmpty()) {
             showError(lblAddressError, "Address is required");
@@ -145,21 +156,24 @@ public class EditReceptionistFormController {
     }
     
     private void showError(Label label, String message) {
+        // Hiển thị thông báo lỗi
         label.setText(message);
         label.setVisible(true);
     }
     
     private void hideError(Label label) {
+        // Ẩn thông báo lỗi
         label.setVisible(false);
     }
     
     private void saveReceptionist() {
+        // Lưu thông tin lễ tân vào cơ sở dữ liệu
         try (Connection conn = Database.connectDB()) {
-            // Begin transaction
+            // Bắt đầu giao dịch
             conn.setAutoCommit(false);
             
             try {
-                // Update USER_ACCOUNT table
+                // Cập nhật bảng USER_ACCOUNT
                 String sqlUser = "UPDATE USER_ACCOUNT SET Email = ?, Name = ?, Gender = ? WHERE Id = ?";
                 PreparedStatement psUser = conn.prepareStatement(sqlUser);
                 psUser.setString(1, txtEmail.getText().trim());
@@ -168,7 +182,7 @@ public class EditReceptionistFormController {
                 psUser.setString(4, receptionistId);
                 psUser.executeUpdate();
                 
-                // Update RECEPTIONIST table
+                // Cập nhật bảng RECEPTIONIST
                 String sqlReception = "UPDATE RECEPTIONIST SET Phone = ?, Address = ? WHERE Receptionist_id = ?";
                 PreparedStatement psReception = conn.prepareStatement(sqlReception);
                 psReception.setString(1, txtPhone.getText().trim());
@@ -176,24 +190,24 @@ public class EditReceptionistFormController {
                 psReception.setString(3, receptionistId);
                 psReception.executeUpdate();
                 
-                // Commit transaction
+                // Cam kết giao dịch
                 conn.commit();
                 
-                // Show success message
+                // Hiển thị thông báo thành công
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Success");
                 alert.setHeaderText(null);
                 alert.setContentText("Receptionist updated successfully!");
                 alert.showAndWait();
                 
-                // Close the form
+                // Đóng form
                 ((Stage) btnUpdate.getScene().getWindow()).close();
                 
             } catch (Exception e) {
-                // Rollback transaction in case of error
+                // Hoàn tác giao dịch nếu có lỗi
                 conn.rollback();
                 
-                // Show error message
+                // Hiển thị thông báo lỗi
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error");
                 alert.setHeaderText(null);
@@ -203,7 +217,7 @@ public class EditReceptionistFormController {
             }
             
         } catch (Exception e) {
-            // Connection error
+            // Lỗi kết nối cơ sở dữ liệu
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Database Error");
             alert.setHeaderText(null);
@@ -212,6 +226,4 @@ public class EditReceptionistFormController {
             e.printStackTrace();
         }
     }
-    
-    
 }

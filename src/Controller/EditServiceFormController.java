@@ -1,4 +1,3 @@
-
 package Controller;
 
 import javafx.collections.FXCollections;
@@ -22,7 +21,8 @@ public class EditServiceFormController {
 
     @FXML private TextField txtServiceName, txtPrice;
     @FXML private Button btnSave, btnCancel;
- // Validation error labels
+    // Validation error labels
+    // Nhãn hiển thị lỗi xác thực
     @FXML private Label lbServiceNameError, lbPriceError,lbTypeError;
     
 	@FXML
@@ -31,6 +31,7 @@ public class EditServiceFormController {
     private ServiceData service;
 
     public void setServiceData(ServiceData service) {
+        // Gán dữ liệu dịch vụ vào các trường hiển thị
         this.service = service;
         txtServiceName.setText(service.getName());
         txtPrice.setText(String.valueOf(service.getPrice()));
@@ -39,12 +40,14 @@ public class EditServiceFormController {
 
     @FXML
     private void initialize() {
+        // Tải danh sách loại dịch vụ vào ComboBox
     	cbType.setItems(FXCollections.observableArrayList(
     		    Arrays.stream(ServiceType.values())
     		          .map(Enum::name)
     		          .collect(Collectors.toList())
     		));
 
+        // Ràng buộc nhập số cho giá
         txtPrice.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*\\.?\\d*")) {
                 txtPrice.setText(oldVal);
@@ -55,17 +58,20 @@ public class EditServiceFormController {
 
     @FXML
     private void handleCancel() {
+        // Đóng cửa sổ khi nhấn hủy
         ((Stage) btnCancel.getScene().getWindow()).close();
     }
 
     @FXML
     private void handleSave() {
+        // Lưu thông tin dịch vụ nếu các trường hợp lệ
         if (validateAllFields()) {
             updateService();
         }
     }
 
     private boolean validateAllFields() {
+        // Kiểm tra tất cả các trường nhập liệu
         boolean isValid = true;
 
         isValid = validateTextField(txtServiceName.getText(), lbServiceNameError, "Service name is required") && isValid;
@@ -77,6 +83,7 @@ public class EditServiceFormController {
     }
 
     private boolean validateTextField(String string, Label errorLabel, String message) {
+        // Kiểm tra trường văn bản
         if (string.trim().isEmpty()) {
             showError(errorLabel, message);
             return false;
@@ -86,6 +93,7 @@ public class EditServiceFormController {
     }
 
     private boolean validateNumericField(TextField field, Label errorLabel, String message) {
+        // Kiểm tra trường số
         try {
             double value = Double.parseDouble(field.getText().trim());
             if (value < 0) throw new NumberFormatException();
@@ -98,15 +106,18 @@ public class EditServiceFormController {
     }
 
     private void showError(Label label, String message) {
+        // Hiển thị thông báo lỗi
         label.setText(message);
         label.setVisible(true);
     }
 
     private void hideError(Label label) {
+        // Ẩn thông báo lỗi
         label.setVisible(false);
     }
 
     private void updateService() {
+        // Cập nhật thông tin dịch vụ vào cơ sở dữ liệu
         try (Connection conn = Database.connectDB()) {
             String sql = "UPDATE SERVICE SET Name = ?, Type = ?, Price = ? WHERE Id = ?";
             PreparedStatement ps = conn.prepareStatement(sql);
@@ -117,15 +128,18 @@ public class EditServiceFormController {
 
             ps.executeUpdate();
 
+            // Hiển thị thông báo thành công
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Success");
             alert.setHeaderText(null);
             alert.setContentText("Service updated successfully!");
             alert.showAndWait();
 
+            // Đóng form
             ((Stage) btnSave.getScene().getWindow()).close();
         } catch (Exception e) {
             e.printStackTrace();
+            // Hiển thị thông báo lỗi
             Alert error = new Alert(Alert.AlertType.ERROR, "Error updating service: " + e.getMessage());
             error.showAndWait();
         }

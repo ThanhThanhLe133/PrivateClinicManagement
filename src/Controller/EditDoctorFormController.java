@@ -28,6 +28,7 @@ public class EditDoctorFormController {
     private DoctorData doctor;
 
     public void setDoctorData(DoctorData doctor) {
+        // Gán dữ liệu bác sĩ vào các trường hiển thị
         this.doctor = doctor;
 //        txtUsername.setText(doctor.getUsername());
 //        txtPassword.setText(doctor.getPassword());
@@ -41,11 +42,12 @@ public class EditDoctorFormController {
 
     @FXML
     private void initialize() {
-    	 loadComboBox();
-
+        // Tải danh sách vào ComboBox
+    	loadComboBox();
     }
-    public void loadComboBox() {
 
+    public void loadComboBox() {
+        // Tải danh sách giới tính và chuyên môn
     	cmbGender.setItems(FXCollections
 				.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
 		ObservableList<String> specializationCb = FXCollections.observableArrayList();
@@ -67,11 +69,13 @@ public class EditDoctorFormController {
 
     @FXML
     private void handleCancel() {
+        // Đóng cửa sổ khi nhấn hủy
         ((Stage) btnCancel.getScene().getWindow()).close();
     }
 
     @FXML
     private void handleSave() {
+        // Cập nhật thông tin bác sĩ
         try (Connection conn = Database.connectDB()) {
             // Cập nhật bảng USER_ACCOUNT
 //            String sqlUser = "UPDATE USER_ACCOUNT SET Username = ?, Password = ?, Email = ?, Name = ?, Gender = ? WHERE Id = ?";
@@ -86,7 +90,7 @@ public class EditDoctorFormController {
             psUser.setString(4, doctor.getId());
             psUser.executeUpdate();
 
-            // Cập nhật bảng DOCTOR
+            // Lấy ID dịch vụ từ tên chuyên môn
             String getServiceIdSql = "SELECT Id FROM SERVICE WHERE Name = ?";
             PreparedStatement psService = conn.prepareStatement(getServiceIdSql);
             psService.setString(1, cmbSpecialization.getValue());
@@ -105,16 +109,18 @@ public class EditDoctorFormController {
                 psDoctor.executeUpdate();
             }
 
-            // Thông báo
+            // Hiển thị thông báo thành công
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Sucess");
             alert.setHeaderText(null);
             alert.setContentText("Update doctor successfully!");
             alert.showAndWait();
 
+            // Đóng form
             ((Stage) btnSave.getScene().getWindow()).close();
         } catch (Exception e) {
             e.printStackTrace();
+            // Hiển thị thông báo lỗi
             Alert error = new Alert(Alert.AlertType.ERROR, "Error!");
             error.showAndWait();
         }

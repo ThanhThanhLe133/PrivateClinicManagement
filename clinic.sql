@@ -1,5 +1,6 @@
 -- SHOW PROCESSLIST;
 -- KILL {Id};
+-- SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''));
 
 -- DROP VÀ TẠO LẠI DATABASE
 DROP DATABASE IF EXISTS clinic;
@@ -372,6 +373,7 @@ INSERT INTO USER_ACCOUNT (
     'DOCTOR',
     TRUE
 );
+
 INSERT INTO DOCTOR (
     doctor_id, Phone, Service_id, Address
 ) VALUES (
@@ -452,12 +454,13 @@ INSERT INTO ADMIN (Admin_id) VALUES (@Admin_id);
 
 
 -- INSERT mẫu RECEPTIONIST
-SET @recept_id := UUID();
+SET @recept_id1 := UUID();
+SET @recept_id2 := UUID();
 
 INSERT INTO USER_ACCOUNT (
     Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active
 ) VALUES (
-    @recept_id,
+    @recept_id1,
     'recept.anna',
     'recept123',
     'anna.reception@example.com',
@@ -468,13 +471,13 @@ INSERT INTO USER_ACCOUNT (
     TRUE
 ),
 (
-    '10',
-    'asdf',
-    '123456',
-    'anna.reception@example.com',
-    'Receptionist Anna',
+    @recept_id2,
+    'recept01',
+    'receptpass',
+    'yuukirecept@example.com',
+    'Yuuki',
     NULL,
-    'Male',
+    'Female',
     'RECEPTIONIST',
     TRUE
 );
@@ -483,14 +486,14 @@ INSERT INTO USER_ACCOUNT (
 INSERT INTO RECEPTIONIST (
     Receptionist_id, Phone, Address
 ) VALUES (
-    @recept_id,
+    @recept_id1,
     '0988123456',
     '23 Front Office Blvd, District 3'
 ),
 (
-    '10',
-    '0988123456',
-    '23 Front Office Blvd, District 3'
+    @recept_id2,
+    '0988391233',
+    '27 Back Office Blvd, District8'
 );
 
 -- INSERT mẫu DRUG

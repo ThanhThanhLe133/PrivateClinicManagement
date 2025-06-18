@@ -22,7 +22,7 @@
             <padding>
                 <Insets bottom="15" left="20" right="20" top="15" />
             </padding>
-            <Label text="Edit Service" textFill="WHITE">
+            <Label text="Add Service" textFill="WHITE">
                 <font>
                     <Font name="System Bold" size="18" />
                 </font>

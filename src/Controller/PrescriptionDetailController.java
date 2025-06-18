@@ -54,13 +54,13 @@ public class PrescriptionDetailController {
 
     @FXML
     public void initialize() {
-        // Bind data to TableView columns
-        colDrugId.setCellValueFactory(data -> data.getValue().drugIdProperty());
+    	// Gán giá trị cho các cột trong bảng        
+    	colDrugId.setCellValueFactory(data -> data.getValue().drugIdProperty());
         colDrugName.setCellValueFactory(data -> data.getValue().drugNameProperty());
         colQuantity.setCellValueFactory(data -> data.getValue().quantityProperty().asObject());
         colInstruction.setCellValueFactory(data -> data.getValue().instructionsProperty());
 
-        // Set up Edit and Delete buttons in colAction
+        // Thiết lập nút Sửa và Xóa trong cột hành động
         colAction.setCellFactory(param -> new TableCell<>() {
             private final Button editButton = new Button("Edit");
             private final Button deleteButton = new Button("Delete");
@@ -89,7 +89,7 @@ public class PrescriptionDetailController {
                         stage.initModality(Modality.APPLICATION_MODAL);
                         stage.setResizable(false);
                         stage.showAndWait();
-                        // Reload table after editing
+                        // Tải lại bảng sau khi chỉnh sửa
                         try (Connection conn = Database.connectDB()) {
                             loadPrescriptionDetails(lblID.getText(), conn);
                             updateTotalAmountLabel(conn, lblID.getText());
@@ -150,7 +150,8 @@ public class PrescriptionDetailController {
     }
 
     private void fillForm(ResultSet rs, Connection conn) throws SQLException {
-        String prescriptionId = rs.getString("Id");
+    	// Điền dữ liệu vào form
+    	String prescriptionId = rs.getString("Id");
 
         lblID.setText(prescriptionId);
         lblDiagnosis.setText(rs.getString("diagnose"));

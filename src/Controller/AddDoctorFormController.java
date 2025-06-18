@@ -1,60 +1,3 @@
-//package Controller;
-//
-//import javafx.fxml.FXML;
-//import javafx.scene.control.*;
-//import javafx.stage.Stage;
-//import DAO.Database;
-//
-//import java.sql.Connection;
-//import java.sql.PreparedStatement;
-//import java.util.UUID;
-//
-//public class AddDoctorFormController {
-//    @FXML private TextField txtUsername, txtPassword, txtName, txtEmail, txtPhone, txtSpecialized, txtAddress;
-//    @FXML private ComboBox<String> cmbGender;
-//    @FXML private Button btnSave;
-//
-//    @FXML
-//    private void initialize() {
-//        cmbGender.getItems().addAll("Nam", "Nữ", "Khác");
-//    }
-//
-//    @FXML
-//    private void addDoctor() {
-//        String id = UUID.randomUUID().toString();
-//        try (Connection conn = Database.connectDB()) {
-//            String sqlUser = "INSERT INTO USER_ACCOUNT (Id, Username, Password, Email, Name, Gender, Role, Is_active) VALUES (?, ?, ?, ?, ?, ?, 'DOCTOR', TRUE)";
-//            PreparedStatement psUser = conn.prepareStatement(sqlUser);
-//            psUser.setString(1, id);
-//            psUser.setString(2, txtUsername.getText());
-//            psUser.setString(3, txtPassword.getText());
-//            psUser.setString(4, txtEmail.getText());
-//            psUser.setString(5, txtName.getText());
-//            psUser.setString(6, cmbGender.getValue());
-//            psUser.executeUpdate();
-//
-//            String sqlDoctor = "INSERT INTO DOCTOR (Doctor_id, Phone, Specialized, Address, Is_confirmed) VALUES (?, ?, ?, ?, FALSE)";
-//            PreparedStatement psDoctor = conn.prepareStatement(sqlDoctor);
-//            psDoctor.setString(1, id);
-//            psDoctor.setString(2, txtPhone.getText());
-//            psDoctor.setString(3, txtSpecialized.getText());
-//            psDoctor.setString(4, txtAddress.getText());
-//            psDoctor.executeUpdate();
-//
-//            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-//            alert.setTitle("Thành công");
-//            alert.setHeaderText(null);
-//            alert.setContentText("Đã thêm bác sĩ thành công!");
-//            alert.showAndWait();
-//            ((Stage) btnSave.getScene().getWindow()).close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-//}
-
-
-
 package Controller;
 
 import javafx.fxml.FXML;
@@ -84,18 +27,21 @@ public class AddDoctorFormController {
     @FXML private Button btnSave, btnCancel;
     
     // Validation error labels
+    // Nhãn hiển thị lỗi xác thực
     @FXML private Label lblUsernameError, lblPasswordError, lblNameError, lblEmailError,
                      lblGenderError, lblPhoneError, lblSpecializedError, lblAddressError;
     
     // Regex patterns for validation
+    // Mẫu regex để kiểm tra định dạng
     private final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     private final Pattern PHONE_PATTERN = Pattern.compile("^[0-9]{10,15}$");
 	private final AlertMessage alert = new AlertMessage();
     @FXML
     private void initialize() {
+        // Tải danh sách vào ComboBox
         loadComboBox();
         
-        // Add focus listeners for real-time validation
+        // Thêm listener để xác thực thời gian thực
         txtUsername.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) validateUsername();
         });
@@ -122,7 +68,7 @@ public class AddDoctorFormController {
     }
     
     public void loadComboBox() {
-
+        // Tải danh sách giới tính và chuyên môn
     	cmbGender.setItems(FXCollections
 				.observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
 		ObservableList<String> specializationCb = FXCollections.observableArrayList();
@@ -144,6 +90,7 @@ public class AddDoctorFormController {
 
     @FXML
     private void handleSave() {
+        // Xử lý lưu thông tin bác sĩ
         if (validateAllFields()) {
             saveDoctor();
         }
@@ -151,10 +98,12 @@ public class AddDoctorFormController {
     
     @FXML
     private void handleCancel() {
+        // Đóng cửa sổ khi hủy
         ((Stage) btnCancel.getScene().getWindow()).close();
     }
     
     private boolean validateAllFields() {
+        // Kiểm tra tất cả các trường nhập liệu
         boolean isValid = validateUsername();
         isValid = validatePassword() && isValid;
         isValid = validateName() && isValid;
@@ -168,6 +117,7 @@ public class AddDoctorFormController {
     }
     
     private boolean validateUsername() {
+        // Kiểm tra tên người dùng
         String username = txtUsername.getText().trim();
         if (username.isEmpty()) {
             showError(lblUsernameError, "Username is required");
@@ -181,6 +131,7 @@ public class AddDoctorFormController {
     }
     
     private boolean validatePassword() {
+        // Kiểm tra mật khẩu
         String password = txtPassword.getText();
         if (password.isEmpty()) {
             showError(lblPasswordError, "Password is required");
@@ -194,6 +145,7 @@ public class AddDoctorFormController {
     }
     
     private boolean validateName() {
+        // Kiểm tra tên
         String name = txtName.getText().trim();
         if (name.isEmpty()) {
             showError(lblNameError, "Name is required");
@@ -204,6 +156,7 @@ public class AddDoctorFormController {
     }
     
     private boolean validateEmail() {
+        // Kiểm tra email
         String email = txtEmail.getText().trim();
         if (email.isEmpty()) {
             showError(lblEmailError, "Email is required");
@@ -217,6 +170,7 @@ public class AddDoctorFormController {
     }
     
     private boolean validateGender() {
+        // Kiểm tra giới tính
         if (cmbGender.getValue() == null) {
             showError(lblGenderError, "Please select a gender");
             return false;
@@ -226,6 +180,7 @@ public class AddDoctorFormController {
     }
     
     private boolean validatePhone() {
+        // Kiểm tra số điện thoại
         String phone = txtPhone.getText().trim();
         if (phone.isEmpty()) {
             showError(lblPhoneError, "Phone number is required");
@@ -239,6 +194,7 @@ public class AddDoctorFormController {
     }
     
     private boolean validateSpecialization() {
+        // Kiểm tra chuyên môn
         if (cmbSpecialization.getValue() == null) {
             showError(lblSpecializedError, "Please select a specialization");
             return false;
@@ -248,6 +204,7 @@ public class AddDoctorFormController {
     }
     
     private boolean validateAddress() {
+        // Kiểm tra địa chỉ
         String address = txtAddress.getText().trim();
         if (address.isEmpty()) {
             showError(lblAddressError, "Address is required");
@@ -258,23 +215,26 @@ public class AddDoctorFormController {
     }
     
     private void showError(Label label, String message) {
+        // Hiển thị thông báo lỗi
         label.setText(message);
         label.setVisible(true);
     }
     
     private void hideError(Label label) {
+        // Ẩn thông báo lỗi
         label.setVisible(false);
     }
     
     private void saveDoctor() {
+        // Lưu thông tin bác sĩ vào cơ sở dữ liệu
         String id = UUID.randomUUID().toString();
         
         try (Connection conn = Database.connectDB()) {
-            // Begin transaction
+            // Bắt đầu giao dịch
             conn.setAutoCommit(false);
             
             try {
-                // Insert into USER_ACCOUNT table
+                // Thêm vào bảng USER_ACCOUNT
                 String sqlUser = "INSERT INTO USER_ACCOUNT (Id, Username, Password, Email, Name, Gender, Role, Is_active) " +
                                 "VALUES (?, ?, ?, ?, ?, ?, 'DOCTOR', TRUE)";
                 PreparedStatement psUser = conn.prepareStatement(sqlUser);
@@ -286,37 +246,38 @@ public class AddDoctorFormController {
                 psUser.setString(6, cmbGender.getValue());
                 psUser.executeUpdate();
                 
+                // Thêm vào bảng DOCTOR
                 String sqlDoctor = """
                 	    INSERT INTO DOCTOR (Doctor_id, Phone, Address, Is_confirmed, Service_id)
                 	    VALUES (?, ?, ?, FALSE, (SELECT id FROM service WHERE name = ?))
                 	""";
 
-                	PreparedStatement psDoctor = conn.prepareStatement(sqlDoctor);
-                	psDoctor.setString(1, id);                           
-                	psDoctor.setString(2, txtPhone.getText().trim());      
-                	psDoctor.setString(3, txtAddress.getText().trim());    
-                	psDoctor.setString(4, cmbSpecialization.getValue()); 
-                	psDoctor.executeUpdate();
+                PreparedStatement psDoctor = conn.prepareStatement(sqlDoctor);
+                psDoctor.setString(1, id);                           
+                psDoctor.setString(2, txtPhone.getText().trim());      
+                psDoctor.setString(3, txtAddress.getText().trim());    
+                psDoctor.setString(4, cmbSpecialization.getValue()); 
+                psDoctor.executeUpdate();
 
                 
-                // Commit transaction
+                // Cam kết giao dịch
                 conn.commit();
                 
-                // Show success message
+                // Hiển thị thông báo thành công
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Success");
                 alert.setHeaderText(null);
                 alert.setContentText("Doctor added successfully!");
                 alert.showAndWait();
                 
-                // Close the form
+                // Đóng form
                 ((Stage) btnSave.getScene().getWindow()).close();
                 
             } catch (Exception e) {
-                // Rollback transaction in case of error
+                // Hoàn tác giao dịch nếu có lỗi
                 conn.rollback();
                 
-                // Show error message
+                // Hiển thị thông báo lỗi
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error");
                 alert.setHeaderText(null);
@@ -326,7 +287,7 @@ public class AddDoctorFormController {
             }
             
         } catch (Exception e) {
-            // Connection error
+            // Lỗi kết nối cơ sở dữ liệu
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Database Error");
             alert.setHeaderText(null);

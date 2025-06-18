@@ -22,24 +22,27 @@ public class EditPrescriptionDrugFormController {
 
     @FXML private Label lblDrugNameError, lblManufacturerError, lblQuantityError, lblInstructionError;
     
+    // ID của đơn thuốc và thuốc
     private String prescriptionId;
     private String drugId;
 
     public void setPrescriptionId(String id) {
+        // Gán ID đơn thuốc
         this.prescriptionId = id;
     }
 
     public void loadDrugData(String drugId) {
+        // Tải dữ liệu thuốc hiện tại
         this.drugId = drugId;
         loadCurrentDrugData();
     }
 
     @FXML
     private void initialize() {
-        // Load drugs into cmbDrugName
+        // Tải danh sách thuốc
         loadDrugs();
 
-        // Restrict txtQuantity to positive integers
+        // Giới hạn txtQuantity chỉ nhận số nguyên dương
         if (txtQuantity != null) {
             txtQuantity.textProperty().addListener((obs, oldVal, newVal) -> {
                 if (!newVal.matches("\\d*")) {
@@ -48,7 +51,7 @@ public class EditPrescriptionDrugFormController {
             });
         }
 
-        // Load manufacturers when a drug is selected
+        // Tải danh sách nhà sản xuất khi chọn thuốc
         if (cmbDrugName != null) {
             cmbDrugName.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal != null) {
@@ -64,6 +67,7 @@ public class EditPrescriptionDrugFormController {
     }
 
     private void loadDrugs() {
+        // Tải danh sách thuốc còn tồn kho
         if (cmbDrugName == null) return;
         try (Connection conn = Database.connectDB()) {
             String sql = """
@@ -78,10 +82,10 @@ public class EditPrescriptionDrugFormController {
             """;
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, prescriptionId);
-                ps.setString(2, drugId != null ? drugId : ""); // Exclude current drug from the NOT IN condition
-                ps.setString(3, drugId != null ? drugId : ""); // Explicitly include the current drug
+                ps.setString(2, drugId != null ? drugId : ""); // Loại trừ thuốc hiện tại khỏi điều kiện NOT IN
+                ps.setString(3, drugId != null ? drugId : ""); // Bao gồm thuốc hiện tại
                 ResultSet rs = ps.executeQuery();
-                Set<String> drugNames = new HashSet<>(); // Use Set to avoid duplicates
+                Set<String> drugNames = new HashSet<>(); // Sử dụng Set để tránh trùng lặp
                 while (rs.next()) {
                     drugNames.add(rs.getString("Name"));
                 }
@@ -93,6 +97,7 @@ public class EditPrescriptionDrugFormController {
     }
 
     private void loadManufacturers(String drugName) {
+        // Tải danh sách nhà sản xuất cho thuốc được chọn
         if (cmbManufacturer == null) return;
         cmbManufacturer.getItems().clear();
         try (Connection conn = Database.connectDB()) {
@@ -121,6 +126,7 @@ public class EditPrescriptionDrugFormController {
     }
 
     private void loadCurrentDrugData() {
+        // Tải dữ liệu thuốc hiện tại vào form
         if (drugId == null || cmbDrugName == null || cmbManufacturer == null || txtQuantity == null || txtInstruction == null) return;
         try (Connection conn = Database.connectDB()) {
             String sql = """
@@ -139,9 +145,9 @@ public class EditPrescriptionDrugFormController {
                     int quantity = rs.getInt("Quantity");
                     String instructions = rs.getString("Instructions");
 
-                    // Set values in the form
+                    // Gán giá trị vào form
                     cmbDrugName.setValue(drugName);
-                    loadManufacturers(drugName); // Load manufacturers first
+                    loadManufacturers(drugName); // Tải nhà sản xuất trước
                     cmbManufacturer.setValue(manufacturer);
                     txtQuantity.setText(String.valueOf(quantity));
                     txtInstruction.setText(instructions != null ? instructions : "");
@@ -154,6 +160,7 @@ public class EditPrescriptionDrugFormController {
 
     @FXML
     private void handleSave() {
+        // Lưu thông tin thuốc nếu các trường hợp lệ
         if (validateAllFields()) {
             saveDrug();
         }
@@ -161,15 +168,17 @@ public class EditPrescriptionDrugFormController {
 
     @FXML
     private void handleCancel() {
+        // Đóng cửa sổ khi nhấn hủy
         if (btnCancel != null) {
             ((Stage) btnCancel.getScene().getWindow()).close();
         }
     }
 
     private boolean validateAllFields() {
+        // Kiểm tra tất cả các trường nhập liệu
         boolean isValid = true;
 
-        // Validate Drug Name
+        // Kiểm tra tên thuốc
         if (cmbDrugName != null && (cmbDrugName.getValue() == null || cmbDrugName.getValue().trim().isEmpty())) {
             showError(lblDrugNameError, "Drug name is required");
             isValid = false;
@@ -177,7 +186,7 @@ public class EditPrescriptionDrugFormController {
             hideError(lblDrugNameError);
         }
 
-        // Validate Manufacturer
+        // Kiểm tra nhà sản xuất
         if (cmbManufacturer != null && (cmbManufacturer.getValue() == null || cmbManufacturer.getValue().trim().isEmpty() || 
                 cmbManufacturer.getValue().equals("No Manufacturer Available"))) {
             showError(lblManufacturerError, "Manufacturer is required");
@@ -186,7 +195,7 @@ public class EditPrescriptionDrugFormController {
             hideError(lblManufacturerError);
         }
 
-        // Validate Quantity
+        // Kiểm tra số lượng
         if (txtQuantity != null) {
             try {
                 int value = Integer.parseInt(txtQuantity.getText().trim());
@@ -205,7 +214,7 @@ public class EditPrescriptionDrugFormController {
             isValid = false;
         }
 
-        // Validate Instructions
+        // Kiểm tra hướng dẫn sử dụng
         if (txtInstruction != null && txtInstruction.getText().trim().isEmpty()) {
             showError(lblInstructionError, "Instructions are required");
             isValid = false;
@@ -217,11 +226,12 @@ public class EditPrescriptionDrugFormController {
     }
 
     private void saveDrug() {
+        // Lưu thông tin thuốc vào đơn thuốc
         try (Connection conn = Database.connectDB()) {
-            // Begin transaction for consistency
+            // Bắt đầu giao dịch
             conn.setAutoCommit(false);
 
-            // Find the new drug ID based on selected name and manufacturer
+            // Tìm ID thuốc mới dựa trên tên và nhà sản xuất
             String sql = "SELECT Id FROM DRUG WHERE Name = ? AND Manufacturer = ? AND Stock > 0 LIMIT 1";
             String newDrugId = null;
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -239,7 +249,7 @@ public class EditPrescriptionDrugFormController {
                 return;
             }
 
-            // Check if the new (Prescription_id, Drug_id) pair already exists (excluding the current record)
+            // Kiểm tra xem thuốc mới đã có trong đơn thuốc chưa (ngoại trừ bản ghi hiện tại)
             if (!newDrugId.equals(drugId)) {
                 sql = "SELECT COUNT(*) FROM PRESCRIPTION_DETAILS WHERE Prescription_id = ? AND Drug_id = ?";
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -257,9 +267,9 @@ public class EditPrescriptionDrugFormController {
                 }
             }
 
-            // Get original quantity
+            // Lấy số lượng ban đầu
             int originalQuantity = 0;
-            String originalDrugId = drugId; // The initial drugId passed to loadDrugData
+            String originalDrugId = drugId; // ID thuốc ban đầu
             sql = "SELECT Quantity FROM PRESCRIPTION_DETAILS WHERE Prescription_id = ? AND Drug_id = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, prescriptionId);
@@ -272,10 +282,10 @@ public class EditPrescriptionDrugFormController {
 
             int newQuantity = Integer.parseInt(txtQuantity.getText().trim());
 
-            // Handle stock updates
+            // Xử lý cập nhật tồn kho
             if (!originalDrugId.equals(newDrugId)) {
-                // Different drug selected: restore original drug's stock and deduct new drug's stock
-                // Step 1: Restore stock of the original drug
+                // Thuốc khác: hoàn lại tồn kho của thuốc cũ và trừ tồn kho của thuốc mới
+                // Bước 1: Hoàn lại tồn kho của thuốc cũ
                 sql = "UPDATE DRUG SET Stock = Stock + ? WHERE Id = ?";
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
                     ps.setInt(1, originalQuantity);
@@ -283,7 +293,7 @@ public class EditPrescriptionDrugFormController {
                     ps.executeUpdate();
                 }
 
-                // Step 2: Check and deduct stock of the new drug
+                // Bước 2: Kiểm tra và trừ tồn kho của thuốc mới
                 int availableStock = 0;
                 sql = "SELECT Stock FROM DRUG WHERE Id = ?";
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -300,7 +310,7 @@ public class EditPrescriptionDrugFormController {
                     return;
                 }
 
-                // Deduct the full new quantity from the new drug
+                // Trừ toàn bộ số lượng mới từ thuốc mới
                 sql = "UPDATE DRUG SET Stock = Stock - ? WHERE Id = ?";
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
                     ps.setInt(1, newQuantity);
@@ -308,7 +318,7 @@ public class EditPrescriptionDrugFormController {
                     ps.executeUpdate();
                 }
             } else {
-                // Same drug: calculate net change in quantity
+                // Cùng thuốc: tính toán thay đổi số lượng
                 int stockChange = newQuantity - originalQuantity;
                 int availableStock = 0;
                 sql = "SELECT Stock FROM DRUG WHERE Id = ?";
@@ -326,7 +336,7 @@ public class EditPrescriptionDrugFormController {
                     return;
                 }
 
-                // Update stock with the net change
+                // Cập nhật tồn kho với thay đổi ròng
                 sql = "UPDATE DRUG SET Stock = Stock - ? WHERE Id = ?";
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
                     ps.setInt(1, stockChange);
@@ -335,7 +345,7 @@ public class EditPrescriptionDrugFormController {
                 }
             }
 
-            // Update PRESCRIPTION_DETAILS
+            // Cập nhật PRESCRIPTION_DETAILS
             sql = """
                 UPDATE PRESCRIPTION_DETAILS
                 SET Drug_id = ?, Quantity = ?, Instructions = ?
@@ -350,13 +360,16 @@ public class EditPrescriptionDrugFormController {
 
                 int rowsAffected = ps.executeUpdate();
                 if (rowsAffected > 0) {
+                    // Cam kết giao dịch
                     conn.commit();
+                    // Hiển thị thông báo thành công
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle("Success");
                     alert.setHeaderText(null);
                     alert.setContentText("Drug updated successfully!");
                     alert.showAndWait();
 
+                    // Đóng form
                     if (btnSave != null) {
                         ((Stage) btnSave.getScene().getWindow()).close();
                     }
@@ -372,12 +385,14 @@ public class EditPrescriptionDrugFormController {
             } catch (SQLException rollbackEx) {
                 rollbackEx.printStackTrace();
             }
+            // Hiển thị thông báo lỗi
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Database Error");
             alert.setHeaderText(null);
             alert.setContentText("Failed to update drug: " + e.getMessage());
             alert.showAndWait();
         } finally {
+            // Khôi phục trạng thái tự động cam kết
             try (Connection conn = Database.connectDB()) {
                 conn.setAutoCommit(true);
             } catch (SQLException e) {
@@ -387,11 +402,13 @@ public class EditPrescriptionDrugFormController {
     }
     
     private void showError(String message) {
+        // Hiển thị thông báo lỗi chung
         Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
         alert.showAndWait();
     }
 
     private void showError(Label label, String message) {
+        // Hiển thị thông báo lỗi trên nhãn
         if (label != null) {
             label.setText(message);
             label.setVisible(true);
@@ -399,6 +416,7 @@ public class EditPrescriptionDrugFormController {
     }
 
     private void hideError(Label label) {
+        // Ẩn thông báo lỗi trên nhãn
         if (label != null) {
             label.setVisible(false);
         }

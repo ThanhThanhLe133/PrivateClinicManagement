@@ -10,32 +10,35 @@ import java.sql.PreparedStatement;
 
 public class AddPatientFormController {
 
-    @FXML private TextField txtPatientName, txtHeight, txtWeight, txtPhone, txtDiagnosis, txtAddress;
-    @FXML private TextField txtEmail;
-    @FXML private ComboBox<String> cmbGender;
+    @FXML private TextField txtPatientName, txtHeight, txtWeight, txtPhone, txtDiagnosis, txtAddress; // Trường nhập thông tin bệnh nhân
+    @FXML private TextField txtEmail; // Trường nhập email
+    @FXML private ComboBox<String> cmbGender; // ComboBox để chọn giới tính
 
     @FXML private Label lblPatientNameError, lblEmailError, lblHeightError, lblWeightError,
-                         lblGenderError, lblPhoneError, lblDiagnosisError, lblAddressError;
+                         lblGenderError, lblPhoneError, lblDiagnosisError, lblAddressError; // Nhãn lỗi xác thực
 
-    @FXML private Button btnSave, btnCancel;
+    @FXML private Button btnSave, btnCancel; // Nút lưu và hủy
 
     @FXML
     private void initialize() {
+        // Khởi tạo danh sách giới tính cho ComboBox
         cmbGender.getItems().addAll("Male", "Female", "Other");
 
-        // Ràng buộc chỉ cho nhập số
+        // Ràng buộc chỉ cho nhập số và dấu chấm thập phân vào trường chiều cao
         txtHeight.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*\\.?\\d*")) {
                 txtHeight.setText(oldVal);
             }
         });
 
+        // Ràng buộc chỉ cho nhập số và dấu chấm thập phân vào trường cân nặng
         txtWeight.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*\\.?\\d*")) {
                 txtWeight.setText(oldVal);
             }
         });
 
+        // Ràng buộc chỉ cho nhập số vào trường số điện thoại
         txtPhone.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*")) {
                 txtPhone.setText(oldVal);
@@ -45,6 +48,7 @@ public class AddPatientFormController {
 
     @FXML
     private void handleSave() {
+        // Xử lý sự kiện lưu, kiểm tra hợp lệ trước khi lưu
         if (validateAllFields()) {
             savePatient();
         }
@@ -52,10 +56,12 @@ public class AddPatientFormController {
 
     @FXML
     private void handleCancel() {
+        // Xử lý sự kiện hủy, đóng cửa sổ hiện tại
         ((Stage) btnCancel.getScene().getWindow()).close();
     }
 
     private boolean validateAllFields() {
+        // Kiểm tra tính hợp lệ của tất cả các trường
         boolean isValid = true;
 
         isValid = validateTextField(txtPatientName, lblPatientNameError, "Name is required") && isValid;
@@ -71,6 +77,7 @@ public class AddPatientFormController {
     }
 
     private boolean validateTextField(TextField field, Label errorLabel, String errorMessage) {
+        // Kiểm tra trường văn bản có rỗng không
         if (field.getText().trim().isEmpty()) {
             showError(errorLabel, errorMessage);
             return false;
@@ -80,6 +87,7 @@ public class AddPatientFormController {
     }
 
     private boolean validateNumericField(TextField field, Label errorLabel, String errorMessage) {
+        // Kiểm tra trường số có hợp lệ không
         try {
             double value = Double.parseDouble(field.getText().trim());
             if (value <= 0) throw new NumberFormatException();
@@ -92,6 +100,7 @@ public class AddPatientFormController {
     }
 
     private boolean validateComboBox(ComboBox<String> comboBox, Label errorLabel, String errorMessage) {
+        // Kiểm tra ComboBox có giá trị hợp lệ không
         if (comboBox.getValue() == null || comboBox.getValue().isEmpty()) {
             showError(errorLabel, errorMessage);
             return false;
@@ -101,15 +110,18 @@ public class AddPatientFormController {
     }
 
     private void showError(Label label, String message) {
+        // Hiển thị thông báo lỗi
         label.setText(message);
         label.setVisible(true);
     }
 
     private void hideError(Label label) {
+        // Ẩn thông báo lỗi
         label.setVisible(false);
     }
 
     private void savePatient() {
+        // Lưu thông tin bệnh nhân vào cơ sở dữ liệu
         try (Connection conn = Database.connectDB()) {
             String sql = "INSERT INTO PATIENT (Name, Email, Height, Weight, Gender, Phone, Diagnosis, Address) " +
                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
