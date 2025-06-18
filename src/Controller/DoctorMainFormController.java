@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
@@ -52,6 +53,8 @@ import javafx.scene.chart.BarChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar.ButtonData;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -598,36 +601,120 @@ public class DoctorMainFormController implements Initializable {
 	}
 
 	public void appointmentDeleteBtn() {
-	    // Xóa cuộc hẹn
-	    String appointmentID = appointment_appointmentID.getText();
-	    System.out.println("Appointment ID: " + appointmentID);
-
-	    // Kiểm tra ID cuộc hẹn
-	    if (appointmentID.isEmpty()) {
+	    // Lấy lịch hẹn được chọn
+		AlertMessage alert1 = new AlertMessage();
+	    DoctorAppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
+	    String appointmentID = "";
+	    if (selectedAppointment != null) {
+	        appointmentID = selectedAppointment.getId();
+	    } else {
+	        // Hiển thị thông báo lỗi nếu chưa chọn lịch hẹn
 	        alert.errorMessage("Please select an appointment to delete.");
 	        return;
 	    }
 
-	    // Câu truy vấn xóa cuộc hẹn
-	    String sql = "DELETE FROM appointment WHERE id = ?";
-	    connect = Database.connectDB();
-	    try {
-	        prepare = connect.prepareStatement(sql);
-	        prepare.setString(1, appointmentID);
+	    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+	    alert.setTitle("Delete Confirmation");
+	    alert.setHeaderText("Are you sure you want to delete this appointment?");
+	    alert.setContentText("This action cannot be undone.");
 
-	        int rowsDeleted = prepare.executeUpdate();
-	        // Kiểm tra kết quả xóa
-	        if (rowsDeleted > 0) {
-	            alert.successMessage("Appointment deleted successfully.");
-	            appointmentClearBtn(); // Xóa form
-	            loadAppointmentData(); // Tải lại dữ liệu
-	            dashboardLoadAppointmentData(); // Cập nhật dashboard
-	        } else {
-	            alert.errorMessage("No appointment found with ID: " + appointmentID);
+	    Optional<ButtonType> result = alert.showAndWait();
+	    if (result.isPresent() && result.get() == ButtonType.OK) {
+	        Connection conn = null;
+	        try {
+	            conn = Database.connectDB();
+	            conn.setAutoCommit(false); // Start transaction
+
+	            // Check appointment status
+	            String checkStatusSQL = "SELECT Status FROM APPOINTMENT WHERE id = ?";
+	            PreparedStatement psCheck = conn.prepareStatement(checkStatusSQL);
+	            psCheck.setString(1, appointmentID);
+	            ResultSet rs = psCheck.executeQuery();
+	            boolean isFinished = false;
+	            if (rs.next()) {
+	                isFinished = "Finish".equals(rs.getString("Status"));
+	            } else {
+	                conn.rollback();
+	                alert1.errorMessage("Appointment not found.");
+	                conn.close();
+	                return;
+	            }
+
+	            if (isFinished) {
+	                // Show warning for finished appointment
+	                Alert warning = new Alert(Alert.AlertType.WARNING);
+	                warning.setTitle("Finished Appointment");
+	                warning.setHeaderText("This appointment is marked as 'Finish'.");
+	                warning.setContentText("Deleting this appointment will also delete all associated services, prescriptions, and prescription details. Do you want to proceed?");
+	                ButtonType proceedButton = new ButtonType("Proceed");
+	                ButtonType cancelButton = new ButtonType("Cancel");
+	                warning.getButtonTypes().setAll(proceedButton, cancelButton);
+
+	                Optional<ButtonType> warningResult = warning.showAndWait();
+	                if (warningResult.isEmpty() || warningResult.get() != proceedButton) {
+	                    conn.rollback();
+	                    conn.close();
+	                    return; // User canceled
+	                }
+
+	                // Delete associated prescription details
+	                String deletePrescriptionDetailsSQL = "DELETE FROM PRESCRIPTION_DETAILS WHERE Prescription_id IN " +
+	                                                     "(SELECT Id FROM PRESCRIPTION WHERE Appointment_id = ?)";
+	                PreparedStatement psDeletePrescriptionDetails = conn.prepareStatement(deletePrescriptionDetailsSQL);
+	                psDeletePrescriptionDetails.setString(1, appointmentID);
+	                psDeletePrescriptionDetails.executeUpdate();
+
+	                // Delete associated prescriptions
+	                String deletePrescriptionSQL = "DELETE FROM PRESCRIPTION WHERE Appointment_id = ?";
+	                PreparedStatement psDeletePrescriptions = conn.prepareStatement(deletePrescriptionSQL);
+	                psDeletePrescriptions.setString(1, appointmentID);
+	                psDeletePrescriptions.executeUpdate();
+	            }
+
+	            // Delete associated appointment_service entries (for both Finish and non-Finish)
+	            String deleteAppointmentServiceSQL = "DELETE FROM APPOINTMENT_SERVICE WHERE Appointment_id = ?";
+	            PreparedStatement psDeleteAppointmentService = conn.prepareStatement(deleteAppointmentServiceSQL);
+	            psDeleteAppointmentService.setString(1, appointmentID);
+	            psDeleteAppointmentService.executeUpdate();
+
+	            // Reset associated slot in AVAILABLE_SLOT
+	            String updateSlotSQL = "UPDATE AVAILABLE_SLOT SET Is_booked = FALSE, Appointment_id = NULL WHERE Appointment_id = ?";
+	            PreparedStatement psUpdateSlot = conn.prepareStatement(updateSlotSQL);
+	            psUpdateSlot.setString(1, appointmentID);
+	            psUpdateSlot.executeUpdate();
+
+	            // Delete the appointment
+	            String deleteAppointmentSQL = "DELETE FROM APPOINTMENT WHERE id = ?";
+	            PreparedStatement psDeleteAppointment = conn.prepareStatement(deleteAppointmentSQL);
+	            psDeleteAppointment.setString(1, appointmentID);
+	            int rowsDeleted = psDeleteAppointment.executeUpdate();
+
+	            if (rowsDeleted > 0) {
+	                conn.commit(); // Commit transaction
+	                appointmentClearBtn(); // Clear form
+	                loadAppointmentData(); // Refresh table
+	                dashboardLoadAppointmentData(); // Refresh dashboard
+	                alert1.successMessage("Appointment deleted successfully.");
+	            } else {
+	                conn.rollback();
+	                alert1.errorMessage("No appointment found with ID: " + appointmentID);
+	            }
+
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            try {
+	                if (conn != null) conn.rollback();
+	            } catch (SQLException rollbackEx) {
+	                rollbackEx.printStackTrace();
+	            }
+	            alert1.errorMessage("Error deleting appointment: " + e.getMessage());
+	        } finally {
+	            try {
+	                if (conn != null) conn.close();
+	            } catch (SQLException e) {
+	                e.printStackTrace();
+	            }
 	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        alert.errorMessage("Error deleting appointment: " + e.getMessage());
 	    }
 	}
 
