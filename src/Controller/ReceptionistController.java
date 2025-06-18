@@ -1393,7 +1393,7 @@ public class ReceptionistController implements Initializable {
 	@FXML
 	private void addNewForm(ActionEvent event) {
 		try {
-			FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/ChooseServiceForm.fxml"));
+			FXMLLoader loader = new FXMLLoader(getClass().getResource("/View/ChooseServiceForm.fxml"));
 			AnchorPane newForm = loader.load();
 
 			int insertPos = vboxContainer.getChildren().size() - 2; // Vị trí chèn form mới
@@ -1442,11 +1442,15 @@ public class ReceptionistController implements Initializable {
 			alert.errorMessage("⚠ Please select patient.");
 			return;
 		}
-
 		if (cb_urgency.getValue() == null) {
 			alert.errorMessage("⚠ Please select urgency level.");
 			return;
 		}
+		if (getSelectedServiceIdsFromVBox().isEmpty()) {
+			alert.errorMessage("⚠ Please select at least one service.");
+			return;
+		}
+		
 		String patientId = selectedPatient.getPatientId();
 		List<String> serviceIds = getSelectedServiceIdsFromVBox();
 		int urgency = cb_urgency.getValue().getScore();
@@ -1974,156 +1978,177 @@ public class ReceptionistController implements Initializable {
 			}
 		}
 
-		// Hàm tạo lịch hẹn và xuất hóa đơn
-		@FXML
-		public void createAppointment(ActionEvent event) {
+	@FXML
+	public void createAppointment(ActionEvent event) {
+	    // Kiểm tra xem lịch hẹn đã được kiểm tra chưa
+	    if (!isCheck) {
+	        alert.errorMessage("Please check the schedule before creating appointments!");
+	        return;
+	    }
+	    // Kiểm tra xem lịch hẹn có hợp lệ không
+	    if (!isAvailableAppointment) {
+	        alert.errorMessage("⚠ Cannot create appointment due to schedule conflicts!");
+	        return;
+	    }
+	    // Kiểm tra xem bệnh nhân đã được chọn chưa
+	    if (selectedPatient == null) {
+	        alert.errorMessage("Please select a patient!");
+	        return;
+	    }
 
-			// Kiểm tra xem lịch hẹn đã được kiểm tra chưa
-			if (!isCheck) {
-				alert.errorMessage("Please check the schedule before creating appointments!");
-				return;
-			}
-			// Kiểm tra xem lịch hẹn có hợp lệ không
-			if (!isAvailableAppointment) {
-				alert.errorMessage("⚠ Cannot create appointment due to schedule conflicts!");
-				return;
-			}
+	    try {
+	        // Tạo danh sách các dịch vụ được chọn và loại bỏ trùng lặp
+	        List<ServiceData> selectedServices = new ArrayList<>();
+	        Set<String> serviceIds = new HashSet<>(); // Để kiểm tra trùng lặp Service_id
+	        for (Node node : vboxContainer.getChildren()) {
+	            if (node instanceof AnchorPane) {
+	                ComboBox<ServiceData> cbService = (ComboBox<ServiceData>) ((AnchorPane) node).lookup("#cb_service");
+	                if (cbService != null && cbService.getValue() != null) {
+	                    ServiceData service = cbService.getValue();
+	                    // Kiểm tra trùng lặp Service_id
+	                    if (!serviceIds.add(service.getServiceId())) {
+	                        alert.errorMessage("Service: '" + service.getName() + "' has been selected multiple times. Please select service one time only!");
+	                        return;
+	                    }
+	                    selectedServices.add(service);
+	                }
+	            }
+	        }
+	        // Kiểm tra xem có chọn dịch vụ nào chưa
+	        if (selectedServices.isEmpty()) {
+	            alert.errorMessage("Please select at least one service!");
+	            return;
+	        }
 
-			// Kiểm tra xem bệnh nhân đã được chọn chưa
-			if (selectedPatient == null) {
-				alert.errorMessage("Please select a patient!");
-				return;
-			}
+	        // Kết nối cơ sở dữ liệu
+	        connect = Database.connectDB();
+	        // Tắt chế độ tự động commit để thực hiện giao dịch
+	        connect.setAutoCommit(false);
 
-			try {
-				// Tạo danh sách các dịch vụ được chọn
-				List<ServiceData> selectedServices = new ArrayList<>();
-				for (Node node : vboxContainer.getChildren()) {
-					if (node instanceof AnchorPane) {
-						ComboBox<ServiceData> cbService = (ComboBox<ServiceData>) ((AnchorPane) node).lookup("#cb_service");
-						if (cbService != null && cbService.getValue() != null) {
-							selectedServices.add(cbService.getValue());
-						}
-					}
-				}
-				// Kiểm tra xem có chọn dịch vụ nào chưa
-				if (selectedServices.isEmpty()) {
-					alert.errorMessage("Please select at least one service!");
-					return;
-				}
+	        String insertAppointmentSQL = "INSERT INTO appointment (id, time, status, cancel_reason, Doctor_id, Patient_id, Urgency_level, Is_followup, Priority_score, create_date, update_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	        String insertAppointmentServiceSQL = "INSERT INTO appointment_service (Appointment_id, Service_id) VALUES (?, ?)";
+	        String checkDuplicateServiceSQL = "SELECT COUNT(*) FROM appointment_service WHERE Appointment_id = ? AND Service_id = ?";
+	        String updateSlotSQL = "UPDATE AVAILABLE_SLOT SET Doctor_id = ?, Is_booked = ?, Appointment_id = ? WHERE Id = ?";
+	        String findSlotSQL = "SELECT Id FROM AVAILABLE_SLOT WHERE Doctor_id = ? AND Slot_date = ? AND Slot_time = ? AND Is_booked = FALSE LIMIT 1";
 
-				// Kết nối cơ sở dữ liệu
-				connect = Database.connectDB();
-				// Tắt chế độ tự động commit để thực hiện giao dịch
-				connect.setAutoCommit(false);
+	        // Chuẩn bị các câu lệnh SQL
+	        PreparedStatement psFindSlot = connect.prepareStatement(findSlotSQL);
+	        PreparedStatement psInsertAppointment = connect.prepareStatement(insertAppointmentSQL);
+	        PreparedStatement psUpdateSlot = connect.prepareStatement(updateSlotSQL);
+	        PreparedStatement psCheckDuplicateService = connect.prepareStatement(checkDuplicateServiceSQL);
 
-				String insertAppointmentSQL = "INSERT INTO appointment (id, time, status, cancel_reason, Doctor_id, Patient_id, Urgency_level, Is_followup, Priority_score, create_date, update_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-				String insertAppointmentServiceSQL = "INSERT INTO appointment_service (Appointment_id, Service_id) VALUES (?, ?)";
-				String updateSlotSQL = "UPDATE AVAILABLE_SLOT SET Doctor_id = ?, Is_booked = ?, Appointment_id = ? WHERE Id = ?";
-				String findSlotSQL = "SELECT Id FROM AVAILABLE_SLOT WHERE Doctor_id = ? AND Slot_date = ? AND Slot_time = ? AND Is_booked = FALSE LIMIT 1";
+	        // Duyệt qua danh sách thời gian và bác sĩ
+	        for (int i = 0; i < selectedServiceNames.size(); i++) {
+	            // Tạo ID duy nhất cho lịch hẹn
+	            String appointmentId = UUID.randomUUID().toString();
+	            String doctorId = selectedDoctorInfos.get(i).get("id");
+	            String doctorName = selectedDoctorInfos.get(i).get("name");
+	            LocalDate date = selectTimes.get(i);
+	            LocalTime time = slotTimes.get(i);
+	            LocalDateTime appointmentDateTime = LocalDateTime.of(date, time);
 
-				// Chuẩn bị các câu lệnh SQL
-				PreparedStatement psFindSlot = connect.prepareStatement(findSlotSQL);
-				PreparedStatement psInsertAppointment = connect.prepareStatement(insertAppointmentSQL);
-				PreparedStatement psUpdateSlot = connect.prepareStatement(updateSlotSQL);
+	            // 1. Kiểm tra slot trống
+	            psFindSlot.setString(1, doctorId);
+	            psFindSlot.setDate(2, java.sql.Date.valueOf(date));
+	            psFindSlot.setTime(3, java.sql.Time.valueOf(time));
+	            ResultSet rs = psFindSlot.executeQuery();
 
-				// Duyệt qua danh sách dịch vụ được chọn
-				for (int i = 0; i < selectedServiceNames.size(); i++) {
-					// Tạo ID duy nhất cho lịch hẹn
-					String appointmentId = UUID.randomUUID().toString();
-					String doctorId = selectedDoctorInfos.get(i).get("id");
-					String doctorName = selectedDoctorInfos.get(i).get("name");
-					LocalDate date = selectTimes.get(i);
-					LocalTime time = slotTimes.get(i);
-					LocalDateTime appointmentDateTime = LocalDateTime.of(date, time);
+	            if (rs.next()) {
+	                // Lấy ID của slot
+	                String slotId = rs.getString("Id");
 
-					// 1. Kiểm tra slot trống
-					psFindSlot.setString(1, doctorId);
-					psFindSlot.setDate(2, java.sql.Date.valueOf(date));
-					psFindSlot.setTime(3, java.sql.Time.valueOf(time));
-					ResultSet rs = psFindSlot.executeQuery();
+	                // 2. Thêm lịch hẹn vào cơ sở dữ liệu
+	                psInsertAppointment.setString(1, appointmentId);
+	                psInsertAppointment.setTimestamp(2, Timestamp.valueOf(appointmentDateTime));
+	                psInsertAppointment.setString(3, "Coming");
+	                psInsertAppointment.setString(4, "");
+	                psInsertAppointment.setString(5, doctorId);
+	                psInsertAppointment.setString(6, selectedPatient.getPatientId());
+	                psInsertAppointment.setInt(7, urgency);
+	                psInsertAppointment.setBoolean(8, isFollowup);
+	                psInsertAppointment.setInt(9, 0); // priority_score
+	                psInsertAppointment.setTimestamp(10, Timestamp.valueOf(LocalDateTime.now()));
+	                psInsertAppointment.setTimestamp(11, Timestamp.valueOf(LocalDateTime.now()));
+	                psInsertAppointment.executeUpdate();
 
-					if (rs.next()) {
-						// Lấy ID của slot
-						String slotId = rs.getString("Id");
+	                // 3. Cập nhật trạng thái slot đã đặt
+	                psUpdateSlot.setString(1, doctorId);
+	                psUpdateSlot.setBoolean(2, true);
+	                psUpdateSlot.setString(3, appointmentId);
+	                psUpdateSlot.setString(4, slotId);
+	                psUpdateSlot.executeUpdate();
 
-						// 2. Thêm lịch hẹn vào cơ sở dữ liệu
-						psInsertAppointment.setString(1, appointmentId);
-						psInsertAppointment.setTimestamp(2, Timestamp.valueOf(appointmentDateTime));
-						psInsertAppointment.setString(3, "Coming");
-						psInsertAppointment.setString(4, "");
-						psInsertAppointment.setString(5, doctorId);
-						psInsertAppointment.setString(6, selectedPatient.getPatientId());
-						psInsertAppointment.setInt(7, urgency);
-						psInsertAppointment.setBoolean(8, isFollowup);
-						psInsertAppointment.setInt(9, 0); // priority_score
-						psInsertAppointment.setTimestamp(10, Timestamp.valueOf(LocalDateTime.now()));
-						psInsertAppointment.setTimestamp(11, Timestamp.valueOf(LocalDateTime.now()));
-						psInsertAppointment.executeUpdate();
+	                // 4. Thêm các dịch vụ tương ứng với lịch hẹn
+	                for (ServiceData serviceData : selectedServices) {
+	                    // Kiểm tra xem dịch vụ đã được thêm cho lịch hẹn này chưa
+	                    psCheckDuplicateService.setString(1, appointmentId);
+	                    psCheckDuplicateService.setString(2, serviceData.getServiceId());
+	                    ResultSet checkRs = psCheckDuplicateService.executeQuery();
+	                    checkRs.next();
+	                    if (checkRs.getInt(1) > 0) {
+	                        connect.rollback();
+	                        alert.errorMessage("Service: '" + serviceData.getName() + "' has been added to this appointment!");
+	                        return;
+	                    }
 
-						// 3. Cập nhật trạng thái slot đã đặt
-						psUpdateSlot.setString(1, doctorId);
-						psUpdateSlot.setBoolean(2, true);
-						psUpdateSlot.setString(3, appointmentId);
-						psUpdateSlot.setString(4, slotId);
-						psUpdateSlot.executeUpdate();
+	                    PreparedStatement psAppointmentService = connect.prepareStatement(insertAppointmentServiceSQL);
+	                    psAppointmentService.setString(1, appointmentId);
+	                    psAppointmentService.setString(2, serviceData.getServiceId());
+	                    psAppointmentService.executeUpdate();
+	                }
+	            } else {
+	                // Nếu không tìm thấy slot trống, hiển thị thông báo lỗi
+	                connect.rollback();
+	                alert.errorMessage("⚠ No empty slot for " + doctorName + " at " + time + " on " + date);
+	                return;
+	            }
+	        }
 
-						// 4. Thêm các dịch vụ tương ứng với lịch hẹn
-						for (ServiceData serviceData : selectedServices) {
-							PreparedStatement psAppointmentService = connect.prepareStatement(insertAppointmentServiceSQL);
-							psAppointmentService.setString(1, appointmentId);
-							psAppointmentService.setString(2, serviceData.getServiceId());
-							psAppointmentService.executeUpdate();
-						}
+	        // Commit giao dịch
+	        connect.commit();
 
-					} else {
-						// Nếu không tìm thấy slot trống, hiển thị thông báo lỗi
-						alert.errorMessage("⚠ No empty slot for " + doctorName + " at " + time + " on " + date);
-						return;
-					}
-				}
+	        // In hóa đơn
+	        List<String> serviceNames = selectedServices.stream().map(ServiceData::getName).collect(Collectors.toList());
+	        List<BigDecimal> servicePrices = selectedServices.stream().map(ServiceData::getPrice).collect(Collectors.toList());
+	        try {
+	            // Gọi hàm xuất hóa đơn
+	            generateInvoiceDocx(serviceNames, servicePrices, getReceptionistName(connect));
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	            alert.errorMessage("Error generating invoice: " + e.getMessage());
+	        }
 
-				// Commit giao dịch
-				connect.commit();
+	        // Hiển thị thông báo thành công
+	        alert.successMessage("✔ Appointment(s) created successfully!");
 
-				// In hóa đơn
-				// Lấy danh sách tên và giá dịch vụ
-				List<String> serviceNames = selectedServices.stream().map(ServiceData::getName)
-						.collect(Collectors.toList());
-				List<BigDecimal> servicePrices = selectedServices.stream().map(ServiceData::getPrice)
-						.collect(Collectors.toList());
-				try {
-					// Gọi hàm xuất hóa đơn
-					generateInvoiceDocx(serviceNames, servicePrices, getReceptionistName(connect));
-				} catch (IOException e) {
-					e.printStackTrace();
-					alert.errorMessage("Error generating invoice: " + e.getMessage());
-				}
+	        // Xóa các danh sách tạm
+	        selectedServiceNames.clear();
+	        selectedDoctorInfos.clear();
+	        selectedSlotTimes.clear();
+	        selectTimes.clear();
+	        slotTimes.clear();
 
-				// Hiển thị thông báo thành công
-				alert.successMessage("✔ Appointment(s) created successfully!");
-
-				// Xóa các danh sách tạm
-				selectedServiceNames.clear();
-				selectedDoctorInfos.clear();
-				selectedSlotTimes.clear();
-				selectTimes.clear();
-				slotTimes.clear();
-
-			} catch (SQLException e) {
-				// Xử lý lỗi SQL
-				e.printStackTrace();
-				alert.errorMessage("❌ Lỗi khi tạo lịch hẹn: " + e.getMessage());
-				try {
-					if (connect != null)
-						// Rollback giao dịch nếu có lỗi
-						connect.rollback();
-				} catch (SQLException rollbackEx) {
-					rollbackEx.printStackTrace();
-				}
-			}
-		}
-
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        alert.errorMessage("❌ Error creating appointment: " + e.getMessage());
+	        try {
+	            if (connect != null) {
+	                connect.rollback();
+	            }
+	        } catch (SQLException rollbackEx) {
+	            rollbackEx.printStackTrace();
+	        }
+	    } finally {
+	        try {
+	            if (connect != null) {
+	                connect.setAutoCommit(true);
+	                connect.close();
+	            }
+	        } catch (SQLException closeEx) {
+	            closeEx.printStackTrace();
+	        }
+	    }
+	}
 		// Hàm tạo và xuất hóa đơn dưới dạng tài liệu Word
 		private void generateInvoiceDocx(List<String> serviceNames, List<BigDecimal> servicePrices, String receptionistName)
 				throws IOException {
