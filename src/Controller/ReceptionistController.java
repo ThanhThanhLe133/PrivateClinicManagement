@@ -547,30 +547,113 @@ public class ReceptionistController implements Initializable {
 
 	// Xóa thuốc khỏi cơ sở dữ liệu
 	private void deleteDrug(String drugId) {
-		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-		alert.setTitle("Delete Confirmation");
-		alert.setHeaderText("Are you sure you want to delete this drug?");
-		alert.setContentText("This action cannot be undone.");
+	    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+	    alert.setTitle("Delete Confirmation");
+	    alert.setHeaderText("Are you sure you want to delete this drug?");
+	    alert.setContentText("This action cannot be undone.");
 
-		// Xác nhận xóa thuốc
-		Optional<ButtonType> result = alert.showAndWait();
-		if (result.isPresent() && result.get() == ButtonType.OK) {
-			try {
-				Connection conn = Database.connectDB(); // Kết nối cơ sở dữ liệu
+	    Optional<ButtonType> result = alert.showAndWait();
+	    if (result.isPresent() && result.get() == ButtonType.OK) {
+	        Connection conn = null;
+	        try {
+	            conn = Database.connectDB();
+	            conn.setAutoCommit(false); // Start transaction
 
-				String sql = "DELETE FROM DRUG WHERE Id = ?"; // Truy vấn xóa thuốc
-				PreparedStatement ps = conn.prepareStatement(sql);
-				ps.setString(1, drugId);
-				ps.executeUpdate();
+	            // Check if drug is in any prescription details
+	            String checkPrescriptionSQL = "SELECT COUNT(*) FROM PRESCRIPTION_DETAILS WHERE Drug_id = ?";
+	            PreparedStatement psCheck = conn.prepareStatement(checkPrescriptionSQL);
+	            psCheck.setString(1, drugId);
+	            ResultSet rs = psCheck.executeQuery();
+	            rs.next();
+	            int prescriptionCount = rs.getInt(1);
 
-				conn.close(); // Đóng kết nối
-				loadDrugTable(); // Tải lại bảng sau khi xóa
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
+	            if (prescriptionCount > 0) {
+	                // Show warning about prescriptions
+	                Alert warning = new Alert(Alert.AlertType.WARNING);
+	                warning.setTitle("Drug in Use");
+	                warning.setHeaderText("This drug is part of " + prescriptionCount + " prescription(s).");
+	                warning.setContentText("Deleting this drug will remove it from all associated prescriptions and reset the Prescription_Status of affected appointments to 'Created'. Do you want to proceed?");
+	                ButtonType proceedButton = new ButtonType("Proceed");
+	                ButtonType cancelButton = new ButtonType("Cancel");
+	                warning.getButtonTypes().setAll(proceedButton, cancelButton);
+
+	                Optional<ButtonType> warningResult = warning.showAndWait();
+	                if (warningResult.isPresent() && warningResult.get() != proceedButton) {
+	                    conn.rollback();
+	                    conn.close();
+	                    return; // User canceled
+	                }
+
+	                // Get affected appointment IDs
+	                String getAppointmentIdsSQL = "SELECT DISTINCT p.Appointment_id " +
+	                                             "FROM PRESCRIPTION p " +
+	                                             "JOIN PRESCRIPTION_DETAILS pd ON p.Id = pd.Prescription_id " +
+	                                             "WHERE pd.Drug_id = ?";
+	                PreparedStatement psGetAppointments = conn.prepareStatement(getAppointmentIdsSQL);
+	                psGetAppointments.setString(1, drugId);
+	                ResultSet rsAppointments = psGetAppointments.executeQuery();
+	                List<String> appointmentIds = new ArrayList<>();
+	                while (rsAppointments.next()) {
+	                    appointmentIds.add(rsAppointments.getString("Appointment_id"));
+	                }
+
+	                // Delete drug from prescription details
+	                String deletePrescriptionDetailsSQL = "DELETE FROM PRESCRIPTION_DETAILS WHERE Drug_id = ?";
+	                PreparedStatement psDeleteDetails = conn.prepareStatement(deletePrescriptionDetailsSQL);
+	                psDeleteDetails.setString(1, drugId);
+	                psDeleteDetails.executeUpdate();
+
+	                // Reset Prescription_Status to 'Created' for affected appointments
+	                if (!appointmentIds.isEmpty()) {
+	                    String updatePrescriptionStatusSQL = "UPDATE APPOINTMENT SET Prescription_Status = 'Created' WHERE id = ?";
+	                    PreparedStatement psUpdateStatus = conn.prepareStatement(updatePrescriptionStatusSQL);
+	                    for (String appointmentId : appointmentIds) {
+	                        psUpdateStatus.setString(1, appointmentId);
+	                        psUpdateStatus.executeUpdate();
+	                    }
+	                }
+	            }
+
+	            // Delete the drug
+	            String deleteDrugSQL = "DELETE FROM DRUG WHERE Id = ?";
+	            PreparedStatement psDeleteDrug = conn.prepareStatement(deleteDrugSQL);
+	            psDeleteDrug.setString(1, drugId);
+	            int rowsAffected = psDeleteDrug.executeUpdate();
+
+	            if (rowsAffected > 0) {
+	                conn.commit(); // Commit transaction
+	                loadDrugTable(); // Refresh table
+	                Alert success = new Alert(Alert.AlertType.INFORMATION);
+	                success.setContentText("Drug deleted successfully.");
+	                success.showAndWait();
+	            } else {
+	                conn.rollback();
+	                Alert error = new Alert(Alert.AlertType.ERROR);
+	                error.setContentText("Drug not found.");
+	                error.showAndWait();
+	            }
+
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            try {
+	                if (conn != null) conn.rollback();
+	            } catch (SQLException rollbackEx) {
+	                rollbackEx.printStackTrace();
+	            }
+	            Alert error = new Alert(Alert.AlertType.ERROR);
+	            error.setContentText("Error deleting drug: " + e.getMessage());
+	            error.showAndWait();
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        } finally {
+	            try {
+	                if (conn != null) conn.close();
+	            } catch (SQLException e) {
+	                e.printStackTrace();
+	            }
+	        }
+	    }
 	}
-
 	// Mở form chỉnh sửa thuốc
 	private void openEditDrugForm(DrugData drug) {
 		try {
@@ -779,27 +862,111 @@ public class ReceptionistController implements Initializable {
 
 	// Xóa bệnh nhân khỏi cơ sở dữ liệu
 	private void deletePatient(String patientId) {
-		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-		alert.setTitle("Delete Confirmation");
-		alert.setHeaderText("Are you sure you want to delete this patient?");
-		alert.setContentText("This action cannot be undone.");
+	    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+	    alert.setTitle("Delete Confirmation");
+	    alert.setHeaderText("Are you sure you want to delete this patient?");
+	    alert.setContentText("This action cannot be undone.");
 
-		Optional<ButtonType> result = alert.showAndWait();
-		if (result.isPresent() && result.get() == ButtonType.OK) {
-			try {
-				Connection conn = Database.connectDB(); // Kết nối cơ sở dữ liệu
+	    Optional<ButtonType> result = alert.showAndWait();
+	    if (result.isPresent() && result.get() == ButtonType.OK) {
+	        Connection conn = null;
+	        try {
+	            conn = Database.connectDB();
+	            conn.setAutoCommit(false); // Start transaction
 
-				String sql = "DELETE FROM PATIENT WHERE Patient_Id = ?"; // Truy vấn xóa bệnh nhân
-				PreparedStatement ps = conn.prepareStatement(sql);
-				ps.setString(1, patientId);
-				ps.executeUpdate();
+	            // Check if patient has any appointments
+	            String checkAppointmentSQL = "SELECT COUNT(*) FROM APPOINTMENT WHERE Patient_id = ?";
+	            PreparedStatement psCheck = conn.prepareStatement(checkAppointmentSQL);
+	            psCheck.setString(1, patientId);
+	            ResultSet rs = psCheck.executeQuery();
+	            rs.next();
+	            int appointmentCount = rs.getInt(1);
 
-				conn.close(); // Đóng kết nối
-				loadPatientTable(); // Tải lại bảng sau khi xóa
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
+	            if (appointmentCount > 0) {
+	                // Show warning about appointments and related data
+	                Alert warning = new Alert(Alert.AlertType.WARNING);
+	                warning.setTitle("Patient Has Appointments");
+	                warning.setHeaderText("This patient is associated with " + appointmentCount + " appointment(s).");
+	                warning.setContentText("Deleting this patient will also delete all associated appointments, their services, prescriptions, and prescription details. Do you want to proceed?");
+	                ButtonType proceedButton = new ButtonType("Proceed");
+	                ButtonType cancelButton = new ButtonType("Cancel");
+	                warning.getButtonTypes().setAll(proceedButton, cancelButton);
+
+	                Optional<ButtonType> warningResult = warning.showAndWait();
+	                if (warningResult.isPresent() && warningResult.get() != proceedButton) {
+	                    conn.rollback();
+	                    conn.close();
+	                    return; // User canceled
+	                }
+
+	                // Delete associated prescription details
+	                String deletePrescriptionDetailsSQL = "DELETE FROM PRESCRIPTION_DETAILS WHERE Prescription_id IN " +
+	                                                     "(SELECT Id FROM PRESCRIPTION WHERE Appointment_id IN " +
+	                                                     "(SELECT id FROM APPOINTMENT WHERE Patient_id = ?))";
+	                PreparedStatement psDeletePrescriptionDetails = conn.prepareStatement(deletePrescriptionDetailsSQL);
+	                psDeletePrescriptionDetails.setString(1, patientId);
+	                psDeletePrescriptionDetails.executeUpdate();
+
+	                // Delete associated prescriptions
+	                String deletePrescriptionsSQL = "DELETE FROM PRESCRIPTION WHERE Appointment_id IN " +
+	                                               "(SELECT id FROM APPOINTMENT WHERE Patient_id = ?)";
+	                PreparedStatement psDeletePrescriptions = conn.prepareStatement(deletePrescriptionsSQL);
+	                psDeletePrescriptions.setString(1, patientId);
+	                psDeletePrescriptions.executeUpdate();
+
+	                // Delete associated appointment_service entries
+	                String deleteAppointmentServiceSQL = "DELETE FROM APPOINTMENT_SERVICE WHERE Appointment_id IN " +
+	                                                    "(SELECT id FROM APPOINTMENT WHERE Patient_id = ?)";
+	                PreparedStatement psDeleteAppointmentService = conn.prepareStatement(deleteAppointmentServiceSQL);
+	                psDeleteAppointmentService.setString(1, patientId);
+	                psDeleteAppointmentService.executeUpdate();
+
+	                // Delete associated appointments
+	                String deleteAppointmentsSQL = "DELETE FROM APPOINTMENT WHERE Patient_id = ?";
+	                PreparedStatement psDeleteAppointments = conn.prepareStatement(deleteAppointmentsSQL);
+	                psDeleteAppointments.setString(1, patientId);
+	                psDeleteAppointments.executeUpdate();
+	            }
+
+	            // Delete the patient
+	            String deletePatientSQL = "DELETE FROM PATIENT WHERE Patient_Id = ?";
+	            PreparedStatement psDeletePatient = conn.prepareStatement(deletePatientSQL);
+	            psDeletePatient.setString(1, patientId);
+	            int rowsAffected = psDeletePatient.executeUpdate();
+
+	            if (rowsAffected > 0) {
+	                conn.commit(); // Commit transaction
+	                loadPatientTable(); // Refresh table
+	                Alert success = new Alert(Alert.AlertType.INFORMATION);
+	                success.setContentText("Patient deleted successfully.");
+	                success.showAndWait();
+	            } else {
+	                conn.rollback();
+	                Alert error = new Alert(Alert.AlertType.ERROR);
+	                error.setContentText("Patient not found.");
+	                error.showAndWait();
+	            }
+
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            try {
+	                if (conn != null) conn.rollback();
+	            } catch (SQLException rollbackEx) {
+	                rollbackEx.printStackTrace();
+	            }
+	            Alert error = new Alert(Alert.AlertType.ERROR);
+	            error.setContentText("Error deleting patient: " + e.getMessage());
+	            error.showAndWait();
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        } finally {
+	            try {
+	                if (conn != null) conn.close();
+	            } catch (SQLException e) {
+	                e.printStackTrace();
+	            }
+	        }
+	    }
 	}
 
 	// Mở form chỉnh sửa bệnh nhân

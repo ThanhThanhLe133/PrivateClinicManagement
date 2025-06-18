@@ -143,6 +143,24 @@ CREATE TABLE PRESCRIPTION (
     Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+DELIMITER $$
+
+DROP TRIGGER IF EXISTS trg_update_prescription_status $$
+CREATE TRIGGER trg_update_prescription_status
+AFTER UPDATE ON APPOINTMENT
+FOR EACH ROW
+BEGIN
+    -- Check if Prescription_Status has changed
+    IF NEW.Prescription_Status != OLD.Prescription_Status THEN
+        -- Update the status of the corresponding prescription
+        UPDATE PRESCRIPTION
+        SET status = NEW.Prescription_Status
+        WHERE Appointment_id = NEW.Id;
+    END IF;
+END$$
+
+DELIMITER ;
+
 CREATE TABLE PRESCRIPTION_DETAILS (
     Prescription_id CHAR(36) NOT NULL,
     Drug_id CHAR(36) NOT NULL,
@@ -484,15 +502,17 @@ INSERT INTO USER_ACCOUNT (
 
 
 INSERT INTO RECEPTIONIST (
-    Receptionist_id, Phone, Address
+    Receptionist_id, Phone, is_confirmed, Address
 ) VALUES (
     @recept_id1,
     '0988123456',
+    TRUE,
     '23 Front Office Blvd, District 3'
 ),
 (
     @recept_id2,
     '0988391233',
+    TRUE,
     '27 Back Office Blvd, District8'
 );
 
