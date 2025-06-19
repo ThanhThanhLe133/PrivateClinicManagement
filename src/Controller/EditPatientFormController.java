@@ -8,6 +8,12 @@ import DAO.Database;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public class EditPatientFormController {
 
@@ -95,7 +101,16 @@ public class EditPatientFormController {
     private void handleSave() {
         // Lưu thông tin bệnh nhân nếu các trường hợp lệ
         if (validateAllFields()) {
-            updatePatient();
+            // Show confirmation dialog for updating
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmAlert.setTitle("Update Confirmation");
+            confirmAlert.setHeaderText("Are you sure you want to update patient: " + txtPatientName.getText().trim() + "?");
+            confirmAlert.setContentText("This action will update the patient's information.");
+            Optional<ButtonType> confirmResult = confirmAlert.showAndWait();
+
+            if (confirmResult.isPresent() && confirmResult.get() == ButtonType.OK) {
+                updatePatient();
+            }
         }
     }
 
@@ -204,9 +219,54 @@ public class EditPatientFormController {
     }
 
     private void updatePatient() {
-        // Cập nhật thông tin bệnh nhân vào cơ sở dữ liệu
         try (Connection conn = Database.connectDB()) {
-            String sql = "UPDATE PATIENT SET Name=?, Email=?, Height=?, Weight=?, Gender=?, Phone=?, Diagnosis=?, Address=?, Update_date=? WHERE Patient_Id=?";
+            conn.setAutoCommit(false); // Start transaction
+
+            // Check for associated appointments
+            String checkAppointmentSQL = "SELECT COUNT(*) FROM APPOINTMENT WHERE Patient_id = ?";
+            PreparedStatement psCheck = conn.prepareStatement(checkAppointmentSQL);
+            psCheck.setString(1, patient.getPatientId());
+            ResultSet rs = psCheck.executeQuery();
+            rs.next();
+            int appointmentCount = rs.getInt(1);
+
+            if (appointmentCount > 0) {
+                // Show warning about associated appointments
+                Alert warning = new Alert(Alert.AlertType.WARNING);
+                warning.setTitle("Patient Has Appointments");
+                warning.setHeaderText("This patient is associated with " + appointmentCount + " appointment(s).");
+                warning.setContentText("Updating this patient will reset the Prescription_Status of associated appointments to 'Created'. Do you want to proceed?");
+                ButtonType proceedButton = new ButtonType("Proceed");
+                ButtonType cancelButton = new ButtonType("Cancel");
+                warning.getButtonTypes().setAll(proceedButton, cancelButton);
+
+                Optional<ButtonType> warningResult = warning.showAndWait();
+                if (warningResult.isPresent() && warningResult.get() != proceedButton) {
+                    conn.rollback();
+                    return; // User canceled
+                }
+
+                // Get appointment IDs to reset status
+                String getAppointmentsSQL = "SELECT Id FROM APPOINTMENT WHERE Patient_id = ?";
+                psCheck = conn.prepareStatement(getAppointmentsSQL);
+                psCheck.setString(1, patient.getPatientId());
+                rs = psCheck.executeQuery();
+                List<String> appointmentIds = new ArrayList<>();
+                while (rs.next()) {
+                    appointmentIds.add(rs.getString("Id"));
+                }
+
+                // Reset Prescription_Status to 'Created if it was 'Paid'
+                String updateStatusSQL = "UPDATE APPOINTMENT SET Prescription_Status = 'Created' WHERE Id = ? AND Prescription_Status = 'Paid'";
+                PreparedStatement psUpdateStatus = conn.prepareStatement(updateStatusSQL);
+                for (String appointmentId : appointmentIds) {
+                    psUpdateStatus.setString(1, appointmentId);
+                    psUpdateStatus.executeUpdate();
+                }
+            }
+
+            // Update patient data
+            String sql = "UPDATE PATIENT SET Name = ?, Email = ?, Height = ?, Weight = ?, Gender = ?, Phone = ?, Diagnosis = ?, Address = ?, Update_date = ? WHERE Patient_Id = ?";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, txtPatientName.getText().trim());
             ps.setString(2, txtEmail.getText().trim());
@@ -216,23 +276,30 @@ public class EditPatientFormController {
             ps.setString(6, txtPhone.getText().trim());
             ps.setString(7, txtDiagnosis.getText().trim());
             ps.setString(8, txtAddress.getText().trim());
-            ps.setTimestamp(9, new java.sql.Timestamp(System.currentTimeMillis()));
+            ps.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
             ps.setString(10, patient.getPatientId());
 
             ps.executeUpdate();
 
-            // Hiển thị thông báo thành công
+            conn.commit(); // Commit transaction
+
+            // Show success message
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Success");
             alert.setHeaderText(null);
             alert.setContentText("Patient updated successfully!");
             alert.showAndWait();
 
-            // Đóng form
+            // Close form
             ((Stage) btnSave.getScene().getWindow()).close();
         } catch (Exception e) {
             e.printStackTrace();
-            // Hiển thị thông báo lỗi
+            try (Connection conn = Database.connectDB()) {
+                if (conn != null) conn.rollback();
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
+            // Show error message
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Update Error");
             alert.setHeaderText(null);

@@ -2329,304 +2329,462 @@ public class ReceptionistController implements Initializable {
 
 		// Hàm cập nhật thông tin lịch hẹn
 		public void appointmentUpdateBtn() {
-			// Lấy lịch hẹn được chọn từ bảng
-			AppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
-			String appointmentID = "";
-			if (selectedAppointment != null) {
-				appointmentID = selectedAppointment.getId();
-			} else {
-				// Hiển thị thông báo lỗi nếu chưa chọn lịch hẹn
-				alert.errorMessage("Please select appointment to update");
-			}
+	        // Get selected appointment
+	        AppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
+	        if (selectedAppointment == null) {
+	            alert.errorMessage("Please select an appointment to update!");
+	            return;
+	        }
 
-			// Lấy giờ và phút từ spinner
-			Integer hour = spHour1 != null && spHour1.getValue() != null ? spHour1.getValue() : 0;
-			Integer minute = spMinute1 != null && spMinute1.getValue() != null ? spMinute1.getValue() : 0;
+	        // Get current appointment details
+	        String appointmentId = selectedAppointment.getId();
+	        String currentStatus = selectedAppointment.getStatus();
+	        String currentPrescriptionStatus = selectedAppointment.getPrescriptionStatus();
+	        String currentPatientId = selectedAppointment.getPatientId();
+	        String currentDoctorId = selectedAppointment.getDoctorId();
 
-			// Lấy ngày và thời gian hẹn
-			LocalDate dateSet = appointment_date.getValue();
-			LocalTime timeSet = LocalTime.of(hour, minute);
-			LocalDateTime dateTime = LocalDateTime.of(dateSet, timeSet);
+	        // Get updated values from input fields
+	        String newServiceName = appointment_serviceName.getText() != null ? appointment_serviceName.getText().trim() : "";
+	        PatientData newPatient = appointment_patient.getValue();
+	        DoctorData newDoctor = appointment_doctor.getValue();
+	        String newStatus = appointment_status.getValue();
+	        String newCancelReason = appointment_cancelReason.getText() != null ? appointment_cancelReason.getText().trim() : "";
+	        LocalDate newDate = appointment_date.getValue();
+	        Integer newHour = spHour1.getValue();
+	        Integer newMinute = spMinute1.getValue();
 
-			// Định dạng thời gian cho cơ sở dữ liệu
-			String slotTimeStr = dateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")); // cho DB TIME
-			String selectTimeStr = dateTime.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")); // cho hiển thị
-			DateTimeFormatter inputFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-			DateTimeFormatter sqlFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-			String sqlTimeStr = LocalDateTime.parse(selectTimeStr, inputFormat).format(sqlFormat);
+	        // Validate inputs
+	        if (newServiceName.isEmpty() || newPatient == null || newDoctor == null ||
+	                newStatus == null || newDate == null || newHour == null || newMinute == null) {
+	            alert.errorMessage("Please fill all required fields!");
+	            return;
+	        }
 
-			// Lấy các thông tin khác từ giao diện
-			String status = appointment_status.getSelectionModel().getSelectedItem();
-			String cancelReason = appointment_cancelReason.getText();
-			String patientID = appointment_patient.getSelectionModel().getSelectedItem().getPatientId();
-			String doctorId = appointment_doctor.getSelectionModel().getSelectedItem().getId();
-			String doctorName = appointment_doctor.getSelectionModel().getSelectedItem().getName();
-			String serviceName = appointment_serviceName.getText();
+	        // Combine date and time
+	        LocalDateTime newDateTime;
+	        newDateTime = LocalDateTime.of(newDate, LocalTime.of(newHour, newMinute));
+//	        try {
+//	            newDateTime = LocalDateTime.of(newDate, LocalTime.of(newHour, newMinute));
+//	            if (newDateTime.isBefore(LocalDateTime.now())) {
+//	                alert.errorMessage("Appointment date and time cannot be in the past!");
+//	                return;
+//	            }
+//	        } catch (Exception e) {
+//	            alert.errorMessage("Invalid date or time!");
+//	            return;
+//	        }
 
-			// Kiểm tra các trường bắt buộc
-			if (appointmentID.isEmpty() || sqlTimeStr.isEmpty() || status.isEmpty() || patientID.isEmpty()) {
-				alert.errorMessage("Please fill all blank fields");
-				System.out.println(sqlTimeStr);
-				return;
-			}
+	        // Format time for SQL
+	        String sqlTimeStr = newDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 
-			String sqlDoctor = "SELECT COUNT(*) FROM AVAILABLE_SLOT WHERE Doctor_id = ? AND TIME(Slot_time) = ? AND Is_booked = TRUE";
-			String sqlPatient = "SELECT COUNT(*) FROM APPOINTMENT WHERE Patient_id = ? AND time = ?";
-			String sqlUpdate = "UPDATE appointment SET time = ?, status = ?, cancel_reason = ?, patient_id = ?, doctor_id = ? WHERE id = ?";
+	        // Prevent status change if Prescription_status is Paid or Created
+	        if ((currentPrescriptionStatus.equals("Paid") || currentPrescriptionStatus.equals("Created")) &&
+	                !newStatus.equals(currentStatus)) {
+	            alert.errorMessage("Cannot change appointment status when Prescription_status is 'Paid' or 'Created'!");
+	            return;
+	        }
 
-			try {
-				connect = Database.connectDB();
+	        // Check if patient or doctor has changed
+	        boolean patientChanged = !newPatient.getPatientId().equals(currentPatientId);
+	        boolean doctorChanged = !newDoctor.getId().equals(currentDoctorId);
 
-				// 1. Kiểm tra lịch của bác sĩ
-				prepare = connect.prepareStatement(sqlDoctor);
-				prepare.setString(1, doctorId);
-				prepare.setString(2, slotTimeStr);
-				ResultSet rs = prepare.executeQuery();
-				if (rs.next()) {
-					int count = rs.getInt(1);
-					if (count > 0) {
-						// Hiển thị thông báo nếu bác sĩ đã có lịch
-						lb_check.setText("⚠ Doctor " + doctorName + " has already had appointment " + slotTimeStr);
-						isAvailableAppointment = false;
-						return;
-					}
-				}
+	        Connection conn = null;
+	        try {
+	            conn = Database.connectDB();
+	            conn.setAutoCommit(false);
 
-				// 2. Kiểm tra lịch của bệnh nhân
-				prepare = connect.prepareStatement(sqlPatient);
-				prepare.setString(1, selectedPatient.getPatientId());
-				prepare.setString(2, sqlTimeStr);
-				rs = prepare.executeQuery();
-				if (rs.next()) {
-					int count = rs.getInt(1);
-					if (count > 0) {
-						// Hiển thị thông báo nếu bệnh nhân đã có lịch
-						lb_check.setText("⚠ " + serviceName + " is coincided. This patient already has an appointment at "
-								+ slotTimeStr);
-						isAvailableAppointment = false;
-						return;
-					}
-				}
+	            // Get Service_id from service name
+	            String serviceId = null;
+	            String getServiceIdSQL = "SELECT Id FROM SERVICE WHERE Name = ?";
+	            PreparedStatement psService = conn.prepareStatement(getServiceIdSQL);
+	            psService.setString(1, newServiceName);
+	            ResultSet rsService = psService.executeQuery();
+	            if (rsService.next()) {
+	                serviceId = rsService.getString("Id");
+	            } else {
+	                alert.errorMessage("Invalid service name!");
+	                conn.rollback();
+	                return;
+	            }
 
-				// 3. Cập nhật thông tin lịch hẹn
-				prepare = connect.prepareStatement(sqlUpdate);
-				prepare.setString(1, sqlTimeStr);
-				prepare.setString(2, status);
-				prepare.setString(3, cancelReason);
-				prepare.setString(4, patientID);
-				prepare.setString(5, doctorId);
-				prepare.setString(6, appointmentID);
+	            // Check if prescription exists
+	            String checkPrescriptionSQL = "SELECT Id, status FROM PRESCRIPTION WHERE Appointment_id = ?";
+	            PreparedStatement psCheck = conn.prepareStatement(checkPrescriptionSQL);
+	            psCheck.setString(1, appointmentId);
+	            ResultSet rs = psCheck.executeQuery();
+	            boolean prescriptionExists = rs.next();
+	            String prescriptionId = prescriptionExists ? rs.getString("Id") : null;
+	            String prescriptionStatus = prescriptionExists ? rs.getString("status") : null;
 
-				// Thực thi cập nhật
-				int rowsUpdated = prepare.executeUpdate();
-				if (rowsUpdated > 0) {
-					alert.successMessage("Appointment updated successfully.");
-					appointmentClearBtn();
-					loadAppointmentData();
-				} else {
-					// Hiển thị thông báo lỗi nếu không tìm thấy lịch hẹn
-					alert.errorMessage("No appointment found with ID: " + appointmentID);
-				}
+	            // If prescription is Paid and patient/doctor changed, warn user
+	            if (prescriptionExists && prescriptionStatus.equals("Paid") && (patientChanged || doctorChanged)) {
+	                Alert warning = new Alert(Alert.AlertType.WARNING);
+	                warning.setTitle("Prescription Already Paid");
+	                warning.setHeaderText("The prescription for this appointment is already paid.");
+	                warning.setContentText("Updating patient or doctor will reset the Prescription_status to 'Created' and require a new invoice. Proceed?");
+	                warning.getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
+	                if (warning.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
+	                    conn.rollback();
+	                    return;
+	                }
+	            }
 
-			} catch (SQLException e) {
-				// Xử lý lỗi SQL
-				e.printStackTrace();
-				alert.errorMessage("Error updating appointment: " + e.getMessage());
-			}
+	            // Check doctor availability
+	            String sqlDoctor = "SELECT COUNT(*) FROM AVAILABLE_SLOT WHERE Doctor_id = ? AND Slot_time = ? AND Slot_date = ? AND Is_booked = TRUE AND Appointment_id != ?";
+	            PreparedStatement psDoctor = conn.prepareStatement(sqlDoctor);
+	            psDoctor.setString(1, newDoctor.getId());
+	            psDoctor.setString(2, newDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+	            psDoctor.setString(3, newDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+	            psDoctor.setString(4, appointmentId);
+	            ResultSet rsDoctor = psDoctor.executeQuery();
+	            if (rsDoctor.next() && rsDoctor.getInt(1) > 0) {
+	                alert.errorMessage("Doctor " + newDoctor.getName() + " is already booked at this time!");
+	                conn.rollback();
+	                return;
+	            }
 
-		}
+	            // Check patient availability
+	            String sqlPatient = "SELECT COUNT(*) FROM APPOINTMENT WHERE Patient_id = ? AND Time = ? AND Id != ?";
+	            PreparedStatement psPatient = conn.prepareStatement(sqlPatient);
+	            psPatient.setString(1, newPatient.getPatientId());
+	            psPatient.setString(2, sqlTimeStr);
+	            psPatient.setString(3, appointmentId);
+	            ResultSet rsPatient = psPatient.executeQuery();
+	            if (rsPatient.next() && rsPatient.getInt(1) > 0) {
+	                alert.errorMessage("Patient already has an appointment at this time!");
+	                conn.rollback();
+	                return;
+	            }
+
+	            // Update appointment
+	            String updateAppointmentSQL = "UPDATE APPOINTMENT SET Patient_id = ?, Doctor_id = ?, Status = ?, Cancel_reason = ?, Time = ?, Update_date = ?, Prescription_status = ? WHERE Id = ?";
+	            PreparedStatement psUpdate = conn.prepareStatement(updateAppointmentSQL);
+	            psUpdate.setString(1, newPatient.getPatientId());
+	            psUpdate.setString(2, newDoctor.getId());
+	            psUpdate.setString(3, newStatus);
+	            psUpdate.setString(4, newCancelReason.isEmpty() ? null : newCancelReason);
+	            psUpdate.setString(5, sqlTimeStr);
+	            psUpdate.setTimestamp(6, Timestamp.valueOf(LocalDateTime.now()));
+	            psUpdate.setString(7, (prescriptionExists && prescriptionStatus.equals("Paid") && (patientChanged || doctorChanged)) ? "Created" : currentPrescriptionStatus);
+	            psUpdate.setString(8, appointmentId);
+	            int rowsAffected = psUpdate.executeUpdate();
+
+	            // Update APPOINTMENT_SERVICE
+	            String deleteServiceSQL = "DELETE FROM APPOINTMENT_SERVICE WHERE Appointment_id = ?";
+	            PreparedStatement psDeleteService = conn.prepareStatement(deleteServiceSQL);
+	            psDeleteService.setString(1, appointmentId);
+	            psDeleteService.executeUpdate();
+
+	            String insertServiceSQL = "INSERT INTO APPOINTMENT_SERVICE (Appointment_id, Service_id) VALUES (?, ?)";
+	            PreparedStatement psInsertService = conn.prepareStatement(insertServiceSQL);
+	            psInsertService.setString(1, appointmentId);
+	            psInsertService.setString(2, serviceId);
+	            psInsertService.executeUpdate();
+
+	            // Update prescription if it exists and patient or doctor changed
+	            if (prescriptionExists && (patientChanged || doctorChanged)) {
+	                String updatePrescriptionSQL = "UPDATE PRESCRIPTION SET Patient_id = ?, Doctor_id = ?, Update_date = ? WHERE Id = ?";
+	                PreparedStatement psUpdatePrescription = conn.prepareStatement(updatePrescriptionSQL);
+	                psUpdatePrescription.setString(1, newPatient.getPatientId());
+	                psUpdatePrescription.setString(2, newDoctor.getId());
+	                psUpdatePrescription.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+	                psUpdatePrescription.setString(4, prescriptionId);
+	                psUpdatePrescription.executeUpdate();
+	            }
+
+	            // Update AVAILABLE_SLOT
+	            String updateSlotSQL = "UPDATE AVAILABLE_SLOT SET Is_booked = FALSE, Appointment_id = NULL WHERE Appointment_id = ?";
+	            PreparedStatement psUpdateSlot = conn.prepareStatement(updateSlotSQL);
+	            psUpdateSlot.setString(1, appointmentId);
+	            psUpdateSlot.executeUpdate();
+
+	            String insertSlotSQL = "INSERT INTO AVAILABLE_SLOT (Id, Doctor_id, Slot_time, Slot_date, Duration_minutes, Is_booked, Appointment_id) " +
+	                                  "VALUES (UUID(), ?, ?, ?, 15, TRUE, ?) ON DUPLICATE KEY UPDATE Is_booked = TRUE, Appointment_id = ?";
+	            PreparedStatement psInsertSlot = conn.prepareStatement(insertSlotSQL);
+	            psInsertSlot.setString(1, newDoctor.getId());
+	            psInsertSlot.setString(2, newDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+	            psInsertSlot.setString(3, newDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+	            psInsertSlot.setString(4, appointmentId);
+	            psInsertSlot.setString(5, appointmentId);
+	            psInsertSlot.executeUpdate();
+
+	            if (rowsAffected > 0) {
+	                conn.commit();
+	                alert.successMessage("Appointment updated successfully!");
+	                loadAppointmentData();
+	                appointmentClearBtn();
+	            } else {
+	                conn.rollback();
+	                alert.errorMessage("Failed to update appointment!");
+	            }
+	        } catch (SQLException e) {
+	            try {
+	                if (conn != null) conn.rollback();
+	            } catch (SQLException rollbackEx) {
+	                rollbackEx.printStackTrace();
+	            }
+	            e.printStackTrace();
+	            alert.errorMessage("Error updating appointment: " + e.getMessage());
+	        } finally {
+	            try {
+	                if (conn != null) conn.close();
+	            } catch (SQLException e) {
+	                e.printStackTrace();
+	            }
+	        }
+	    }
 
 		// Hàm xuất đơn thuốc dưới dạng tài liệu Word
 		@FXML
 		public void appointmentPrescriptionBtn() {
-			// Lấy lịch hẹn được chọn
-			AppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
+	        // Lấy lịch hẹn được chọn
+	        AppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
 
-			// Kiểm tra xem đã chọn lịch hẹn chưa
-			if (selectedAppointment == null) {
-				alert.errorMessage("Please select an appointment first.");
-				return;
-			}
+	        // Kiểm tra xem đã chọn lịch hẹn chưa
+	        if (selectedAppointment == null) {
+	            alert.errorMessage("Please select an appointment first.");
+	            return;
+	        }
 
-			// Kiểm tra trạng thái lịch hẹn
-			if (!selectedAppointment.getStatus().equals(AppointmentStatus.Finish.toString())) {
-				alert.errorMessage("This appointment has not finished yet.");
-				return;
-			}
+	        // Kiểm tra trạng thái lịch hẹn
+	        if (!selectedAppointment.getStatus().equals(AppointmentStatus.Finish.toString())) {
+	            alert.errorMessage("This appointment has not finished yet.");
+	            return;
+	        }
 
-			// Kiểm tra trạng thái đơn thuốc
-			if ("Paid".equals(selectedAppointment.getPrescriptionStatus())) {
-				// Nếu đơn thuốc đã thanh toán, mở file đơn thuốc
-				String filePath = "Word/prescription_" + selectedAppointment.getId() + ".docx";
-				File file = new File(filePath);
-				if (file.exists()) {
-					try {
-						alert.successMessage("Opening prescription file: " + filePath);
-						LOGGER.info("Opening prescription file: " + filePath);
-						Desktop.getDesktop().open(file);
-					} catch (IOException e) {
-						LOGGER.severe("Failed to open prescription file: " + e.getMessage());
-						alert.errorMessage("Failed to open prescription file: " + e.getMessage());
-					}
-					return;
-				} else {
-					LOGGER.warning("Prescription file not found: " + filePath);
-					alert.errorMessage("Prescription file not found for this appointment!");
-					return;
-				}
-			}
+	        try {
+	            // Kết nối cơ sở dữ liệu
+	            connect = Database.connectDB();
+	            if (connect == null) {
+	                throw new SQLException("Failed to establish database connection.");
+	            }
+	            connect.setAutoCommit(false); // Start transaction
 
-			try {
-				// Kết nối cơ sở dữ liệu
-				connect = Database.connectDB();
-				if (connect == null) {
-					throw new SQLException("Failed to establish database connection.");
-				}
+	            // Câu lệnh SQL lấy thông tin đơn thuốc
+	            String prescriptionSQL = "SELECT p.Id, p.Diagnose, p.Advice, p.Doctor_id, p.Patient_id, "
+	                    + "ua.Name AS Doctor_name, pt.Name AS Patient_name, pt.Gender, pt.Address, pt.Date_of_birth, pt.Patient_id "
+	                    + "FROM PRESCRIPTION p "
+	                    + "JOIN DOCTOR d ON p.Doctor_id = d.Doctor_id "
+	                    + "JOIN USER_ACCOUNT ua ON ua.Id = d.Doctor_id "
+	                    + "JOIN PATIENT pt ON p.Patient_id = pt.Patient_id "
+	                    + "WHERE p.Appointment_id = ?";
+	            // Câu lệnh SQL lấy chi tiết đơn thuốc
+	            String prescriptionDetailsSQL = "SELECT pd.Drug_id, pd.Quantity, pd.Instructions, dr.Name AS Drug_name, dr.Unit, dr.Price "
+	                    + "FROM PRESCRIPTION_DETAILS pd "
+	                    + "JOIN DRUG dr ON pd.Drug_id = dr.Id "
+	                    + "WHERE pd.Prescription_id = ?";
+	            // Câu lệnh SQL cập nhật thông tin đơn thuốc
+	            String updatePrescriptionSQL = "UPDATE PRESCRIPTION SET Doctor_id = ?, Patient_id = ? WHERE Id = ?";
+	            // Câu lệnh SQL cập nhật trạng thái đơn thuốc
+	            String updatePrescriptionStatusSQL = "UPDATE APPOINTMENT SET Prescription_Status = ? WHERE id = ?";
 
-				// Câu lệnh SQL lấy thông tin đơn thuốc
-				String prescriptionSQL = "SELECT p.Id, p.Diagnose, p.Advice, ua.Name AS Doctor_name, pt.Name AS Patient_name, "
-						+ "pt.Gender, pt.Address, pt.Date_of_birth, pt.Patient_id " + "FROM PRESCRIPTION p "
-						+ "JOIN DOCTOR d ON p.Doctor_id = d.Doctor_id " + "JOIN USER_ACCOUNT ua ON ua.Id = d.Doctor_id "
-						+ "JOIN PATIENT pt ON p.Patient_id = pt.Patient_id " + "WHERE p.Appointment_id = ?";
-				// Câu lệnh SQL lấy chi tiết đơn thuốc
-				String prescriptionDetailsSQL = "SELECT pd.Drug_id, pd.Quantity, pd.Instructions, dr.Name AS Drug_name, dr.Unit, dr.Price "
-						+ "FROM PRESCRIPTION_DETAILS pd " + "JOIN DRUG dr ON pd.Drug_id = dr.Id "
-						+ "WHERE pd.Prescription_id = ?";
-				// Câu lệnh SQL cập nhật trạng thái đơn thuốc
-				String updatePrescriptionStatusSQL = "UPDATE appointment SET Prescription_Status = ? WHERE id = ?";
+	            // Thực thi truy vấn đơn thuốc
+	            PreparedStatement psPrescription = connect.prepareStatement(prescriptionSQL);
+	            psPrescription.setString(1, selectedAppointment.getId());
+	            ResultSet rsPrescription = psPrescription.executeQuery();
 
-				// Thực thi truy vấn đơn thuốc
-				PreparedStatement psPrescription = connect.prepareStatement(prescriptionSQL);
-				psPrescription.setString(1, selectedAppointment.getId());
-				ResultSet rsPrescription = psPrescription.executeQuery();
+	            // Kiểm tra xem có đơn thuốc không
+	            if (!rsPrescription.next()) {
+	                alert.errorMessage("No prescription found!");
+	                connect.rollback();
+	                connect.close();
+	                return;
+	            }
 
-				// Kiểm tra xem có đơn thuốc không
-				if (!rsPrescription.next()) {
-					alert.errorMessage("No prescription found!");
-					return;
-				}
+	            // Lấy thông tin từ đơn thuốc
+	            String prescriptionId = rsPrescription.getString("Id");
+	            String currentDoctorId = rsPrescription.getString("Doctor_id");
+	            String currentPatientId = rsPrescription.getString("Patient_id");
+	            String patientName = rsPrescription.getString("Patient_name");
+	            String doctorName = rsPrescription.getString("Doctor_name");
+	            String diagnose = rsPrescription.getString("Diagnose");
+	            String advice = rsPrescription.getString("Advice");
+	            String gender = rsPrescription.getString("Gender");
+	            String address = rsPrescription.getString("Address");
+	            String patientId = rsPrescription.getString("Patient_id");
+	            java.sql.Date dob = rsPrescription.getDate("Date_of_birth");
+	            // Tính tuổi bệnh nhân
+	            int age = (dob != null) ? Period.between(dob.toLocalDate(), LocalDate.now()).getYears() : 0;
 
-				// Lấy thông tin từ đơn thuốc
-				String patientName = rsPrescription.getString("Patient_name");
-				String doctorName = rsPrescription.getString("Doctor_name");
-				String diagnose = rsPrescription.getString("Diagnose");
-				String advice = rsPrescription.getString("Advice");
-				String gender = rsPrescription.getString("Gender");
-				String address = rsPrescription.getString("Address");
-				String patientId = rsPrescription.getString("Patient_id");
-				java.sql.Date dob = rsPrescription.getDate("Date_of_birth");
-				// Tính tuổi bệnh nhân
-				int age = (dob != null) ? Period.between(dob.toLocalDate(), LocalDate.now()).getYears() : 0;
-				String prescriptionId = rsPrescription.getString("Id");
+	            // Kiểm tra xem Doctor_id hoặc Patient_id có thay đổi không
+	            boolean needsUpdate = !currentDoctorId.equals(selectedAppointment.getDoctorId()) ||
+	                                 !currentPatientId.equals(selectedAppointment.getPatientId());
 
-				// Thực thi truy vấn chi tiết đơn thuốc
-				PreparedStatement psDetails = connect.prepareStatement(prescriptionDetailsSQL);
-				psDetails.setString(1, prescriptionId);
-				ResultSet rsDetails = psDetails.executeQuery();
+	            if (needsUpdate) {
+	                // Cập nhật Doctor_id và Patient_id trong PRESCRIPTION
+	                PreparedStatement psUpdatePrescription = connect.prepareStatement(updatePrescriptionSQL);
+	                psUpdatePrescription.setString(1, selectedAppointment.getDoctorId());
+	                psUpdatePrescription.setString(2, selectedAppointment.getPatientId());
+	                psUpdatePrescription.setString(3, prescriptionId);
+	                psUpdatePrescription.executeUpdate();
 
-				// Tạo danh sách thuốc
-				List<Map<String, Object>> drugs = new ArrayList<>();
-				BigDecimal totalPrice = BigDecimal.ZERO;
-				while (rsDetails.next()) {
-					// Thêm thông tin thuốc vào danh sách
-					Map<String, Object> drug = new HashMap<>();
-					drug.put("name", rsDetails.getString("Drug_name"));
-					drug.put("instructions", rsDetails.getString("Instructions"));
-					drug.put("quantity", rsDetails.getInt("Quantity"));
-					drug.put("unit", rsDetails.getString("Unit"));
-					drug.put("price", rsDetails.getBigDecimal("Price"));
-					drugs.add(drug);
-					// Tính tổng giá tiền
-					totalPrice = totalPrice.add(
-							rsDetails.getBigDecimal("Price").multiply(BigDecimal.valueOf(rsDetails.getInt("Quantity"))));
-				}
+	                // Cập nhật thông tin hiển thị
+	                String sqlFetchUpdatedInfo = "SELECT ua.Name AS Doctor_name, pt.Name AS Patient_name, pt.Gender, pt.Address, pt.Date_of_birth "
+	                        + "FROM USER_ACCOUNT ua, PATIENT pt "
+	                        + "WHERE ua.Id = ? AND pt.Patient_id = ?";
+	                PreparedStatement psFetchUpdatedInfo = connect.prepareStatement(sqlFetchUpdatedInfo);
+	                psFetchUpdatedInfo.setString(1, selectedAppointment.getDoctorId());
+	                psFetchUpdatedInfo.setString(2, selectedAppointment.getPatientId());
+	                ResultSet rsUpdatedInfo = psFetchUpdatedInfo.executeQuery();
+	                if (rsUpdatedInfo.next()) {
+	                    doctorName = rsUpdatedInfo.getString("Doctor_name");
+	                    patientName = rsUpdatedInfo.getString("Patient_name");
+	                    gender = rsUpdatedInfo.getString("Gender");
+	                    address = rsUpdatedInfo.getString("Address");
+	                    dob = rsUpdatedInfo.getDate("Date_of_birth");
+	                    age = (dob != null) ? Period.between(dob.toLocalDate(), LocalDate.now()).getYears() : 0;
+	                }
+	            }
 
-				// Tạo thư mục lưu trữ nếu chưa tồn tại
-				Files.createDirectories(Paths.get("Word"));
-				// Tạo tên file đơn thuốc
-				String destFileName = "Word/prescription_" + selectedAppointment.getId() + ".docx";
-				// Đường dẫn file mẫu đơn thuốc
-				File srcFile = new File("Word/PRESCRIPTION.docx");
-				Path destPath = Paths.get(destFileName);
+	            // Thực thi truy vấn chi tiết đơn thuốc
+	            PreparedStatement psDetails = connect.prepareStatement(prescriptionDetailsSQL);
+	            psDetails.setString(1, prescriptionId);
+	            ResultSet rsDetails = psDetails.executeQuery();
 
-				// Kiểm tra xem file mẫu có tồn tại không
-				if (!srcFile.exists()) {
-					throw new IOException("Source file not found.");
-				}
+	            // Tạo danh sách thuốc
+	            List<Map<String, Object>> drugs = new ArrayList<>();
+	            BigDecimal totalPrice = BigDecimal.ZERO;
+	            while (rsDetails.next()) {
+	                // Thêm thông tin thuốc vào danh sách
+	                Map<String, Object> drug = new HashMap<>();
+	                drug.put("name", rsDetails.getString("Drug_name"));
+	                drug.put("instructions", rsDetails.getString("Instructions"));
+	                drug.put("quantity", rsDetails.getInt("Quantity"));
+	                drug.put("unit", rsDetails.getString("Unit"));
+	                drug.put("price", rsDetails.getBigDecimal("Price"));
+	                drugs.add(drug);
+	                // Tính tổng giá tiền
+	                totalPrice = totalPrice.add(
+	                        rsDetails.getBigDecimal("Price").multiply(BigDecimal.valueOf(rsDetails.getInt("Quantity"))));
+	            }
 
-				// Xóa file đích nếu đã tồn tại
-				if (Files.exists(destPath)) {
-					Files.delete(destPath);
-				}
-				// Sao chép file mẫu sang file đích
-				Files.copy(srcFile.toPath(), destPath, StandardCopyOption.REPLACE_EXISTING);
+	            // Kiểm tra trạng thái đơn thuốc
+	            if ("Paid".equals(selectedAppointment.getPrescriptionStatus()) && !needsUpdate) {
+	                // Nếu đơn thuốc đã thanh toán và không cần cập nhật, mở file đơn thuốc
+	                String filePath = "Word/prescription_" + selectedAppointment.getId() + ".docx";
+	                File file = new File(filePath);
+	                if (file.exists()) {
+	                    try {
+	                        alert.successMessage("Opening prescription file: " + filePath);
+	                        LOGGER.info("Opening prescription file: " + filePath);
+	                        Desktop.getDesktop().open(file);
+	                        connect.commit();
+	                        connect.close();
+	                        return;
+	                    } catch (IOException e) {
+	                        LOGGER.severe("Failed to open prescription file: " + e.getMessage());
+	                        alert.errorMessage("Failed to open prescription file: " + e.getMessage());
+	                        connect.rollback();
+	                        connect.close();
+	                        return;
+	                    }
+	                } else {
+	                    LOGGER.warning("Prescription file not found: " + filePath);
+	                    // Tiếp tục tạo mới file nếu không tìm thấy
+	                }
+	            }
 
-				// Mở tài liệu Word để chỉnh sửa
-				try (XWPFDocument doc = new XWPFDocument(new FileInputStream(destFileName))) {
-					String formattedDate = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"))
-							.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+	            // Tạo thư mục lưu trữ nếu chưa tồn tại
+	            Files.createDirectories(Paths.get("Word"));
+	            // Tạo tên file đơn thuốc
+	            String destFileName = "Word/prescription_" + selectedAppointment.getId() + ".docx";
+	            // Đường dẫn file mẫu đơn thuốc
+	            File srcFile = new File("Word/PRESCRIPTION.docx");
+	            Path destPath = Paths.get(destFileName);
 
-					// Tạo các placeholder và giá trị thay thế
-					Map<String, String> placeholders = new HashMap<>();
-					placeholders.put("patientId", patientId);
-					placeholders.put("patientName", patientName);
-					placeholders.put("age", String.valueOf(age));
-					placeholders.put("gender", gender);
-					placeholders.put("address", address);
-					placeholders.put("diagnose", diagnose);
-					placeholders.put("advice", advice);
-					placeholders.put("totalPrice", formatCurrencyVND(totalPrice));
-					placeholders.put("date", formattedDate);
-					placeholders.put("doctorName", doctorName);
+	            // Kiểm tra xem file mẫu có tồn tại không
+	            if (!srcFile.exists()) {
+	                connect.rollback();
+	                connect.close();
+	                throw new IOException("Source file not found.");
+	            }
 
-					// Thay thế các placeholder trong tài liệu
-					replacePlaceholders(doc, placeholders);
-					// Thay thế các placeholder trong bảng
-					replaceTablePlaceholders(doc, null, null, drugs, totalPrice, formattedDate, null, doctorName, diagnose,
-							advice);
+	            // Xóa file đích nếu đã tồn tại
+	            if (Files.exists(destPath)) {
+	                Files.delete(destPath);
+	            }
+	            // Sao chép file mẫu sang file đích
+	            Files.copy(srcFile.toPath(), destPath, StandardCopyOption.REPLACE_EXISTING);
 
-					// Ghi tài liệu đã chỉnh sửa vào file đích
-					try (FileOutputStream fos = new FileOutputStream(destFileName)) {
-						doc.write(fos);
-					}
+	            // Mở tài liệu Word để chỉnh sửa
+	            try (XWPFDocument doc = new XWPFDocument(new FileInputStream(destFileName))) {
+	                String formattedDate = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"))
+	                        .format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
 
-					// Mở tài liệu đơn thuốc nếu hệ thống hỗ trợ
-					if (Desktop.isDesktopSupported()) {
-						Desktop.getDesktop().open(new File(destFileName));
-					}
+	                // Tạo các placeholder và giá trị thay thế
+	                Map<String, String> placeholders = new HashMap<>();
+	                placeholders.put("patientId", selectedAppointment.getPatientId());
+	                placeholders.put("patientName", patientName);
+	                placeholders.put("age", String.valueOf(age));
+	                placeholders.put("gender", gender);
+	                placeholders.put("address", address);
+	                placeholders.put("diagnose", diagnose);
+	                placeholders.put("advice", advice);
+	                placeholders.put("totalPrice", formatCurrencyVND(totalPrice));
+	                placeholders.put("date", formattedDate);
+	                placeholders.put("doctorName", doctorName);
 
-					// Hiển thị thông báo thành công
-					alert.successMessage("Prescription document successfully exported to " + destFileName);
+	                // Thay thế các placeholder trong tài liệu
+	                replacePlaceholders(doc, placeholders);
+	                // Thay thế các placeholder trong bảng
+	                replaceTablePlaceholders(doc, null, null, drugs, totalPrice, formattedDate, null, doctorName, diagnose,
+	                        advice);
 
-					// Cập nhật trạng thái đơn thuốc
-					PreparedStatement psUpdate = connect.prepareStatement(updatePrescriptionStatusSQL);
-					psUpdate.setString(1, "Paid");
-					psUpdate.setString(2, selectedAppointment.getId());
-					psUpdate.executeUpdate();
-					// Cập nhật trạng thái trong đối tượng và làm mới bảng
-					selectedAppointment.setPrescriptionStatus("Paid");
-					appointments_tableView.refresh();
-				}
+	                // Ghi tài liệu đã chỉnh sửa vào file đích
+	                try (FileOutputStream fos = new FileOutputStream(destFileName)) {
+	                    doc.write(fos);
+	                }
 
-			} catch (SQLException e) {
-				// Xử lý lỗi SQL
-				e.printStackTrace();
-				alert.errorMessage("❌ Database error: " + e.getMessage());
-			} catch (IOException e) {
-				// Xử lý lỗi IO
-				e.printStackTrace();
-				alert.errorMessage("❌ File error: " + e.getMessage());
-			} finally {
-				// Đóng kết nối
-				if (connect != null) {
-					try {
-						connect.close();
-					} catch (SQLException e) {
-						LOGGER.severe("Error closing connection: " + e.getMessage());
-					}
-				}
-			}
-		}
+	                // Mở tài liệu đơn thuốc nếu hệ thống hỗ trợ
+	                if (Desktop.isDesktopSupported()) {
+	                    Desktop.getDesktop().open(new File(destFileName));
+	                }
+
+	                // Hiển thị thông báo thành công
+	                alert.successMessage("Prescription document successfully exported to " + destFileName);
+
+	                // Cập nhật trạng thái đơn thuốc
+	                PreparedStatement psUpdate = connect.prepareStatement(updatePrescriptionStatusSQL);
+	                psUpdate.setString(1, "Paid");
+	                psUpdate.setString(2, selectedAppointment.getId());
+	                psUpdate.executeUpdate();
+	                // Cập nhật trạng thái trong đối tượng và làm mới bảng
+	                selectedAppointment.setPrescriptionStatus("Paid");
+	                appointments_tableView.refresh();
+
+	                connect.commit(); // Commit transaction
+	            }
+
+	        } catch (SQLException e) {
+	            // Xử lý lỗi SQL
+	            e.printStackTrace();
+	            alert.errorMessage("❌ Database error: " + e.getMessage());
+	            try {
+	                if (connect != null) connect.rollback();
+	            } catch (SQLException rollbackEx) {
+	                rollbackEx.printStackTrace();
+	            }
+	        } catch (IOException e) {
+	            // Xử lý lỗi IO
+	            e.printStackTrace();
+	            alert.errorMessage("❌ File error: " + e.getMessage());
+	            try {
+	                if (connect != null) connect.rollback();
+	            } catch (SQLException rollbackEx) {
+	                rollbackEx.printStackTrace();
+	            }
+	        } finally {
+	            // Đóng kết nối
+	            if (connect != null) {
+	                try {
+	                    connect.setAutoCommit(true);
+	                    connect.close();
+	                } catch (SQLException e) {
+	                    LOGGER.severe("Error closing connection: " + e.getMessage());
+	                }
+	            }
+	        }
+	    }
 
 		// Hàm xử lý khi chọn một lịch hẹn từ bảng
 		public void appointmentSelect() {

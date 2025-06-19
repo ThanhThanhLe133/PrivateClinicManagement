@@ -10,7 +10,13 @@ import Model.DrugData;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public class EditDrugFormController {
 
@@ -92,7 +98,16 @@ public class EditDrugFormController {
     private void handleSave() {
         // Lưu thông tin thuốc nếu các trường hợp lệ
         if (validateAllFields()) {
-            updateDrug();
+            // Show confirmation dialog for updating
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmAlert.setTitle("Update Confirmation");
+            confirmAlert.setHeaderText("Are you sure you want to update drug: " + txtDrugName.getText().trim() + "?");
+            confirmAlert.setContentText("This action will update the drug's information.");
+            Optional<ButtonType> confirmResult = confirmAlert.showAndWait();
+
+            if (confirmResult.isPresent() && confirmResult.get() == ButtonType.OK) {
+                updateDrug();
+            }
         }
     }
 
@@ -187,8 +202,55 @@ public class EditDrugFormController {
     }
 
     private void updateDrug() {
-        // Cập nhật thông tin thuốc vào cơ sở dữ liệu
         try (Connection conn = Database.connectDB()) {
+            conn.setAutoCommit(false); // Start transaction
+
+            // Check for associated prescriptions
+            String checkPrescriptionSQL = "SELECT COUNT(*) FROM PRESCRIPTION_DETAILS WHERE Drug_id = ?";
+            PreparedStatement psCheck = conn.prepareStatement(checkPrescriptionSQL);
+            psCheck.setString(1, drug.getDrugId());
+            ResultSet rs = psCheck.executeQuery();
+            rs.next();
+            int prescriptionCount = rs.getInt(1);
+
+            if (prescriptionCount > 0) {
+                // Show warning about associated prescriptions
+                Alert warning = new Alert(Alert.AlertType.WARNING);
+                warning.setTitle("Drug in Use");
+                warning.setHeaderText("This drug is part of " + prescriptionCount + " prescription(s).");
+                warning.setContentText("Updating this drug will reset the Prescription_Status of associated appointments to 'Created'. Do you want to proceed?");
+                ButtonType proceedButton = new ButtonType("Proceed");
+                ButtonType cancelButton = new ButtonType("Cancel");
+                warning.getButtonTypes().setAll(proceedButton, cancelButton);
+
+                Optional<ButtonType> warningResult = warning.showAndWait();
+                if (warningResult.isPresent() && warningResult.get() != proceedButton) {
+                    conn.rollback();
+                    return; // User canceled
+                }
+
+                // Get appointment IDs to reset status
+                String getAppointmentsSQL = "SELECT DISTINCT p.Appointment_id FROM PRESCRIPTION p " +
+                                           "JOIN PRESCRIPTION_DETAILS pd ON p.Id = pd.Prescription_id " +
+                                           "WHERE pd.Drug_id = ?";
+                psCheck = conn.prepareStatement(getAppointmentsSQL);
+                psCheck.setString(1, drug.getDrugId());
+                rs = psCheck.executeQuery();
+                List<String> appointmentIds = new ArrayList<>();
+                while (rs.next()) {
+                    appointmentIds.add(rs.getString("Appointment_id"));
+                }
+
+                // Reset Prescription_Status to 'Created'
+                String updateStatusSQL = "UPDATE APPOINTMENT SET Prescription_Status = 'Created' WHERE Id = ?";
+                PreparedStatement psUpdateStatus = conn.prepareStatement(updateStatusSQL);
+                for (String appointmentId : appointmentIds) {
+                    psUpdateStatus.setString(1, appointmentId);
+                    psUpdateStatus.executeUpdate();
+                }
+            }
+
+            // Update drug data
             String sql = "UPDATE DRUG SET Name = ?, Manufacturer = ?, Expiry_date = ?, Unit = ?, Price = ?, Stock = ?, Update_date = ? WHERE Id = ?";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, txtDrugName.getText().trim());
@@ -197,23 +259,30 @@ public class EditDrugFormController {
             ps.setString(4, cmbUnit.getValue());
             ps.setDouble(5, Double.parseDouble(txtPrice.getText().trim()));
             ps.setInt(6, Integer.parseInt(txtStock.getText().trim()));
-            ps.setTimestamp(7, new java.sql.Timestamp(System.currentTimeMillis()));
+            ps.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
             ps.setString(8, drug.getDrugId());
 
             ps.executeUpdate();
 
-            // Hiển thị thông báo thành công
+            conn.commit(); // Commit transaction
+
+            // Show success message
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Success");
             alert.setHeaderText(null);
             alert.setContentText("Drug updated successfully!");
             alert.showAndWait();
 
-            // Đóng form
+            // Close form
             ((Stage) btnSave.getScene().getWindow()).close();
         } catch (Exception e) {
             e.printStackTrace();
-            // Hiển thị thông báo lỗi
+            try (Connection conn = Database.connectDB()) {
+                if (conn != null) conn.rollback();
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
+            // Show error message
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Update Error");
             alert.setHeaderText(null);

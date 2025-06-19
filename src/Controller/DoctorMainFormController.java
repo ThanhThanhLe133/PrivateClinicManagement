@@ -21,6 +21,8 @@ import java.sql.Timestamp;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -554,49 +556,201 @@ public class DoctorMainFormController implements Initializable {
 	}
 
 	public void appointmentUpdateBtn() {
-	    // Cập nhật thông tin cuộc hẹn
-	    String appointmentID = appointment_appointmentID.getText();
-	    System.out.println("Appointment ID: " + appointmentID);
-	    String time = FormatterUtils
-	            .toSQLDate(appointment_time.getText() + " " + appointment_date.getEditor().getText());
-	    System.out.println("Time: " + time);
-	    String status = appointment_status.getSelectionModel().getSelectedItem();
-	    System.out.println("Status: " + status);
-	    String cancelReason = appointment_cancelReason.getText();
-	    System.out.println("Cancel Reason: " + cancelReason);
-	    String patientID = appointment_patientID.getSelectionModel().getSelectedItem();
-	    System.out.println("Patient ID: " + patientID);
-
-	    // Kiểm tra các trường bắt buộc
-	    if (appointmentID.isEmpty() || time.isEmpty() || status.isEmpty() || patientID.isEmpty()) {
-	        alert.errorMessage("Please fill all blank fields");
+	    // Get selected appointment
+	    DoctorAppointmentData selectedAppointment = appointments_tableView.getSelectionModel().getSelectedItem();
+	    if (selectedAppointment == null) {
+	        alert.errorMessage("Please select an appointment to update!");
 	        return;
 	    }
 
-	    // Câu truy vấn cập nhật cuộc hẹn
-	    String sql = "UPDATE appointment SET time = ?, status = ?, cancel_reason = ?, patient_id = ? WHERE id = ?";
-	    connect = Database.connectDB();
-	    try {
-	        prepare = connect.prepareStatement(sql);
-	        prepare.setString(1, time);
-	        prepare.setString(2, status);
-	        prepare.setString(3, cancelReason);
-	        prepare.setString(4, patientID);
-	        prepare.setString(5, appointmentID);
+	    // Get current appointment details
+	    String appointmentId = appointment_appointmentID.getText();
+	    String currentStatus = selectedAppointment.getStatus();
+	    String currentPrescriptionStatus = null;
+	    String currentPatientId = selectedAppointment.getPatientId();
 
-	        int rowsUpdated = prepare.executeUpdate();
-	        // Kiểm tra kết quả cập nhật
-	        if (rowsUpdated > 0) {
-	            alert.successMessage("Appointment updated successfully.");
-	            appointmentClearBtn(); // Xóa form
-	            loadAppointmentData(); // Tải lại dữ liệu
-	            dashboardLoadAppointmentData(); // Cập nhật dashboard
+	    // Get updated values from input fields
+	    String newPatientId = appointment_patientID.getValue();
+	    String newStatus = appointment_status.getValue();
+	    String newCancelReason = appointment_cancelReason.getText() != null ? appointment_cancelReason.getText().trim() : "";
+	    LocalDate newDate = appointment_date.getValue();
+	    String newTime = appointment_time.getText() != null ? appointment_time.getText().trim() : "";
+
+	    // Validate inputs
+	    if (appointmentId.isEmpty() || newPatientId == null || newStatus == null || newDate == null || newTime.isEmpty()) {
+	        alert.errorMessage("Please fill all required fields!");
+	        return;
+	    }
+
+	    // Parse time
+	    LocalTime parsedTime;
+	    try {
+	        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+	        parsedTime = LocalTime.parse(newTime, timeFormatter);
+	    } catch (Exception e) {
+	        alert.errorMessage("Invalid time format! Please use HH:mm (e.g., 14:30)");
+	        return;
+	    }
+
+	    // Combine date and time
+	    LocalDateTime newDateTime;
+	    newDateTime = LocalDateTime.of(newDate, parsedTime);
+//	    try {
+//	        newDateTime = LocalDateTime.of(newDate, parsedTime);
+//	        if (newDateTime.isBefore(LocalDateTime.now())) {
+//	            alert.errorMessage("Appointment date and time cannot be in the past!");
+//	            return;
+//	        }
+//	    } catch (Exception e) {
+//	        alert.errorMessage("Invalid date or time!");
+//	        return;
+//	    }
+
+	    // Format time for SQL
+	    String sqlTimeStr = newDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+	    Connection conn = null;
+	    try {
+	        conn = Database.connectDB();
+	        conn.setAutoCommit(false);
+
+	        // Get current Prescription_status
+	        String checkPrescriptionStatusSQL = "SELECT Prescription_status FROM APPOINTMENT WHERE Id = ?";
+	        PreparedStatement psCheckStatus = conn.prepareStatement(checkPrescriptionStatusSQL);
+	        psCheckStatus.setString(1, appointmentId);
+	        ResultSet rsStatus = psCheckStatus.executeQuery();
+	        if (rsStatus.next()) {
+	            currentPrescriptionStatus = rsStatus.getString("Prescription_status");
 	        } else {
-	            alert.errorMessage("No appointment found with ID: " + appointmentID);
+	            alert.errorMessage("Appointment not found!");
+	            conn.rollback();
+	            return;
+	        }
+
+	        // Prevent status change if Prescription_status is Paid or Created
+	        if ((currentPrescriptionStatus.equals("Paid") || currentPrescriptionStatus.equals("Created")) &&
+	                !newStatus.equals(currentStatus)) {
+	            alert.errorMessage("Cannot change appointment status when Prescription_status is 'Paid' or 'Created'!");
+	            conn.rollback();
+	            return;
+	        }
+
+	        // Check if patient has changed
+	        boolean patientChanged = !newPatientId.equals(currentPatientId);
+
+	        // Check if prescription exists
+	        String checkPrescriptionSQL = "SELECT Id, status FROM PRESCRIPTION WHERE Appointment_id = ?";
+	        PreparedStatement psCheck = conn.prepareStatement(checkPrescriptionSQL);
+	        psCheck.setString(1, appointmentId);
+	        ResultSet rs = psCheck.executeQuery();
+	        boolean prescriptionExists = rs.next();
+	        String prescriptionId = prescriptionExists ? rs.getString("Id") : null;
+	        String prescriptionStatus = prescriptionExists ? rs.getString("status") : null;
+
+	        // If prescription is Paid and patient changed, warn user
+	        if (prescriptionExists && prescriptionStatus.equals("Paid") && patientChanged) {
+	            Alert warning = new Alert(Alert.AlertType.WARNING);
+	            warning.setTitle("Prescription Already Paid");
+	            warning.setHeaderText("The prescription for this appointment is already paid.");
+	            warning.setContentText("Updating patient will reset the Prescription_status to 'Created' and require a new invoice. Proceed?");
+	            warning.getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
+	            if (warning.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
+	                conn.rollback();
+	                return;
+	            }
+	        }
+
+	        // Check doctor availability
+	        String sqlDoctor = "SELECT COUNT(*) FROM AVAILABLE_SLOT WHERE Doctor_id = ? AND Slot_time = ? AND Slot_date = ? AND Is_booked = TRUE AND Appointment_id != ?";
+	        PreparedStatement psDoctor = conn.prepareStatement(sqlDoctor);
+	        psDoctor.setString(1, doctor_id);
+	        psDoctor.setString(2, newDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+	        psDoctor.setString(3, newDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+	        psDoctor.setString(4, appointmentId);
+	        ResultSet rsDoctor = psDoctor.executeQuery();
+	        if (rsDoctor.next() && rsDoctor.getInt(1) > 0) {
+	            alert.errorMessage("You are already booked at this time!");
+	            conn.rollback();
+	            return;
+	        }
+
+	        // Check patient availability
+	        String sqlPatient = "SELECT COUNT(*) FROM APPOINTMENT WHERE Patient_id = ? AND Time = ? AND Id != ?";
+	        PreparedStatement psPatient = conn.prepareStatement(sqlPatient);
+	        psPatient.setString(1, newPatientId);
+	        psPatient.setString(2, sqlTimeStr);
+	        psPatient.setString(3, appointmentId);
+	        ResultSet rsPatient = psPatient.executeQuery();
+	        if (rsPatient.next() && rsPatient.getInt(1) > 0) {
+	            alert.errorMessage("Patient already has an appointment at this time!");
+	            conn.rollback();
+	            return;
+	        }
+
+	        // Update appointment
+	        String updateAppointmentSQL = "UPDATE APPOINTMENT SET Patient_id = ?, Doctor_id = ?, Status = ?, Cancel_reason = ?, Time = ?, Update_date = ?, Prescription_status = ? WHERE Id = ?";
+	        PreparedStatement psUpdate = conn.prepareStatement(updateAppointmentSQL);
+	        psUpdate.setString(1, newPatientId);
+	        psUpdate.setString(2, doctor_id);
+	        psUpdate.setString(3, newStatus);
+	        psUpdate.setString(4, newCancelReason.isEmpty() ? null : newCancelReason);
+	        psUpdate.setString(5, sqlTimeStr);
+	        psUpdate.setTimestamp(6, Timestamp.valueOf(LocalDateTime.now()));
+	        psUpdate.setString(7, (prescriptionExists && prescriptionStatus.equals("Paid") && patientChanged) ? "Created" : currentPrescriptionStatus);
+	        psUpdate.setString(8, appointmentId);
+	        int rowsAffected = psUpdate.executeUpdate();
+
+	        // Update prescription if it exists and patient changed
+	        if (prescriptionExists && patientChanged) {
+	            String updatePrescriptionSQL = "UPDATE PRESCRIPTION SET Patient_id = ?, Doctor_id = ?, Update_date = ? WHERE Id = ?";
+	            PreparedStatement psUpdatePrescription = conn.prepareStatement(updatePrescriptionSQL);
+	            psUpdatePrescription.setString(1, newPatientId);
+	            psUpdatePrescription.setString(2, doctor_id);
+	            psUpdatePrescription.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+	            psUpdatePrescription.setString(4, prescriptionId);
+	            psUpdatePrescription.executeUpdate();
+	        }
+
+	        // Update AVAILABLE_SLOT
+	        String updateSlotSQL = "UPDATE AVAILABLE_SLOT SET Is_booked = FALSE, Appointment_id = NULL WHERE Appointment_id = ?";
+	        PreparedStatement psUpdateSlot = conn.prepareStatement(updateSlotSQL);
+	        psUpdateSlot.setString(1, appointmentId);
+	        psUpdateSlot.executeUpdate();
+
+	        String insertSlotSQL = "INSERT INTO AVAILABLE_SLOT (Id, Doctor_id, Slot_time, Slot_date, Duration_minutes, Is_booked, Appointment_id) " +
+	                              "VALUES (UUID(), ?, ?, ?, 15, TRUE, ?) ON DUPLICATE KEY UPDATE Is_booked = TRUE, Appointment_id = ?";
+	        PreparedStatement psInsertSlot = conn.prepareStatement(insertSlotSQL);
+	        psInsertSlot.setString(1, doctor_id);
+	        psInsertSlot.setString(2, newDateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+	        psInsertSlot.setString(3, newDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+	        psInsertSlot.setString(4, appointmentId);
+	        psInsertSlot.setString(5, appointmentId);
+	        psInsertSlot.executeUpdate();
+
+	        if (rowsAffected > 0) {
+	            conn.commit();
+	            alert.successMessage("Appointment updated successfully!");
+	            loadAppointmentData();
+	            dashboardLoadAppointmentData();
+	            appointmentClearBtn();
+	        } else {
+	            conn.rollback();
+	            alert.errorMessage("Failed to update appointment!");
 	        }
 	    } catch (SQLException e) {
+	        try {
+	            if (conn != null) conn.rollback();
+	        } catch (SQLException rollbackEx) {
+	            rollbackEx.printStackTrace();
+	        }
 	        e.printStackTrace();
 	        alert.errorMessage("Error updating appointment: " + e.getMessage());
+	    } finally {
+	        try {
+	            if (conn != null) conn.close();
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
 	    }
 	}
 
