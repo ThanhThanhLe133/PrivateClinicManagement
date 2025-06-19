@@ -561,34 +561,46 @@ VALUES
 
 
 -- Cuộc hẹn 1: hoàn thành
+SET @appointment_id1 := UUID();
 INSERT INTO APPOINTMENT (
     Id, Time, Status, Cancel_reason, Doctor_id, Patient_id,
     Urgency_level, Is_followup, Priority_score,
     Create_date, Update_date
 ) VALUES (
-    UUID(), '2025-05-10 09:00:00', 'Finish', NULL, @doctor1_id , @patient_id,
+     @appointment_id1, '2025-05-10 09:00:00', 'Finish', NULL, @doctor1_id , @patient_id,
     1, FALSE, 6, NOW(), NOW()
 );
 
+INSERT INTO APPOINTMENT_SERVICE (Appointment_id, Service_id)
+VALUES (@appointment_id1, @Service1_id);
+
 -- Cuộc hẹn 2: hủy với lý do
+SET @appointment_id2 := UUID();
 INSERT INTO APPOINTMENT (
     Id, Time, Status, Cancel_reason, Doctor_id, Patient_id,
     Urgency_level, Is_followup, Priority_score,
     Create_date, Update_date
 ) VALUES (
-    UUID(), '2025-05-11 10:30:00', 'Cancel', 'Patient had a family emergency', @doctor2_id, @patient_id,
+    @appointment_id2, '2025-05-11 10:30:00', 'Cancel', 'Patient had a family emergency', @doctor2_id, @patient_id,
     3, FALSE, 3, NOW(), NOW()
 );
 
+INSERT INTO APPOINTMENT_SERVICE (Appointment_id, Service_id)
+VALUES (@appointment_id2, @Service2_id);
+
 -- Cuộc hẹn 3: sắp tới
+SET @appointment_id3 := UUID();
 INSERT INTO APPOINTMENT (
     Id, Time, Status, Cancel_reason, Doctor_id, Patient_id,
     Urgency_level, Is_followup, Priority_score,
     Create_date, Update_date
 ) VALUES (
-    UUID(), '2025-05-14 15:00:00', 'Coming', NULL, @doctor3_id, @patient_id,
+     @appointment_id3, '2025-05-14 15:00:00', 'Coming', NULL, @doctor3_id, @patient_id,
     1, TRUE, 9, NOW(), NOW()
 );
+
+INSERT INTO APPOINTMENT_SERVICE (Appointment_id, Service_id)
+VALUES (@appointment_id3, @Service3_id);
 
 -- Thêm bản ghi vào USER_ACCOUNT trước
 INSERT INTO USER_ACCOUNT (
@@ -616,6 +628,11 @@ VALUES
     TRUE
 );
 
+SET @appointment_id4 := UUID();
+SET @appointment_id5 := UUID();
+SET @appointment_id6 := UUID();
+SET @appointment_id7 := UUID();
+SET @appointment_id8 := UUID();
     
 INSERT INTO APPOINTMENT (
     Id, Time, Status, Cancel_reason, Doctor_id, Patient_id,
@@ -623,95 +640,198 @@ INSERT INTO APPOINTMENT (
     Create_date, Update_date
 )
 VALUES
-(UUID(), '2025-05-10 09:00:00', 'Coming', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
+(@appointment_id4, '2025-05-10 09:00:00', 'Coming', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
  (SELECT Patient_id FROM PATIENT WHERE Name = 'John Smith' LIMIT 1), 1, FALSE, 10, NOW(), NOW()),
 
-(UUID(), '2025-05-11 14:00:00', 'Finish', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
+(@appointment_id5, '2025-05-11 14:00:00', 'Finish', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
  (SELECT Patient_id FROM PATIENT WHERE Name = 'Emily Johnson' LIMIT 1), 2, FALSE, 8, NOW(), NOW()),
 
-(UUID(), '2025-05-12 11:00:00', 'Cancel', 'Patient unavailable', '88669f0e-300b-11f0-bbf2-581122815a3a',
+(@appointment_id6, '2025-05-12 11:00:00', 'Cancel', 'Patient unavailable', '88669f0e-300b-11f0-bbf2-581122815a3a',
  (SELECT Patient_id FROM PATIENT WHERE Name = 'Michael Brown' LIMIT 1), 3, FALSE, 5, NOW(), NOW()),
 
-(UUID(), '2025-05-13 16:30:00', 'Coming', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
+(@appointment_id7, '2025-05-13 16:30:00', 'Coming', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
  (SELECT Patient_id FROM PATIENT WHERE Name = 'Sarah Davis' LIMIT 1), 1, TRUE, 9, NOW(), NOW()),
 
-(UUID(), '2025-05-14 10:45:00', 'Finish', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
+(@appointment_id8, '2025-05-14 10:45:00', 'Finish', NULL, '88669f0e-300b-11f0-bbf2-581122815a3a',
  (SELECT Patient_id FROM PATIENT WHERE Name = 'David Wilson' LIMIT 1), 2, FALSE, 7, NOW(), NOW());
 
+INSERT INTO APPOINTMENT_SERVICE (Appointment_id, Service_id)
+VALUES (@appointment_id4, @Service1_id),
+(@appointment_id5, @Service1_id),
+(@appointment_id6, @Service1_id),
+(@appointment_id7, @Service1_id),
+(@appointment_id8, @Service1_id);
 
-
-
--- Thêm các slot mỗi ngày
-
+-- Bật Event Scheduler
 SET GLOBAL event_scheduler = ON;
-
 
 -- Tạo Stored Procedure
 DELIMITER $$
 
-DROP PROCEDURE IF EXISTS GenerateDailySlots $$
-CREATE PROCEDURE GenerateDailySlots()
+DROP PROCEDURE IF EXISTS GenerateWeeklySlots $$
+CREATE PROCEDURE GenerateWeeklySlots()
 BEGIN
     DECLARE done INT DEFAULT FALSE;
     DECLARE doc_id CHAR(36);
     DECLARE start_time TIME;
     DECLARE slot_date DATE;
-
+    DECLARE end_date DATE;
+    DECLARE now_date DATE;
+    DECLARE doctor_count INT DEFAULT 0;
+    
+    -- Khai báo con trỏ và handler
     DECLARE cur CURSOR FOR SELECT Doctor_id FROM DOCTOR;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
-    SET slot_date = CURDATE();
+    -- Tạo bảng log nếu chưa có
+    CREATE TABLE IF NOT EXISTS debug_log (id INT AUTO_INCREMENT PRIMARY KEY, message TEXT, log_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 
+    -- Tắt Safe Update Mode tạm thời
+    SET SESSION sql_safe_updates = OFF;
+
+    -- Lấy ngày đầu tuần (thứ Hai) và ngày cuối tuần (Chủ Nhật) của tuần hiện tại
+    SET slot_date = DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY); -- Ngày thứ Hai
+    SET end_date = DATE_ADD(slot_date, INTERVAL 6 DAY); -- Ngày Chủ Nhật
+
+    -- Đếm số bác sĩ
+    SELECT COUNT(*) INTO doctor_count FROM DOCTOR;
+    INSERT INTO debug_log (message) VALUES (CONCAT('Bắt đầu tạo slot cho tuần từ ', slot_date, ' đến ', end_date, ', có ', doctor_count, ' bác sĩ'));
+
+    -- Xóa slot cũ của tuần hiện tại để tránh trùng lặp
+    DELETE FROM AVAILABLE_SLOT WHERE Slot_date BETWEEN slot_date AND end_date;
+    INSERT INTO debug_log (message) VALUES ('Xóa slot cũ thành công');
+
+    -- Bật lại Safe Update Mode
+    SET SESSION sql_safe_updates = ON;
+
+    -- Mở con trỏ
     OPEN cur;
 
     read_loop: LOOP
         FETCH cur INTO doc_id;
         IF done THEN
+            INSERT INTO debug_log (message) VALUES ('Kết thúc vòng lặp bác sĩ');
             LEAVE read_loop;
         END IF;
 
-        SET start_time = '08:00:00';
+        INSERT INTO debug_log (message) VALUES (CONCAT('Xử lý bác sĩ ', doc_id));
 
-        WHILE start_time < '16:00:00' DO
-            INSERT INTO AVAILABLE_SLOT (Id, Doctor_id, Slot_time, Slot_date, Duration_minutes, Is_booked)
-            SELECT UUID(), doc_id, start_time, slot_date, 15, FALSE
-            FROM DUAL
-            WHERE NOT EXISTS (
-                SELECT 1 FROM AVAILABLE_SLOT 
-                WHERE Doctor_id = doc_id 
-                  AND Slot_time = start_time 
-                  AND Slot_date = slot_date
-            );
-            SET start_time = ADDTIME(start_time, '00:15:00');
+        -- Khởi tạo now_date cho mỗi bác sĩ
+        SET now_date = slot_date;
+
+        -- Duyệt qua từng ngày trong tuần
+        WHILE now_date <= end_date DO
+            INSERT INTO debug_log (message) VALUES (CONCAT('Xử lý ngày ', now_date, ' cho bác sĩ ', doc_id));
+            SET start_time = '08:00:00';
+
+            -- Tạo slot từ 8h đến trước 16h
+            WHILE start_time < '16:00:00' DO
+                INSERT INTO AVAILABLE_SLOT (Id, Doctor_id, Slot_time, Slot_date, Duration_minutes, Is_booked)
+                SELECT UUID(), doc_id, start_time, now_date, 15, FALSE
+                FROM DUAL
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM AVAILABLE_SLOT 
+                    WHERE Doctor_id = doc_id 
+                      AND Slot_time = start_time 
+                      AND Slot_date = now_date
+                );
+                SET start_time = ADDTIME(start_time, '00:15:00');
+            END WHILE;
+
+            -- Tăng now_date lên 1 ngày
+            SET now_date = DATE_ADD(now_date, INTERVAL 1 DAY);
         END WHILE;
-
     END LOOP;
 
+    -- Đóng con trỏ
     CLOSE cur;
+
+    INSERT INTO debug_log (message) VALUES ('Hoàn tất tạo slot');
 END $$
 
 DELIMITER ;
 
--- GỌI LẦN ĐẦU TIÊN NGAY
-CALL GenerateDailySlots();
+-- Gọi thủ công để tạo slot cho tuần hiện tại
+CALL GenerateWeeklySlots();
 
--- Tạo EVENT chạy tự động lúc 00:00 mỗi ngày
+-- Tạo Event để chạy tự động vào thứ Hai mỗi tuần
 DELIMITER $$
-DROP EVENT IF EXISTS add_daily_slots $$
-CREATE EVENT add_daily_slots
-ON SCHEDULE EVERY 1 DAY
-STARTS CURRENT_TIMESTAMP
+DROP EVENT IF EXISTS add_weekly_slots $$
+CREATE EVENT add_weekly_slots
+ON SCHEDULE EVERY 1 WEEK
+STARTS DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 7 DAY) -- 00:00 thứ Hai tuần sau
 ON COMPLETION PRESERVE
 DO
 BEGIN
-    CALL GenerateDailySlots();
+    CALL GenerateWeeklySlots();
 END $$
 
 DELIMITER ;
+-- DELIMITER $$
 
-ALTER EVENT add_daily_slots
-ON SCHEDULE EVERY 1 DAY
-STARTS CURRENT_TIMESTAMP;
+-- DROP PROCEDURE IF EXISTS GenerateDailySlots $$
+-- CREATE PROCEDURE GenerateDailySlots()
+-- BEGIN
+--     DECLARE done INT DEFAULT FALSE;
+--     DECLARE doc_id CHAR(36);
+--     DECLARE start_time TIME;
+--     DECLARE slot_date DATE;
+
+--     DECLARE cur CURSOR FOR SELECT Doctor_id FROM DOCTOR;
+--     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+--     SET slot_date = CURDATE();
+
+--     OPEN cur;
+
+--     read_loop: LOOP
+--         FETCH cur INTO doc_id;
+--         IF done THEN
+--             LEAVE read_loop;
+--         END IF;
+
+--         SET start_time = '08:00:00';
+
+--         WHILE start_time < '16:00:00' DO
+--             INSERT INTO AVAILABLE_SLOT (Id, Doctor_id, Slot_time, Slot_date, Duration_minutes, Is_booked)
+--             SELECT UUID(), doc_id, start_time, slot_date, 15, FALSE
+--             FROM DUAL
+--             WHERE NOT EXISTS (
+--                 SELECT 1 FROM AVAILABLE_SLOT 
+--                 WHERE Doctor_id = doc_id 
+--                   AND Slot_time = start_time 
+--                   AND Slot_date = slot_date
+--             );
+--             SET start_time = ADDTIME(start_time, '00:15:00');
+--         END WHILE;
+
+--     END LOOP;
+
+--     CLOSE cur;
+-- END $$
+
+-- DELIMITER ;
+
+-- -- GỌI LẦN ĐẦU TIÊN NGAY
+-- CALL GenerateDailySlots();
+
+-- -- Tạo EVENT chạy tự động lúc 00:00 mỗi ngày
+-- DELIMITER $$
+-- DROP EVENT IF EXISTS add_daily_slots $$
+-- CREATE EVENT add_daily_slots
+-- ON SCHEDULE EVERY 1 DAY
+-- STARTS CURRENT_TIMESTAMP
+-- ON COMPLETION PRESERVE
+-- DO
+-- BEGIN
+--     CALL GenerateDailySlots();
+-- END $$
+
+-- DELIMITER ;
+
+-- ALTER EVENT add_daily_slots
+-- ON SCHEDULE EVERY 1 DAY
+-- STARTS CURRENT_TIMESTAMP;
 
 
 -- DELIMITER $$
