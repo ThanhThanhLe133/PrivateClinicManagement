@@ -245,7 +245,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Male',
     'DOCTOR',
-    TRUE
+    FALSE
 );
 INSERT INTO DOCTOR (
     doctor_id, Phone, Service_id, Address, is_confirmed
@@ -270,7 +270,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Male',
     'DOCTOR',
-    TRUE,
+    FALSE,
     '2025-04-15',
     '2025-04-15'
 );
@@ -297,7 +297,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Female',
     'DOCTOR',
-    TRUE
+    FALSE
 );
 INSERT INTO DOCTOR (
     doctor_id, Phone, Service_id, Address, is_confirmed
@@ -322,7 +322,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Male',
     'DOCTOR',
-    TRUE
+    FALSE
 );
 INSERT INTO DOCTOR (
     doctor_id, Phone, Service_id, Address, is_confirmed
@@ -347,7 +347,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Female',
     'DOCTOR',
-    TRUE
+    FALSE
 );
 INSERT INTO DOCTOR (
     doctor_id, Phone, Service_id, Address, is_confirmed
@@ -372,7 +372,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Male',
     'DOCTOR',
-    TRUE
+    FALSE
 );
 INSERT INTO DOCTOR (
     doctor_id, Phone, Service_id, Address, is_confirmed
@@ -397,7 +397,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Female',
     'DOCTOR',
-    TRUE
+    FALSE
 );
 INSERT INTO DOCTOR (
     doctor_id, Phone, Service_id, Address
@@ -421,7 +421,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Male',
     'DOCTOR',
-    TRUE
+    FALSE
 );
 
 INSERT INTO DOCTOR (
@@ -446,7 +446,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Female',
     'DOCTOR',
-    TRUE
+    FALSE
 );
 INSERT INTO DOCTOR (
     doctor_id, Phone, Service_id, Address
@@ -470,7 +470,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Male',
     'DOCTOR',
-    TRUE
+    FALSE
 );
 INSERT INTO DOCTOR (
     doctor_id, Phone, Service_id, Address, is_confirmed
@@ -498,7 +498,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Male',
     'ADMIN',
-    TRUE
+    FALSE
 );
 
 INSERT INTO ADMIN (Admin_id) VALUES (@Admin_id);
@@ -519,7 +519,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Female',
     'RECEPTIONIST',
-    TRUE
+    FALSE
 ),
 (
     @recept_id2,
@@ -530,7 +530,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Female',
     'RECEPTIONIST',
-    TRUE
+    FALSE
 );
 
 
@@ -561,7 +561,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Male',
     'DOCTOR',
-    TRUE,
+    FALSE,
     '2025-05-15',
     '2025-05-15'
 );
@@ -573,6 +573,9 @@ INSERT INTO RECEPTIONIST (
     TRUE,
     '23 Front Office Blvd, District 4'
 );
+
+UPDATE USER_ACCOUNT SET Create_date = '2025-04-01 00:00:00' WHERE Id = @recept_id1;
+UPDATE USER_ACCOUNT SET Create_date = '2025-06-04 00:00:00' WHERE Id = @recept_id2;
 
 -- INSERT mẫu DRUG
 INSERT INTO DRUG (Id, Name, Manufacturer, Expiry_date, Unit, Price, Stock, Create_date, Update_date)
@@ -672,7 +675,7 @@ INSERT INTO USER_ACCOUNT (
     NULL,
     'Male',
     'DOCTOR',
-    TRUE
+    FALSE
 );
 
 -- Sau đó mới chèn vào DOCTOR

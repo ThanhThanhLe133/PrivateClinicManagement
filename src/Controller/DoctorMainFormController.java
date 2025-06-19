@@ -1552,6 +1552,8 @@ public class DoctorMainFormController implements Initializable {
 	    dashboardDisplayNumPrescriptions();
 	    dashboardDisplayAppointments();
 	    dashboardLoadAppointmentData();
+	    dashboardLoadPatientAreaChart(); // Add new chart loading
+        dashboardLoadAppointmentBarChart(); // Add new chart loading
 
 	    // Tải danh sách vào ComboBox
 	    appointment_gender.setItems(FXCollections
@@ -1584,19 +1586,32 @@ public class DoctorMainFormController implements Initializable {
 	}
 
 	private void dashboardDisplayNumPatients() {
-	    // Hiển thị số lượng bệnh nhân
-	    String sql = "SELECT COUNT(*) AS total FROM patient";
-	    connect = Database.connectDB();
-	    try {
-	        prepare = connect.prepareStatement(sql);
-	        result = prepare.executeQuery();
-	        if (result.next()) {
-	            dashboard_TP.setText(result.getString("total"));
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-	}
+        String sql = "SELECT COUNT(DISTINCT a.Patient_id) AS total " +
+                     "FROM APPOINTMENT a " +
+                     "WHERE a.Doctor_id = ?";
+        connect = Database.connectDB();
+        try {
+            prepare = connect.prepareStatement(sql);
+            prepare.setString(1, doctor_id);
+            result = prepare.executeQuery();
+            if (result.next()) {
+                dashboard_TP.setText(result.getString("total"));
+            } else {
+                dashboard_TP.setText("0");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            alert.errorMessage("Error loading patient count: " + e.getMessage());
+        } finally {
+            try {
+                if (result != null) result.close();
+                if (prepare != null) prepare.close();
+                if (connect != null) connect.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
 	private void dashboardDisplayNumPrescriptions() {
 	    // Hiển thị số lượng đơn thuốc
@@ -1652,6 +1667,116 @@ public class DoctorMainFormController implements Initializable {
 	        e.printStackTrace();
 	    }
 	}
+	
+	@FXML
+    private AreaChart<String, Number> dashboard_chart_PD;
+
+    @FXML
+    private BarChart<String, Number> dashboard_chart_DD;
+
+    private void dashboardLoadPatientAreaChart() {
+        XYChart.Series<String, Number> patientSeries = new XYChart.Series<>();
+        patientSeries.setName("Distinct Patients");
+
+        String sql = "SELECT DATE(a.Time) AS appointment_date, COUNT(DISTINCT a.Patient_id) AS patient_count " +
+                     "FROM APPOINTMENT a " +
+                     "WHERE a.Doctor_id = ? " +
+                     "GROUP BY DATE(a.Time) " +
+                     "ORDER BY appointment_date ASC";
+
+        Connection connect = null;
+        PreparedStatement prepare = null;
+        ResultSet result = null;
+
+        try {
+            connect = Database.connectDB();
+            prepare = connect.prepareStatement(sql);
+            prepare.setString(1, doctor_id);
+            result = prepare.executeQuery();
+
+            int cumulativePatientCount = 0;
+            while (result.next()) {
+                String date = result.getString("appointment_date");
+                int count = result.getInt("patient_count");
+                cumulativePatientCount += count;
+                patientSeries.getData().add(new XYChart.Data<>(date, cumulativePatientCount));
+                // Debug: Log each data point
+                System.out.println("Patient AreaChart - Date: " + date + ", Count: " + count + ", Cumulative: " + cumulativePatientCount);
+            }
+
+            // Fallback for no data
+            if (patientSeries.getData().isEmpty()) {
+                patientSeries.getData().add(new XYChart.Data<>(LocalDate.now().toString(), 0));
+                System.out.println("No patient data found, added placeholder point.");
+            }
+
+            dashboard_chart_PD.getData().clear();
+            dashboard_chart_PD.getData().add(patientSeries);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            alert.errorMessage("Error loading patient chart data: " + e.getMessage());
+        } finally {
+            try {
+                if (result != null) result.close();
+                if (prepare != null) prepare.close();
+                if (connect != null) connect.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void dashboardLoadAppointmentBarChart() {
+        XYChart.Series<String, Number> appointmentSeries = new XYChart.Series<>();
+        appointmentSeries.setName("Appointments");
+
+        String sql = "SELECT DATE(a.Time) AS appointment_date, COUNT(*) AS appointment_count " +
+                     "FROM APPOINTMENT a " +
+                     "WHERE a.Doctor_id = ? " +
+                     "GROUP BY DATE(a.Time) " +
+                     "ORDER BY appointment_date ASC";
+
+        Connection connect = null;
+        PreparedStatement prepare = null;
+        ResultSet result = null;
+
+        try {
+            connect = Database.connectDB();
+            prepare = connect.prepareStatement(sql);
+            prepare.setString(1, doctor_id);
+            result = prepare.executeQuery();
+
+            while (result.next()) {
+                String date = result.getString("appointment_date");
+                int count = result.getInt("appointment_count");
+                appointmentSeries.getData().add(new XYChart.Data<>(date, count));
+                // Debug: Log each data point
+                System.out.println("Appointment BarChart - Date: " + date + ", Count: " + count);
+            }
+
+            // Fallback for no data
+            if (appointmentSeries.getData().isEmpty()) {
+                appointmentSeries.getData().add(new XYChart.Data<>(LocalDate.now().toString(), 0));
+                System.out.println("No appointment data found, added placeholder point.");
+            }
+
+            dashboard_chart_DD.getData().clear();
+            dashboard_chart_DD.getData().add(appointmentSeries);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            alert.errorMessage("Error loading appointment chart data: " + e.getMessage());
+        } finally {
+            try {
+                if (result != null) result.close();
+                if (prepare != null) prepare.close();
+                if (connect != null) connect.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
 	private void loadAppointmentData() {
 	    // Tải dữ liệu cuộc hẹn

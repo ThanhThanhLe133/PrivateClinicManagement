@@ -204,25 +204,63 @@ public class LoginController implements Initializable {
 				};
 
 				if (fxmlFile != null) {
-					
 					FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
 					Parent root = loader.load();
 					if (selectedRole.equalsIgnoreCase("ADMIN")) {
-					    AdminMainFormController adminController = loader.getController();
-					    adminController.setUsername(login_username.getText()); 
-					}
-					else if (selectedRole.equalsIgnoreCase("DOCTOR")) {
-					    DoctorMainFormController doctorController = loader.getController();
-					    doctorController.setUserData(login_username.getText(), result.getString("id"));
-						doctorController.load() ;
-					}
-					else if(selectedRole.equalsIgnoreCase("RECEPTIONIST")) {
-					    ReceptionistController receptController = loader.getController();
-					    receptController.setUsername(login_username.getText()); 
+						AdminMainFormController adminController = loader.getController();
+						adminController.setUsername(login_username.getText()); 
+					} else if (selectedRole.equalsIgnoreCase("DOCTOR")) {
+						DoctorMainFormController doctorController = loader.getController();
+						doctorController.setUserData(login_username.getText(), result.getString("id"));
+						doctorController.load();
+					} else if(selectedRole.equalsIgnoreCase("RECEPTIONIST")) {
+						ReceptionistController receptController = loader.getController();
+						receptController.setUsername(login_username.getText()); 
 					}
 					Stage stage = new Stage();
 					stage.setTitle("Private Clinic | " + selectedRole);
 					stage.setScene(new Scene(root));
+
+					// Thêm sự kiện setOnHidden để cập nhật trạng thái is_active thành false khi form đóng
+					stage.setOnHidden(e -> {
+						try {
+							connect = Database.connectDB();
+							if (connect == null) {
+								alert.errorMessage("Database connection failed.");
+								return;
+							}
+
+							// Lấy thông tin người dùng hiện tại
+							String selectUserSQL = "SELECT id FROM user_account WHERE username = ?";
+							PreparedStatement selectStmt = connect.prepareStatement(selectUserSQL);
+							selectStmt.setString(1, username);
+							ResultSet selectResult = selectStmt.executeQuery();
+
+							if (!selectResult.next()) {
+								alert.errorMessage("User not found.");
+								return;
+							}
+
+							// Cập nhật trạng thái is_active thành false
+							String updateStatusSQL2 = "UPDATE user_account SET is_active = ? WHERE id = ?";
+							PreparedStatement updateStmt2 = connect.prepareStatement(updateStatusSQL2);
+							updateStmt2.setBoolean(1, false);
+							updateStmt2.setString(2, selectResult.getString("id"));
+							int rowsAffected2 = updateStmt2.executeUpdate();
+							if (rowsAffected2 > 0) {
+								System.out.println("User status updated to inactive.");
+							} else {
+								alert.errorMessage("Failed to update user status.");
+							}
+
+							// Đóng kết nối
+							connect.close();
+						} catch (Exception ex) {
+							ex.printStackTrace();
+							alert.errorMessage("Error updating user status: " + ex.getMessage());
+						}
+					});
+
 					stage.show();
 
 					// Đóng form đăng nhập
@@ -236,6 +274,12 @@ public class LoginController implements Initializable {
 		} catch (Exception e) {
 			e.printStackTrace();
 			alert.errorMessage(e.toString());
+		} finally {
+			try {
+				if (connect != null) connect.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 

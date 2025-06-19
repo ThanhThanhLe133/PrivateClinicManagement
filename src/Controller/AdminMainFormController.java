@@ -336,10 +336,9 @@ public class AdminMainFormController {
 	        // Kết nối đến cơ sở dữ liệu
 	        Connection conn = Database.connectDB();
 	        // Câu truy vấn lấy thông tin bác sĩ
-	        String sql = "SELECT u.Id AS doctorId, u.Username, u.Name,u.Is_active, u.Email, u.Gender, u.Password, u.Avatar, "
+	        String sql = "SELECT u.Id AS doctorId, u.Username, u.Name, u.Is_active, u.Email, u.Gender, u.Password, u.Avatar, "
 	                + "d.Phone, d.Address, d.Is_confirmed, s.Name AS ServiceName " + "FROM DOCTOR d "
 	                + "JOIN USER_ACCOUNT u ON d.Doctor_id = u.Id " + "JOIN SERVICE s ON s.Id = d.Service_id";
-
 	        // Chuẩn bị và thực thi câu truy vấn
 	        PreparedStatement ps = conn.prepareStatement(sql);
 	        ResultSet rs = ps.executeQuery();
@@ -363,8 +362,7 @@ public class AdminMainFormController {
 	        doctors_col_address.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAddress()));
 	        // Hiển thị trạng thái active/inactive
 	        doctors_col_status.setCellValueFactory(data -> 
-	            new SimpleStringProperty(data.getValue().getStatus() ?  "Inactive" : "Active" )
-	        );
+            new SimpleStringProperty(data.getValue().getIsActive() ? "Active" : "Inactive"));
 
 	        // Tạo cột hành động với các nút chỉnh sửa, xóa, xác nhận
 	        doctors_col_action.setCellFactory(col -> new TableCell<>() {
@@ -590,21 +588,23 @@ public class AdminMainFormController {
 
 	    try (Connection conn = Database.connectDB()) {
 	        // Câu truy vấn lấy thông tin lễ tân
-	        String sql = "SELECT u.Id AS receptionist_id, u.Username, u.Password, u.Name, u.Email, u.Gender, u.Is_active,"
+	    	String sql = "SELECT u.Id AS receptionist_id, u.Username, u.Password, u.Name, u.Email, u.Gender, u.Is_active,"
 	                + " r.Phone, r.Address, r.Is_confirmed "
 	                + "FROM RECEPTIONIST r JOIN USER_ACCOUNT u ON r.Receptionist_id = u.Id";
-
+	    	
 	        // Chuẩn bị và thực thi câu truy vấn
 	        PreparedStatement ps = conn.prepareStatement(sql);
 	        ResultSet rs = ps.executeQuery();
 
 	        // Duyệt kết quả và thêm vào danh sách
+	        
 	        while (rs.next()) {
 	            list.add(new ReceptionistData(rs.getString("receptionist_id"), rs.getString("username"),
 	                    rs.getString("password"), rs.getString("name"), rs.getString("email"), rs.getString("gender"),
 	                    rs.getBoolean("is_active"), rs.getString("phone"), rs.getString("address"),
 	                    rs.getBoolean("is_confirmed")));
 	        }
+	        
 	        // Gán giá trị cho các cột trong bảng
 	        receptionist_col_id.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getId()));
 	        receptionist_col_name.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
@@ -615,7 +615,7 @@ public class AdminMainFormController {
 	                .setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAddress()));
 	        // Hiển thị trạng thái active/inactive
 	        receptionist_col_status.setCellValueFactory(data -> 
-	            new SimpleStringProperty(data.getValue().getStatus() ? "Inactive" : "Active" ));
+            new SimpleStringProperty(data.getValue().getIsActive() ? "Active" : "Inactive"));
 	        // Tạo cột hành động với các nút chỉnh sửa, xóa, xác nhận
 	        receptionist_col_action.setCellFactory(col -> new TableCell<>() {
 	            private final Button editBtn = new Button("Update");
@@ -1667,7 +1667,7 @@ public class AdminMainFormController {
 	@FXML
 	private void logoutBtn() {
 	    // Đăng xuất
-	    try {
+	    try {			
 	        // Mở form đăng nhập
 	        Parent root = FXMLLoader.load(getClass().getResource("/View/Login.fxml"));
 	        Stage stage = new Stage();

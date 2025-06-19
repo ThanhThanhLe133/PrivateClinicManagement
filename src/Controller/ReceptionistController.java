@@ -3191,9 +3191,9 @@ public class ReceptionistController implements Initializable {
 		// Hàm đăng xuất
 		@FXML
 		void logoutBtn(ActionEvent event) {
-
 			try {
-				if (alert.confirmationMessage("Are you sure you want to logout?")) {
+				if (alert.confirmationMessage("Are you sure you want to logout?")) {					
+					// Hiển thị giao diện đăng nhập
 					Parent root = FXMLLoader.load(getClass().getResource("/View/Login.fxml"));
 					Stage stage = new Stage();
 					stage.setScene(new Scene(root));
