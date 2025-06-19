@@ -647,18 +647,18 @@ public class DoctorMainFormController implements Initializable {
 	        String prescriptionId = prescriptionExists ? rs.getString("Id") : null;
 	        String prescriptionStatus = prescriptionExists ? rs.getString("status") : null;
 
-	        // If prescription is Paid and patient changed, warn user
-	        if (prescriptionExists && prescriptionStatus.equals("Paid") && patientChanged) {
-	            Alert warning = new Alert(Alert.AlertType.WARNING);
-	            warning.setTitle("Prescription Already Paid");
-	            warning.setHeaderText("The prescription for this appointment is already paid.");
-	            warning.setContentText("Updating patient will reset the Prescription_status to 'Created' and require a new invoice. Proceed?");
-	            warning.getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
-	            if (warning.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
-	                conn.rollback();
-	                return;
-	            }
-	        }
+//	        // If prescription is Paid and patient changed, warn user
+//	        if (prescriptionExists && prescriptionStatus.equals("Paid") && patientChanged) {
+//	            Alert warning = new Alert(Alert.AlertType.WARNING);
+//	            warning.setTitle("Prescription Already Paid");
+//	            warning.setHeaderText("The prescription for this appointment is already paid.");
+//	            warning.setContentText("Updating patient will reset the Prescription_status to 'Created' and require a new invoice. Proceed?");
+//	            warning.getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
+//	            if (warning.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
+//	                conn.rollback();
+//	                return;
+//	            }
+//	        }
 
 	        // Check doctor availability
 	        String sqlDoctor = "SELECT COUNT(*) FROM AVAILABLE_SLOT WHERE Doctor_id = ? AND Slot_time = ? AND Slot_date = ? AND Is_booked = TRUE AND Appointment_id != ?";
@@ -696,7 +696,7 @@ public class DoctorMainFormController implements Initializable {
 	        psUpdate.setString(4, newCancelReason.isEmpty() ? null : newCancelReason);
 	        psUpdate.setString(5, sqlTimeStr);
 	        psUpdate.setTimestamp(6, Timestamp.valueOf(LocalDateTime.now()));
-	        psUpdate.setString(7, (prescriptionExists && prescriptionStatus.equals("Paid") && patientChanged) ? "Created" : currentPrescriptionStatus);
+	        psUpdate.setString(7, currentPrescriptionStatus);
 	        psUpdate.setString(8, appointmentId);
 	        int rowsAffected = psUpdate.executeUpdate();
 

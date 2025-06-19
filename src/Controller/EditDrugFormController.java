@@ -205,50 +205,50 @@ public class EditDrugFormController {
         try (Connection conn = Database.connectDB()) {
             conn.setAutoCommit(false); // Start transaction
 
-            // Check for associated prescriptions
-            String checkPrescriptionSQL = "SELECT COUNT(*) FROM PRESCRIPTION_DETAILS WHERE Drug_id = ?";
-            PreparedStatement psCheck = conn.prepareStatement(checkPrescriptionSQL);
-            psCheck.setString(1, drug.getDrugId());
-            ResultSet rs = psCheck.executeQuery();
-            rs.next();
-            int prescriptionCount = rs.getInt(1);
-
-            if (prescriptionCount > 0) {
-                // Show warning about associated prescriptions
-                Alert warning = new Alert(Alert.AlertType.WARNING);
-                warning.setTitle("Drug in Use");
-                warning.setHeaderText("This drug is part of " + prescriptionCount + " prescription(s).");
-                warning.setContentText("Updating this drug will reset the Prescription_Status of associated appointments to 'Created'. Do you want to proceed?");
-                ButtonType proceedButton = new ButtonType("Proceed");
-                ButtonType cancelButton = new ButtonType("Cancel");
-                warning.getButtonTypes().setAll(proceedButton, cancelButton);
-
-                Optional<ButtonType> warningResult = warning.showAndWait();
-                if (warningResult.isPresent() && warningResult.get() != proceedButton) {
-                    conn.rollback();
-                    return; // User canceled
-                }
-
-                // Get appointment IDs to reset status
-                String getAppointmentsSQL = "SELECT DISTINCT p.Appointment_id FROM PRESCRIPTION p " +
-                                           "JOIN PRESCRIPTION_DETAILS pd ON p.Id = pd.Prescription_id " +
-                                           "WHERE pd.Drug_id = ?";
-                psCheck = conn.prepareStatement(getAppointmentsSQL);
-                psCheck.setString(1, drug.getDrugId());
-                rs = psCheck.executeQuery();
-                List<String> appointmentIds = new ArrayList<>();
-                while (rs.next()) {
-                    appointmentIds.add(rs.getString("Appointment_id"));
-                }
-
-                // Reset Prescription_Status to 'Created'
-                String updateStatusSQL = "UPDATE APPOINTMENT SET Prescription_Status = 'Created' WHERE Id = ?";
-                PreparedStatement psUpdateStatus = conn.prepareStatement(updateStatusSQL);
-                for (String appointmentId : appointmentIds) {
-                    psUpdateStatus.setString(1, appointmentId);
-                    psUpdateStatus.executeUpdate();
-                }
-            }
+//            // Check for associated prescriptions
+//            String checkPrescriptionSQL = "SELECT COUNT(*) FROM PRESCRIPTION_DETAILS WHERE Drug_id = ?";
+//            PreparedStatement psCheck = conn.prepareStatement(checkPrescriptionSQL);
+//            psCheck.setString(1, drug.getDrugId());
+//            ResultSet rs = psCheck.executeQuery();
+//            rs.next();
+//            int prescriptionCount = rs.getInt(1);
+//
+//            if (prescriptionCount > 0) {
+//                // Show warning about associated prescriptions
+//                Alert warning = new Alert(Alert.AlertType.WARNING);
+//                warning.setTitle("Drug in Use");
+//                warning.setHeaderText("This drug is part of " + prescriptionCount + " prescription(s).");
+//                warning.setContentText("Updating this drug will reset the Prescription_Status of associated appointments to 'Created'. Do you want to proceed?");
+//                ButtonType proceedButton = new ButtonType("Proceed");
+//                ButtonType cancelButton = new ButtonType("Cancel");
+//                warning.getButtonTypes().setAll(proceedButton, cancelButton);
+//
+//                Optional<ButtonType> warningResult = warning.showAndWait();
+//                if (warningResult.isPresent() && warningResult.get() != proceedButton) {
+//                    conn.rollback();
+//                    return; // User canceled
+//                }
+//
+//                // Get appointment IDs to reset status
+//                String getAppointmentsSQL = "SELECT DISTINCT p.Appointment_id FROM PRESCRIPTION p " +
+//                                           "JOIN PRESCRIPTION_DETAILS pd ON p.Id = pd.Prescription_id " +
+//                                           "WHERE pd.Drug_id = ?";
+//                psCheck = conn.prepareStatement(getAppointmentsSQL);
+//                psCheck.setString(1, drug.getDrugId());
+//                rs = psCheck.executeQuery();
+//                List<String> appointmentIds = new ArrayList<>();
+//                while (rs.next()) {
+//                    appointmentIds.add(rs.getString("Appointment_id"));
+//                }
+//
+//                // Reset Prescription_Status to 'Created'
+//                String updateStatusSQL = "UPDATE APPOINTMENT SET Prescription_Status = 'Created' WHERE Id = ?";
+//                PreparedStatement psUpdateStatus = conn.prepareStatement(updateStatusSQL);
+//                for (String appointmentId : appointmentIds) {
+//                    psUpdateStatus.setString(1, appointmentId);
+//                    psUpdateStatus.executeUpdate();
+//                }
+//            }
 
             // Update drug data
             String sql = "UPDATE DRUG SET Name = ?, Manufacturer = ?, Expiry_date = ?, Unit = ?, Price = ?, Stock = ?, Update_date = ? WHERE Id = ?";

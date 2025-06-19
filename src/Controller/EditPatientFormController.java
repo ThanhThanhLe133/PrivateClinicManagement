@@ -222,48 +222,48 @@ public class EditPatientFormController {
         try (Connection conn = Database.connectDB()) {
             conn.setAutoCommit(false); // Start transaction
 
-            // Check for associated appointments
-            String checkAppointmentSQL = "SELECT COUNT(*) FROM APPOINTMENT WHERE Patient_id = ?";
-            PreparedStatement psCheck = conn.prepareStatement(checkAppointmentSQL);
-            psCheck.setString(1, patient.getPatientId());
-            ResultSet rs = psCheck.executeQuery();
-            rs.next();
-            int appointmentCount = rs.getInt(1);
-
-            if (appointmentCount > 0) {
-                // Show warning about associated appointments
-                Alert warning = new Alert(Alert.AlertType.WARNING);
-                warning.setTitle("Patient Has Appointments");
-                warning.setHeaderText("This patient is associated with " + appointmentCount + " appointment(s).");
-                warning.setContentText("Updating this patient will reset the Prescription_Status of associated appointments to 'Created'. Do you want to proceed?");
-                ButtonType proceedButton = new ButtonType("Proceed");
-                ButtonType cancelButton = new ButtonType("Cancel");
-                warning.getButtonTypes().setAll(proceedButton, cancelButton);
-
-                Optional<ButtonType> warningResult = warning.showAndWait();
-                if (warningResult.isPresent() && warningResult.get() != proceedButton) {
-                    conn.rollback();
-                    return; // User canceled
-                }
-
-                // Get appointment IDs to reset status
-                String getAppointmentsSQL = "SELECT Id FROM APPOINTMENT WHERE Patient_id = ?";
-                psCheck = conn.prepareStatement(getAppointmentsSQL);
-                psCheck.setString(1, patient.getPatientId());
-                rs = psCheck.executeQuery();
-                List<String> appointmentIds = new ArrayList<>();
-                while (rs.next()) {
-                    appointmentIds.add(rs.getString("Id"));
-                }
-
-                // Reset Prescription_Status to 'Created if it was 'Paid'
-                String updateStatusSQL = "UPDATE APPOINTMENT SET Prescription_Status = 'Created' WHERE Id = ? AND Prescription_Status = 'Paid'";
-                PreparedStatement psUpdateStatus = conn.prepareStatement(updateStatusSQL);
-                for (String appointmentId : appointmentIds) {
-                    psUpdateStatus.setString(1, appointmentId);
-                    psUpdateStatus.executeUpdate();
-                }
-            }
+//            // Check for associated appointments
+//            String checkAppointmentSQL = "SELECT COUNT(*) FROM APPOINTMENT WHERE Patient_id = ?";
+//            PreparedStatement psCheck = conn.prepareStatement(checkAppointmentSQL);
+//            psCheck.setString(1, patient.getPatientId());
+//            ResultSet rs = psCheck.executeQuery();
+//            rs.next();
+//            int appointmentCount = rs.getInt(1);
+//
+//            if (appointmentCount > 0) {
+//                // Show warning about associated appointments
+//                Alert warning = new Alert(Alert.AlertType.WARNING);
+//                warning.setTitle("Patient Has Appointments");
+//                warning.setHeaderText("This patient is associated with " + appointmentCount + " appointment(s).");
+//                warning.setContentText("Updating this patient will reset the Prescription_Status of associated appointments to 'Created'. Do you want to proceed?");
+//                ButtonType proceedButton = new ButtonType("Proceed");
+//                ButtonType cancelButton = new ButtonType("Cancel");
+//                warning.getButtonTypes().setAll(proceedButton, cancelButton);
+//
+//                Optional<ButtonType> warningResult = warning.showAndWait();
+//                if (warningResult.isPresent() && warningResult.get() != proceedButton) {
+//                    conn.rollback();
+//                    return; // User canceled
+//                }
+//
+//                // Get appointment IDs to reset status
+//                String getAppointmentsSQL = "SELECT Id FROM APPOINTMENT WHERE Patient_id = ?";
+//                psCheck = conn.prepareStatement(getAppointmentsSQL);
+//                psCheck.setString(1, patient.getPatientId());
+//                rs = psCheck.executeQuery();
+//                List<String> appointmentIds = new ArrayList<>();
+//                while (rs.next()) {
+//                    appointmentIds.add(rs.getString("Id"));
+//                }
+//
+//                // Reset Prescription_Status to 'Created if it was 'Paid'
+//                String updateStatusSQL = "UPDATE APPOINTMENT SET Prescription_Status = 'Created' WHERE Id = ? AND Prescription_Status = 'Paid'";
+//                PreparedStatement psUpdateStatus = conn.prepareStatement(updateStatusSQL);
+//                for (String appointmentId : appointmentIds) {
+//                    psUpdateStatus.setString(1, appointmentId);
+//                    psUpdateStatus.executeUpdate();
+//                }
+//            }
 
             // Update patient data
             String sql = "UPDATE PATIENT SET Name = ?, Email = ?, Height = ?, Weight = ?, Gender = ?, Phone = ?, Diagnosis = ?, Address = ?, Update_date = ? WHERE Patient_Id = ?";

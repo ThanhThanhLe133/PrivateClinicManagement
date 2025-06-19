@@ -49,6 +49,14 @@ public class DoctorData extends UserAccount {
 	public String getAddress() {
 		return address;
 	}
+	
+	public void setStatus(boolean status) {
+		this.status = status;
+	}
+	
+	public void setName(String name) {
+		this.name = name;
+	}
 
 	public void setAddress(String address) {
 		this.address = address;
@@ -65,5 +73,13 @@ public class DoctorData extends UserAccount {
 	public boolean getStatus() {
 		// TODO Auto-generated method stub
 		return status;
+	}
+
+	public void setEmail(String trim) {
+		this.email = trim;
+	}
+
+	public void setGender(String value) {
+		this.gender = value;
 	}
 }

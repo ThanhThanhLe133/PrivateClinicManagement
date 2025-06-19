@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -119,6 +120,36 @@ public class EditServiceFormController {
     private void updateService() {
         // Cập nhật thông tin dịch vụ vào cơ sở dữ liệu
         try (Connection conn = Database.connectDB()) {
+        	// Check if service is used by any doctor
+            String checkDoctorsSql = "SELECT Doctor_id FROM DOCTOR WHERE Service_id = ?";
+            PreparedStatement psCheckDoctors = conn.prepareStatement(checkDoctorsSql);
+            psCheckDoctors.setString(1, service.getServiceId());
+            ResultSet rsDoctors = psCheckDoctors.executeQuery();
+            boolean hasDoctors = rsDoctors.next();
+
+            // Check if service is used in any appointment_service
+            String checkAppointmentServiceSql = "SELECT Appointment_id FROM APPOINTMENT_SERVICE WHERE Service_id = ?";
+            PreparedStatement psCheckAppointmentService = conn.prepareStatement(checkAppointmentServiceSql);
+            psCheckAppointmentService.setString(1, service.getServiceId());
+            ResultSet rsAppointmentService = psCheckAppointmentService.executeQuery();
+            boolean hasAppointmentServices = rsAppointmentService.next();
+
+            // If service is associated with doctors or appointment_services, show warning
+            if (hasDoctors || hasAppointmentServices) {
+                String warningMessage = "This service is associated with:\n" +
+                        (hasDoctors ? "- One or more doctors.\n" : "") +
+                        (hasAppointmentServices ? "- Existing appointments.\n" : "") +
+                        "Updating the service will affect these records. Do you want to proceed?";
+                Alert warning = new Alert(Alert.AlertType.CONFIRMATION);
+                warning.setTitle("Confirm Update");
+                warning.setHeaderText("Service Associations Found");
+                warning.setContentText(warningMessage);
+                warning.getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
+                if (warning.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
+                    conn.rollback();
+                    return;
+                }
+            }
             String sql = "UPDATE SERVICE SET Name = ?, Type = ?, Price = ? WHERE Id = ?";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, txtServiceName.getText().trim());
