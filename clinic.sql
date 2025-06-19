@@ -248,12 +248,40 @@ INSERT INTO USER_ACCOUNT (
     TRUE
 );
 INSERT INTO DOCTOR (
-    doctor_id, Phone, Service_id, Address
+    doctor_id, Phone, Service_id, Address, is_confirmed
 ) VALUES (
     @doctor1_id,
     '0912345678',
     @Service1_id,
-    '12 Medical Lane, District 1'
+    '12 Medical Lane, District 1',
+    true
+);
+
+-- Doctor 
+SET @doctor_id := UUID();
+INSERT INTO USER_ACCOUNT (
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active, create_date, update_date
+) VALUES (
+    @doctor_id,
+    'dr.smith1',
+    'doctor1231',
+    'dr.smith1@example.com',
+    'Dr. John Smith1',
+    NULL,
+    'Male',
+    'DOCTOR',
+    TRUE,
+    '2025-04-15',
+    '2025-04-15'
+);
+INSERT INTO DOCTOR (
+    doctor_id, Phone, Service_id, Address, is_confirmed
+) VALUES (
+    @doctor_id,
+    '0912345679',
+    @Service1_id,
+    '12 Medical Lane, District 1',
+    true
 );
 
 -- Doctor 2
@@ -272,12 +300,13 @@ INSERT INTO USER_ACCOUNT (
     TRUE
 );
 INSERT INTO DOCTOR (
-    doctor_id, Phone, Service_id, Address
+    doctor_id, Phone, Service_id, Address, is_confirmed
 ) VALUES (
     @doctor2_id,
     '0987654321',
     @Service2_id,
-    '34 Wellness Street, District 2'
+    '34 Wellness Street, District 2',
+    true
 );
 
 -- Doctor 3
@@ -296,12 +325,13 @@ INSERT INTO USER_ACCOUNT (
     TRUE
 );
 INSERT INTO DOCTOR (
-    doctor_id, Phone, Service_id, Address
+    doctor_id, Phone, Service_id, Address, is_confirmed
 ) VALUES (
     @doctor3_id,
     '0911122233',
     @Service3_id,
-    '56 Psychology Avenue, District 3'
+    '56 Psychology Avenue, District 3',
+    true
 );
 
 -- Doctor 4
@@ -320,12 +350,13 @@ INSERT INTO USER_ACCOUNT (
     TRUE
 );
 INSERT INTO DOCTOR (
-    doctor_id, Phone, Service_id, Address
+    doctor_id, Phone, Service_id, Address, is_confirmed
 ) VALUES (
     @doctor4_id,
     '0933344455',
     @Service4_id,
-    '78 CBT Road, District 4'
+    '78 CBT Road, District 4',
+    true
 );
 
 -- Doctor 5
@@ -344,12 +375,13 @@ INSERT INTO USER_ACCOUNT (
     TRUE
 );
 INSERT INTO DOCTOR (
-    doctor_id, Phone, Service_id, Address
+    doctor_id, Phone, Service_id, Address, is_confirmed
 ) VALUES (
     @doctor5_id,
     '0966677788',
     @Service5_id,
-    '90 ECG Street, District 5'
+    '90 ECG Street, District 5',
+    true
 );
 
 -- Doctor 6
@@ -441,12 +473,13 @@ INSERT INTO USER_ACCOUNT (
     TRUE
 );
 INSERT INTO DOCTOR (
-    doctor_id, Phone, Service_id, Address
+    doctor_id, Phone, Service_id, Address, is_confirmed
 ) VALUES (
     @doctor9_id,
     '0933445566',
     @Service9_id,
-    '180 Assessment Ave, District 9'
+    '180 Assessment Ave, District 9',
+    true
 );
 
 
@@ -514,6 +547,31 @@ INSERT INTO RECEPTIONIST (
     '0988391233',
     TRUE,
     '27 Back Office Blvd, District8'
+);
+
+SET @recept_id := UUID();
+INSERT INTO USER_ACCOUNT (
+    Id, Username, Password, Email, Name, Avatar, Gender, Role, Is_active, create_date, update_date
+) VALUES (
+    @recept_id,
+    'pd.smith1',
+    'recept1231',
+    'pd.smith1@example.com',
+    'PD. John Smith1',
+    NULL,
+    'Male',
+    'DOCTOR',
+    TRUE,
+    '2025-05-15',
+    '2025-05-15'
+);
+INSERT INTO RECEPTIONIST (
+    Receptionist_id, Phone, is_confirmed, Address
+) VALUES (
+    @recept_id,
+    '0988123452',
+    TRUE,
+    '23 Front Office Blvd, District 4'
 );
 
 -- INSERT mẫu DRUG

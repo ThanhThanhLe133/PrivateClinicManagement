@@ -44,6 +44,9 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.chart.AreaChart;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
@@ -171,6 +174,29 @@ public class AdminMainFormController {
 	@FXML
 	private TableColumn<RevenueService, String> revenue_col_serviceRevenue;
 
+	@FXML
+	private Label dashboard_AD; // Active Doctors
+	@FXML
+	private Label dashboard_TP; // Total Receptionists
+	@FXML
+	private Label dashboard_AP; // Active Receptionists
+	@FXML
+	private Label dashboard_tA; // Total Revenue
+	@FXML
+	private TableView<DoctorData> dashboard_tableView; // Table for doctor data
+	@FXML
+	private TableColumn<DoctorData, String> dashboard_col_doctorID;
+	@FXML
+	private TableColumn<DoctorData, String> dashboard_col_name;
+	@FXML
+	private TableColumn<DoctorData, String> dashboard_col_specialization;
+	@FXML
+	private TableColumn<DoctorData, String> dashboard_col_status;
+	@FXML
+	private AreaChart dashboard_chart_PD; // Chart for receptionist data
+	@FXML
+	private BarChart dashboard_chart_DD; // Chart for doctor data
+	
 	@FXML
 	private AnchorPane main_form;
 	private String currentUserId; // Lưu ID của user đang đăng nhập
@@ -337,7 +363,7 @@ public class AdminMainFormController {
 	        doctors_col_address.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAddress()));
 	        // Hiển thị trạng thái active/inactive
 	        doctors_col_status.setCellValueFactory(data -> 
-	            new SimpleStringProperty(data.getValue().getStatus() ? "Active" : "Inactive")
+	            new SimpleStringProperty(data.getValue().getStatus() ?  "Inactive" : "Active" )
 	        );
 
 	        // Tạo cột hành động với các nút chỉnh sửa, xóa, xác nhận
@@ -589,7 +615,7 @@ public class AdminMainFormController {
 	                .setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAddress()));
 	        // Hiển thị trạng thái active/inactive
 	        receptionist_col_status.setCellValueFactory(data -> 
-	            new SimpleStringProperty(data.getValue().getStatus() ? "Active" : "Inactive"));
+	            new SimpleStringProperty(data.getValue().getStatus() ? "Inactive" : "Active" ));
 	        // Tạo cột hành động với các nút chỉnh sửa, xóa, xác nhận
 	        receptionist_col_action.setCellFactory(col -> new TableCell<>() {
 	            private final Button editBtn = new Button("Update");
@@ -1655,7 +1681,163 @@ public class AdminMainFormController {
 	        e.printStackTrace();
 	    }
 	}
+	
+	public void loadDashboard() {
+	    try (Connection conn = Database.connectDB()) {
+	        // Active Doctors
+	        String activeDoctorsSQL = "SELECT COUNT(*) AS count FROM DOCTOR d " +
+	                                 "JOIN USER_ACCOUNT u ON d.Doctor_id = u.Id " +
+	                                 "WHERE u.Is_active = TRUE";
+	        PreparedStatement psActiveDoctors = conn.prepareStatement(activeDoctorsSQL);
+	        ResultSet rsActiveDoctors = psActiveDoctors.executeQuery();
+	        if (rsActiveDoctors.next()) {
+	            dashboard_AD.setText(String.valueOf(rsActiveDoctors.getInt("count")));
+	        }
 
+	        // Total Receptionists
+	        String totalReceptionistsSQL = "SELECT COUNT(*) AS count FROM RECEPTIONIST";
+	        PreparedStatement psTotalReceptionists = conn.prepareStatement(totalReceptionistsSQL);
+	        ResultSet rsTotalReceptionists = psTotalReceptionists.executeQuery();
+	        if (rsTotalReceptionists.next()) {
+	            dashboard_TP.setText(String.valueOf(rsTotalReceptionists.getInt("count")));
+	        }
+
+	        // Active Receptionists
+	        String activeReceptionistsSQL = "SELECT COUNT(*) AS count FROM RECEPTIONIST r " +
+	                                        "JOIN USER_ACCOUNT u ON r.Receptionist_id = u.Id " +
+	                                        "WHERE u.Is_active = TRUE";
+	        PreparedStatement psActiveReceptionists = conn.prepareStatement(activeReceptionistsSQL);
+	        ResultSet rsActiveReceptionists = psActiveReceptionists.executeQuery();
+	        if (rsActiveReceptionists.next()) {
+	            dashboard_AP.setText(String.valueOf(rsActiveReceptionists.getInt("count")));
+	        }
+
+	        // Total Revenue
+	        String totalRevenueSQL = "SELECT " +
+	                                "(SELECT COALESCE(SUM(d.Price * pd.Quantity), 0) " +
+	                                "FROM PRESCRIPTION_DETAILS pd " +
+	                                "JOIN PRESCRIPTION p ON pd.Prescription_id = p.Id " +
+	                                "JOIN APPOINTMENT a ON p.Appointment_id = a.Id " +
+	                                "JOIN DRUG d ON pd.Drug_id = d.Id " +
+	                                "WHERE a.Prescription_Status = 'Paid') + " +
+	                                "(SELECT COALESCE(SUM(s.Price), 0) " +
+	                                "FROM APPOINTMENT a " +
+	                                "JOIN APPOINTMENT_SERVICE aps ON aps.Appointment_id = a.Id " +
+	                                "JOIN SERVICE s ON s.Id = aps.Service_id " +
+	                                "WHERE a.Status != 'Cancel') AS total_revenue";
+	        PreparedStatement psTotalRevenue = conn.prepareStatement(totalRevenueSQL);
+	        ResultSet rsTotalRevenue = psTotalRevenue.executeQuery();
+	        if (rsTotalRevenue.next()) {
+	            BigDecimal totalRevenue = rsTotalRevenue.getBigDecimal("total_revenue");
+	            dashboard_tA.setText(FormatterUtils.formatCurrencyVND(totalRevenue));
+	        }
+
+	        // Doctor Table Data
+	        ObservableList<DoctorData> doctorList = FXCollections.observableArrayList();
+	        String doctorSQL = "SELECT u.Id AS doctorId, u.Username, u.Name, u.Email, u.Gender, u.Is_active, " +
+	                          "d.Phone, d.Address, d.Is_confirmed, s.Name AS ServiceName " +
+	                          "FROM DOCTOR d " +
+	                          "JOIN USER_ACCOUNT u ON d.Doctor_id = u.Id " +
+	                          "JOIN SERVICE s ON s.Id = d.Service_id";
+	        PreparedStatement psDoctors = conn.prepareStatement(doctorSQL);
+	        ResultSet rsDoctors = psDoctors.executeQuery();
+
+	        while (rsDoctors.next()) {
+	            doctorList.add(new DoctorData(
+	                rsDoctors.getString("doctorId"),
+	                rsDoctors.getString("Username"),
+	                null, // Password not needed
+	                rsDoctors.getString("Name"),
+	                rsDoctors.getString("Email"),
+	                rsDoctors.getString("Gender"),
+	                rsDoctors.getBoolean("Is_active"),
+	                rsDoctors.getString("Phone"),
+	                rsDoctors.getString("ServiceName"),
+	                rsDoctors.getString("Address"),
+	                rsDoctors.getBoolean("Is_confirmed")
+	            ));
+	        }
+
+	        // Set up table columns
+	        dashboard_col_doctorID.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getId()));
+	        dashboard_col_name.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
+	        dashboard_col_specialization.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getServiceName()));
+	        dashboard_col_status.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getIsActive() ? "Active" : "Inactive"));
+
+	        dashboard_tableView.setItems(doctorList);
+
+	        // Load AreaChart for Total Receptionists Over Time
+	        XYChart.Series<String, Number> receptionistSeries = new XYChart.Series<>();
+	        receptionistSeries.setName("Total Receptionists");
+
+	        String receptionistChartSQL = "SELECT DATE(u.Create_date) AS create_date, " +
+	                                     "COUNT(*) AS count " +
+	                                     "FROM USER_ACCOUNT u " +
+	                                     "JOIN RECEPTIONIST r ON u.Id = r.Receptionist_id " +
+	                                     "WHERE u.Role = 'RECEPTIONIST' " +
+	                                     "GROUP BY DATE(u.Create_date) " +
+	                                     "ORDER BY create_date ASC";
+	        PreparedStatement psReceptionistChart = conn.prepareStatement(receptionistChartSQL);
+	        ResultSet rsReceptionistChart = psReceptionistChart.executeQuery();
+
+	        int cumulativeReceptionistCount = 0;
+	        while (rsReceptionistChart.next()) {
+	            String date = rsReceptionistChart.getString("create_date");
+	            int count = rsReceptionistChart.getInt("count");
+	            cumulativeReceptionistCount += count;
+	            receptionistSeries.getData().add(new XYChart.Data<>(date, cumulativeReceptionistCount));
+	            // Debug: Log each data point
+	            System.out.println("Receptionist Chart - Date: " + date + ", Count: " + count + ", Cumulative: " + cumulativeReceptionistCount);
+	        }
+
+	        // Fallback for no data
+	        if (receptionistSeries.getData().isEmpty()) {
+	            receptionistSeries.getData().add(new XYChart.Data<>(LocalDate.now().toString(), 0));
+	            System.out.println("No receptionist data found, added placeholder point.");
+	        }
+
+	        dashboard_chart_PD.getData().clear();
+	        dashboard_chart_PD.getData().add(receptionistSeries);
+
+	        // Load BarChart for Total Doctors Over Time
+	        XYChart.Series<String, Number> doctorSeries = new XYChart.Series<>();
+	        doctorSeries.setName("Total Doctors");
+
+	        String doctorChartSQL = "SELECT DATE(u.Create_date) AS create_date, " +
+	                               "COUNT(*) AS count " +
+	                               "FROM USER_ACCOUNT u " +
+	                               "JOIN DOCTOR d ON u.Id = d.Doctor_id " +
+	                               "WHERE u.Role = 'DOCTOR' " +
+	                               "GROUP BY DATE(u.Create_date) " +
+	                               "ORDER BY create_date ASC";
+	        PreparedStatement psDoctorChart = conn.prepareStatement(doctorChartSQL);
+	        ResultSet rsDoctorChart = psDoctorChart.executeQuery();
+
+	        int cumulativeDoctorCount = 0;
+	        while (rsDoctorChart.next()) {
+	            String date = rsDoctorChart.getString("create_date");
+	            int count = rsDoctorChart.getInt("count");
+	            cumulativeDoctorCount += count;
+	            doctorSeries.getData().add(new XYChart.Data<>(date, cumulativeDoctorCount));
+	            // Debug: Log each data point
+	            System.out.println("Doctor Chart - Date: " + date + ", Count: " + count + ", Cumulative: " + cumulativeDoctorCount);
+	        }
+
+	        // Fallback for no data
+	        if (doctorSeries.getData().isEmpty()) {
+	            doctorSeries.getData().add(new XYChart.Data<>(LocalDate.now().toString(), 0));
+	            System.out.println("No doctor data found, added placeholder point.");
+	        }
+
+	        dashboard_chart_DD.getData().clear();
+	        dashboard_chart_DD.getData().add(doctorSeries);
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        alert.errorMessage("Error loading dashboard data: " + e.getMessage());
+	    }
+	}
+	
 	@FXML
 	private void switchForm(ActionEvent event) {
 	    // Chuyển đổi giữa các form
@@ -1689,6 +1871,7 @@ public class AdminMainFormController {
 	    case "dashboard":
 	        dashboard_form.setVisible(true);
 	        current_form.setText("Dashboard Form");
+	        loadDashboard(); // Tải dữ liệu dashboard
 	        break;
 	    case "doctors":
 	        doctors_form.setVisible(true);
