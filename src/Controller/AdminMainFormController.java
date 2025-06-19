@@ -816,28 +816,82 @@ public class AdminMainFormController {
 	}
 
 	private void deleteService(String serviceId) {
-	    // Tạo hộp thoại xác nhận xóa
-	    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-	    alert.setTitle("Delete Confirmation");
-	    alert.setHeaderText("Are you sure you want to delete this service?");
-	    alert.setContentText("This action cannot be undone.");
+	    // Initial confirmation alert
+	    Alert initialAlert = new Alert(Alert.AlertType.CONFIRMATION);
+	    initialAlert.setTitle("Delete Confirmation");
+	    initialAlert.setHeaderText("Are you sure you want to delete this service?");
+	    initialAlert.setContentText("This action cannot be undone.");
+	    
+	    Optional<ButtonType> initialResult = initialAlert.showAndWait();
+	    if (initialResult.isEmpty() || initialResult.get() != ButtonType.OK) {
+	        return; // User canceled
+	    }
 
-	    // Chờ người dùng xác nhận
-	    Optional<ButtonType> result = alert.showAndWait();
-	    if (result.isPresent() && result.get() == ButtonType.OK) {
+	    Connection conn = null;
+	    try {
+	        conn = Database.connectDB();
+	        // Check for associated doctors
+	        String checkDoctorsSQL = "SELECT COUNT(*) AS count FROM DOCTOR WHERE Service_id = ?";
+	        PreparedStatement psCheck = conn.prepareStatement(checkDoctorsSQL);
+	        psCheck.setString(1, serviceId);
+	        ResultSet rs = psCheck.executeQuery();
+	        int doctorCount = 0;
+	        if (rs.next()) {
+	            doctorCount = rs.getInt("count");
+	        }
+
+	        // If doctors are associated, show second warning alert
+	        if (doctorCount > 0) {
+	            Alert warningAlert = new Alert(Alert.AlertType.WARNING);
+	            warningAlert.setTitle("Warning: Associated Doctors");
+	            warningAlert.setHeaderText("This service is associated with " + doctorCount + " doctor(s).");
+	            warningAlert.setContentText("Deleting this service will also delete all related doctors, their user accounts, appointments, appointment services, prescriptions, prescription details, and available slots. Do you want to proceed?");
+	            ButtonType proceedButton = new ButtonType("Proceed");
+	            ButtonType cancelButton = new ButtonType("Cancel");
+	            warningAlert.getButtonTypes().setAll(proceedButton, cancelButton);
+
+	            Optional<ButtonType> warningResult = warningAlert.showAndWait();
+	            if (warningResult.isEmpty() || warningResult.get() != proceedButton) {
+	                conn.close();
+	                return; // User canceled
+	            }
+	        }
+
+	        // Proceed with deletion
+	        conn.setAutoCommit(false); // Start transaction
+
+	        // Delete USER_ACCOUNT records for doctors associated with this service
+	        String deleteUserAccountsSQL = "DELETE FROM USER_ACCOUNT WHERE Id IN (SELECT Doctor_id FROM DOCTOR WHERE Service_id = ?)";
+	        PreparedStatement psDeleteUsers = conn.prepareStatement(deleteUserAccountsSQL);
+	        psDeleteUsers.setString(1, serviceId);
+	        psDeleteUsers.executeUpdate();
+
+	        // Delete SERVICE record (cascades to DOCTOR, APPOINTMENT, etc.)
+	        String deleteServiceSQL = "DELETE FROM SERVICE WHERE Id = ?";
+	        PreparedStatement psDelete = conn.prepareStatement(deleteServiceSQL);
+	        psDelete.setString(1, serviceId);
+	        int rowsDeleted = psDelete.executeUpdate();
+
+	        if (rowsDeleted > 0) {
+	            conn.commit(); // Commit transaction
+	            loadServiceTable(); // Refresh table
+	            alert.successMessage("Service deleted successfully.");
+	        } else {
+	            conn.rollback();
+	            alert.errorMessage("No service found with ID: " + serviceId);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
 	        try {
-	            Connection conn = Database.connectDB();
-
-	            // Xóa dịch vụ
-	            String sql = "DELETE FROM SERVICE WHERE Id = ?";
-	            PreparedStatement ps = conn.prepareStatement(sql);
-	            ps.setString(1, serviceId);
-	            ps.executeUpdate();
-
-	            // Đóng kết nối và tải lại bảng
-	            conn.close();
-	            loadServiceTable();
-	        } catch (Exception e) {
+	            if (conn != null) conn.rollback();
+	        } catch (SQLException rollbackEx) {
+	            rollbackEx.printStackTrace();
+	        }
+	        alert.errorMessage("Error deleting service: " + e.getMessage());
+	    } finally {
+	        try {
+	            if (conn != null) conn.close();
+	        } catch (SQLException e) {
 	            e.printStackTrace();
 	        }
 	    }
@@ -1135,62 +1189,6 @@ public class AdminMainFormController {
 	        }
 	    }
 	}
-	private void handleDateReport(LocalDate startDate, LocalDate endDate) {
-	    // Tạo báo cáo doanh thu theo ngày
-	    try (Connection conn = Database.connectDB()) {
-	        // Câu truy vấn tổng hợp doanh thu từ thuốc và dịch vụ theo ngày
-	        String sql = "SELECT " + "    CreateDate, " + "    SUM(totalDrugRevenue) AS totalDrugRevenue, "
-	                + "    SUM(totalServiceRevenue) AS totalServiceRevenue, " + "    SUM(grandTotal) AS grandTotal "
-	                + "FROM ( " + "    SELECT " + "        DATE(p.Create_Date) AS CreateDate, "
-	                + "        SUM(d.Price * pd.Quantity) AS totalDrugRevenue, " + "        0 AS totalServiceRevenue, "
-	                + "        SUM(d.Price * pd.Quantity) AS grandTotal " + "    FROM PRESCRIPTION_DETAILS pd "
-	                + "    JOIN PRESCRIPTION p ON p.Id = pd.Prescription_id " + "    JOIN DRUG d ON d.Id = pd.Drug_id "
-	                + "    JOIN APPOINTMENT a ON a.Id = p.Appointment_id " + "    WHERE a.Prescription_Status = 'Paid' "
-	                + "      AND DATE(p.Create_Date) BETWEEN ? AND ? " + "    GROUP BY DATE(p.Create_Date) "
-	                + "    UNION ALL " + "    SELECT " + "        DATE(a.Create_Date) AS CreateDate, "
-	                + "        0 AS totalDrugRevenue, " + "        SUM(s.Price) AS totalServiceRevenue, "
-	                + "        SUM(s.Price) AS grandTotal " + "    FROM APPOINTMENT a "
-	                + "    JOIN APPOINTMENT_SERVICE aps ON aps.Appointment_id = a.Id "
-	                + "    JOIN SERVICE s ON s.Id = aps.Service_id " + "    WHERE DATE(a.Create_Date) BETWEEN ? AND ? "
-	                + "    GROUP BY DATE(a.Create_Date) " + ") AS tmp " + "GROUP BY CreateDate "
-	                + "ORDER BY CreateDate ASC;";
-
-	        // Chuẩn bị câu truy vấn với các tham số ngày
-	        PreparedStatement ps = conn.prepareStatement(sql);
-	        ps.setDate(1, java.sql.Date.valueOf(startDate));
-	        ps.setDate(2, java.sql.Date.valueOf(endDate));
-	        ps.setDate(3, java.sql.Date.valueOf(startDate));
-	        ps.setDate(4, java.sql.Date.valueOf(endDate));
-	        ResultSet rs = ps.executeQuery();
-	        i = 1; // Khởi tạo biến đếm
-	        revenueListSortByDate.clear(); // Xóa danh sách cũ
-	        medicationFees = BigDecimal.ZERO; // Đặt lại phí thuốc
-	        serviceFees = BigDecimal.ZERO; // Đặt lại phí dịch vụ
-	        // Duyệt kết quả truy vấn
-	        while (rs.next()) {
-	            LocalDate createDate = LocalDate.parse(rs.getString("CreateDate"));
-	            BigDecimal totalDrugRevenue = rs.getBigDecimal("TotalDrugRevenue");
-	            BigDecimal totalServiceRevenue = rs.getBigDecimal("TotalServiceRevenue");
-	            BigDecimal grandTotal = rs.getBigDecimal("GrandTotal");
-
-	            // Cộng dồn phí thuốc và dịch vụ
-	            medicationFees = medicationFees.add(totalDrugRevenue);
-	            serviceFees = serviceFees.add(totalServiceRevenue);
-
-	            // Thêm dữ liệu vào danh sách doanh thu theo ngày
-	            revenueListSortByDate.add(Map.of("noTotal", String.valueOf(i), "date",
-	                    createDate.format(formatter).toString(), "totalDrug", totalDrugRevenue.toString(),
-	                    "totalService", totalServiceRevenue.toString(), "totalRevenue", grandTotal.toString()));
-
-	            i++;
-	        }
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        // Hiển thị thông báo lỗi nếu truy vấn thất bại
-	        Alert error = new Alert(Alert.AlertType.ERROR, "Failed to load revenue report: " + e.getMessage());
-	        error.showAndWait();
-	    }
-	}
 
 	@FXML
 	private void filterRevenueData() {
@@ -1216,6 +1214,76 @@ public class AdminMainFormController {
 	    setRevenue();
 	}
 
+	private void handleRevenueServiceReport(LocalDate startDate, LocalDate endDate) {
+	    // Tính doanh thu từ dịch vụ
+	    try (Connection conn = Database.connectDB()) {
+	        // Câu truy vấn lấy thông tin doanh thu dịch vụ
+	        String sql = "SELECT s.Name AS ServiceName, " + "COUNT(*) AS Quantity, " + "s.Price, " + "s.Type, "
+	                + "SUM(s.Price) AS TotalRevenue " + "FROM SERVICE s "
+	                + "JOIN APPOINTMENT_SERVICE aps ON aps.Service_id = s.Id "
+	                + "JOIN APPOINTMENT p ON p.Id = aps.Appointment_id "
+	                + "WHERE DATE(p.Time) BETWEEN ? AND ? AND p.Status != 'Cancel' "
+	                + "GROUP BY s.Name, s.Price, s.Type " + "ORDER BY DATE(p.Time) DESC;";
+
+	        // Chuẩn bị câu truy vấn
+	        PreparedStatement ps = conn.prepareStatement(sql);
+	        ps.setDate(1, java.sql.Date.valueOf(startDate));
+	        ps.setDate(2, java.sql.Date.valueOf(endDate));
+
+	        ResultSet rs = ps.executeQuery();
+	        ObservableList<RevenueService> dataList = FXCollections.observableArrayList();
+	        i = 1; // Khởi tạo biến đếm
+	        serviceRevenueList.clear(); // Xóa danh sách cũ
+	        // Duyệt kết quả truy vấn
+	        while (rs.next()) {
+	            String serviceName = rs.getString("ServiceName");
+	            int quantity = rs.getInt("quantity");
+	            BigDecimal price = rs.getBigDecimal("Price");
+	            String type = rs.getString("Type");
+	            BigDecimal totalRevenue = rs.getBigDecimal("TotalRevenue");
+
+	            // Phân loại doanh thu theo loại dịch vụ
+	            switch (type.toLowerCase()) {
+	            case "examination":
+	                examineFees = examineFees.add(totalRevenue);
+	                break;
+	            case "test":
+	                labTestFees = labTestFees.add(totalRevenue);
+	                break;
+	            }
+
+	            // Thêm dữ liệu vào danh sách
+	            dataList.add(new RevenueService(serviceName, type, quantity, price, totalRevenue));
+
+	            // Thêm vào danh sách để xuất báo cáo
+	            serviceRevenueList.add(Map.of("noService", String.valueOf(i), "serviceName", serviceName, "type", type,
+	                    "ServiceQuantity", String.valueOf(quantity), "ServicePrice", price.toString(), "totalService", totalRevenue.toString()));
+
+	            i++;
+	        }
+
+	        // Gán giá trị cho các cột trong bảng
+	        revenue_col_serviceName
+	                .setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getServiceName()));
+	        revenue_col_serviceQuantity.setCellValueFactory(
+	                data -> new SimpleStringProperty(String.valueOf(data.getValue().getQuantity())));
+	        revenue_col_servicePrice
+	                .setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getFormattedPrice()));
+	        revenue_col_serviceRevenue
+	                .setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getFormattedTotalRevenue()));
+	        revenue_col_serviceType.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getType()));
+
+	        // Gán danh sách vào bảng
+	        revenue_service.setItems(dataList);
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        // Hiển thị thông báo lỗi nếu truy vấn thất bại
+	        Alert error = new Alert(Alert.AlertType.ERROR, "Failed to load revenue report: " + e.getMessage());
+	        error.showAndWait();
+	    }
+	}
+
 	private void handleRevenueDrugReport(LocalDate startDate, LocalDate endDate) {
 	    // Tính doanh thu từ thuốc
 	    try (Connection conn = Database.connectDB()) {
@@ -1224,8 +1292,8 @@ public class AdminMainFormController {
 	                + "SUM(d.Price * pd.Quantity) AS TotalRevenue " + "FROM PRESCRIPTION_DETAILS pd "
 	                + "JOIN PRESCRIPTION p ON pd.Prescription_id = p.Id "
 	                + "JOIN APPOINTMENT a ON p.Appointment_id = a.Id " + "JOIN DRUG d ON pd.Drug_id = d.Id "
-	                + "WHERE a.Prescription_Status = 'Paid' " + "AND DATE(pd.Create_date) BETWEEN ? AND ? "
-	                + "GROUP BY d.Name, d.Price " + "ORDER BY DATE(pd.Create_date) DESC";
+	                + "WHERE a.Prescription_Status = 'Paid' " + "AND DATE(pd.Update_date) BETWEEN ? AND ? "
+	                + "GROUP BY d.Name, d.Price " + "ORDER BY DATE(pd.Update_date) DESC";
 
 	        // Chuẩn bị câu truy vấn
 	        PreparedStatement ps = conn.prepareStatement(sql);
@@ -1274,67 +1342,56 @@ public class AdminMainFormController {
 	    }
 	}
 
-	private void handleRevenueServiceReport(LocalDate startDate, LocalDate endDate) {
-	    // Tính doanh thu từ dịch vụ
+	private void handleDateReport(LocalDate startDate, LocalDate endDate) {
+	    // Tạo báo cáo doanh thu theo ngày
 	    try (Connection conn = Database.connectDB()) {
-	        // Câu truy vấn lấy thông tin doanh thu dịch vụ
-	        String sql = "SELECT s.Name AS ServiceName, " + "COUNT(*) AS Quantity, " + "s.Price, " + "s.Type, "
-	                + "SUM(s.Price) AS TotalRevenue " + "FROM SERVICE s "
-	                + "JOIN APPOINTMENT_SERVICE aps ON aps.Service_id = s.Id "
-	                + "JOIN APPOINTMENT p ON p.Id = aps.Appointment_id " + "WHERE DATE(p.Create_Date) BETWEEN ? AND ? "
-	                + "GROUP BY s.Name, s.Price, s.Type " + "ORDER BY DATE(p.Create_Date) DESC;";
+	        // Câu truy vấn tổng hợp doanh thu từ thuốc và dịch vụ theo ngày
+	        String sql = "SELECT " + "    CreateDate, " + "    SUM(totalDrugRevenue) AS totalDrugRevenue, "
+	                + "    SUM(totalServiceRevenue) AS totalServiceRevenue, " + "    SUM(grandTotal) AS grandTotal "
+	                + "FROM ( " + "    SELECT " + "        DATE(pd.Update_date) AS CreateDate, "
+	                + "        SUM(d.Price * pd.Quantity) AS totalDrugRevenue, " + "        0 AS totalServiceRevenue, "
+	                + "        SUM(d.Price * pd.Quantity) AS grandTotal " + "    FROM PRESCRIPTION_DETAILS pd "
+	                + "    JOIN PRESCRIPTION p ON p.Id = pd.Prescription_id " + "    JOIN DRUG d ON d.Id = pd.Drug_id "
+	                + "    JOIN APPOINTMENT a ON a.Id = p.Appointment_id " + "    WHERE a.Prescription_Status = 'Paid' "
+	                + "      AND DATE(pd.Update_date) BETWEEN ? AND ? " + "    GROUP BY DATE(pd.Update_date) "
+	                + "    UNION ALL " + "    SELECT " + "        DATE(a.Time) AS CreateDate, "
+	                + "        0 AS totalDrugRevenue, " + "        SUM(s.Price) AS totalServiceRevenue, "
+	                + "        SUM(s.Price) AS grandTotal " + "    FROM APPOINTMENT a "
+	                + "    JOIN APPOINTMENT_SERVICE aps ON aps.Appointment_id = a.Id "
+	                + "    JOIN SERVICE s ON s.Id = aps.Service_id "
+	                + "    WHERE DATE(a.Time) BETWEEN ? AND ? AND a.Status != 'Cancel' "
+	                + "    GROUP BY DATE(a.Time) " + ") AS tmp " + "GROUP BY CreateDate "
+	                + "ORDER BY CreateDate ASC;";
 
-	        // Chuẩn bị câu truy vấn
+	        // Chuẩn bị câu truy vấn với các tham số ngày
 	        PreparedStatement ps = conn.prepareStatement(sql);
 	        ps.setDate(1, java.sql.Date.valueOf(startDate));
 	        ps.setDate(2, java.sql.Date.valueOf(endDate));
-
+	        ps.setDate(3, java.sql.Date.valueOf(startDate));
+	        ps.setDate(4, java.sql.Date.valueOf(endDate));
 	        ResultSet rs = ps.executeQuery();
-	        ObservableList<RevenueService> dataList = FXCollections.observableArrayList();
 	        i = 1; // Khởi tạo biến đếm
-	        serviceRevenueList.clear(); // Xóa danh sách cũ
+	        revenueListSortByDate.clear(); // Xóa danh sách cũ
+	        medicationFees = BigDecimal.ZERO; // Đặt lại phí thuốc
+	        serviceFees = BigDecimal.ZERO; // Đặt lại phí dịch vụ
 	        // Duyệt kết quả truy vấn
 	        while (rs.next()) {
-	            String serviceName = rs.getString("ServiceName");
-	            int quantity = rs.getInt("quantity");
-	            BigDecimal price = rs.getBigDecimal("Price");
-	            String type = rs.getString("Type");
-	            BigDecimal totalRevenue = rs.getBigDecimal("TotalRevenue");
+	            LocalDate createDate = LocalDate.parse(rs.getString("CreateDate"));
+	            BigDecimal totalDrugRevenue = rs.getBigDecimal("TotalDrugRevenue");
+	            BigDecimal totalServiceRevenue = rs.getBigDecimal("TotalServiceRevenue");
+	            BigDecimal grandTotal = rs.getBigDecimal("GrandTotal");
 
-	            // Phân loại doanh thu theo loại dịch vụ
-	            switch (type.toLowerCase()) {
-	            case "examination":
-	                examineFees = examineFees.add(totalRevenue);
-	                break;
-	            case "test":
-	                labTestFees = labTestFees.add(totalRevenue);
-	                break;
-	            }
+	            // Cộng dồn phí thuốc và dịch vụ
+	            medicationFees = medicationFees.add(totalDrugRevenue);
+	            serviceFees = serviceFees.add(totalServiceRevenue);
 
-	            // Thêm dữ liệu vào danh sách
-	            dataList.add(new RevenueService(serviceName, type, quantity, price, totalRevenue));
-
-	            // Thêm vào danh sách để xuất báo cáo
-	            serviceRevenueList.add(Map.of("noService", String.valueOf(i), "serviceName", serviceName, "type", type,
-	                    "ServiceQuantity",String.valueOf(quantity),"ServicePrice", price.toString(), "totalService", totalRevenue.toString()));
+	            // Thêm dữ liệu vào danh sách doanh thu theo ngày
+	            revenueListSortByDate.add(Map.of("noTotal", String.valueOf(i), "date",
+	                    createDate.format(formatter).toString(), "totalDrug", totalDrugRevenue.toString(),
+	                    "totalService", totalServiceRevenue.toString(), "totalRevenue", grandTotal.toString()));
 
 	            i++;
 	        }
-
-	        // Gán giá trị cho các cột trong bảng
-	        revenue_col_serviceName
-	                .setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getServiceName()));
-	        revenue_col_serviceQuantity.setCellValueFactory(
-	                data -> new SimpleStringProperty(String.valueOf(data.getValue().getQuantity())));
-	        revenue_col_servicePrice
-	                .setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getFormattedPrice()));
-	        revenue_col_serviceRevenue
-	                .setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getFormattedTotalRevenue()));
-	        revenue_col_serviceType.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getType()));
-
-	        // Gán danh sách vào bảng
-	        revenue_service.setItems(dataList);
-
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	        // Hiển thị thông báo lỗi nếu truy vấn thất bại
