@@ -560,7 +560,7 @@ INSERT INTO USER_ACCOUNT (
     'PD. John Smith1',
     NULL,
     'Male',
-    'DOCTOR',
+    'RECEPTIONIST',
     FALSE,
     '2025-05-15',
     '2025-05-15'
