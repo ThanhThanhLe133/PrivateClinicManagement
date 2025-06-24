@@ -397,7 +397,7 @@ public class DoctorMainFormController implements Initializable {
 	@FXML
 	private TextField appointment_mobileNumber;
 	@FXML
-	private ComboBox<String> appointment_patientID;
+	private Label appointment_patientID;
 	@FXML
 	private ComboBox<String> appointment_status;
 	@FXML
@@ -570,7 +570,7 @@ public class DoctorMainFormController implements Initializable {
 	    String currentPatientId = selectedAppointment.getPatientId();
 
 	    // Get updated values from input fields
-	    String newPatientId = appointment_patientID.getValue();
+	    String newPatientId = appointment_patientID.getText();
 	    String newStatus = appointment_status.getValue();
 	    String newCancelReason = appointment_cancelReason.getText() != null ? appointment_cancelReason.getText().trim() : "";
 	    LocalDate newDate = appointment_date.getValue();
@@ -879,8 +879,7 @@ public class DoctorMainFormController implements Initializable {
 	    appointment_gender.getSelectionModel().clearSelection();
 	    appointment_gender.setValue("");
 	    appointment_mobileNumber.clear();
-	    appointment_patientID.getSelectionModel().clearSelection();
-	    appointment_patientID.setValue("");
+	    appointment_patientID.setText("");
 	    appointment_status.getSelectionModel().clearSelection();
 	    appointment_status.setValue("");
 	    appointment_cancelReason.clear();
@@ -1465,7 +1464,7 @@ public class DoctorMainFormController implements Initializable {
 	            .observableArrayList(Arrays.stream(Gender.values()).map(Enum::name).collect(Collectors.toList())));
 	    appointment_status.setItems(FXCollections.observableArrayList(
 	            Arrays.stream(AppointmentStatus.values()).map(Enum::name).collect(Collectors.toList())));
-	    appointment_patientID.setItems(patientIds);
+	    appointment_patientID.setText(patientIds.toString());
 
 	    // Định dạng ngày cho DatePicker
 	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
@@ -1566,7 +1565,7 @@ public class DoctorMainFormController implements Initializable {
 	    loadAppointmentData();
 	    appointment_appointmentID.setEditable(false);
 
-	    appointment_patientID.setItems(patientIds);
+	    appointment_patientID.setText(patientIds.toString());
 	    loadPatientData();
 	}
 
@@ -1838,7 +1837,7 @@ public class DoctorMainFormController implements Initializable {
 	    appointment_name.setText(appointmentData.getName());
 	    appointment_gender.setValue(appointmentData.getGender());
 	    appointment_mobileNumber.setText(appointmentData.getContactNumber());
-	    appointment_patientID.setValue(appointmentData.getPatientId());
+	    appointment_patientID.setText(appointmentData.getPatientId().toString());
 	    appointment_status.setValue(appointmentData.getStatus());
 	    appointment_cancelReason.setText(appointmentData.getReason());
 	    appointment_date.setValue(FormatterUtils.localDate(FormatterUtils.getDate(appointmentData.getTime())));
@@ -1847,32 +1846,32 @@ public class DoctorMainFormController implements Initializable {
 	    appointment_updatedDate.setText(FormatterUtils.formatTime(appointmentData.getLastModifiedDate()));
 	}
 
-	public void patientsSelect() {
-	    // Chọn bệnh nhân từ ComboBox
-	    int index = appointment_patientID.getSelectionModel().getSelectedIndex();
-	    String patientId = appointment_patientID.getSelectionModel().getSelectedItem();
-	    if (index <= -1 || patientId == null) {
-	        System.out.println("No patient selected");
-	        return;
-	    }
-
-	    // Lấy thông tin bệnh nhân
-	    String sql = "SELECT * FROM patient WHERE patient_id = ?";
-	    connect = Database.connectDB();
-	    try {
-	        prepare = connect.prepareStatement(sql);
-	        prepare.setString(1, patientId);
-	        result = prepare.executeQuery();
-	        if (result.next()) {
-	            String name = result.getString("name");
-	            String phone = result.getString("phone");
-	            String gender = result.getString("gender");
-	            appointment_name.setText(name);
-	            appointment_mobileNumber.setText(phone);
-	            appointment_gender.setValue(gender);
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-	}
+//	public void patientsSelect() {
+//	    // Chọn bệnh nhân từ ComboBox
+//	    int index = appointment_patientID.getSelectionModel().getSelectedIndex();
+//	    String patientId = appointment_patientID.getSelectionModel().getSelectedItem();
+//	    if (index <= -1 || patientId == null) {
+//	        System.out.println("No patient selected");
+//	        return;
+//	    }
+//
+//	    // Lấy thông tin bệnh nhân
+//	    String sql = "SELECT * FROM patient WHERE patient_id = ?";
+//	    connect = Database.connectDB();
+//	    try {
+//	        prepare = connect.prepareStatement(sql);
+//	        prepare.setString(1, patientId);
+//	        result = prepare.executeQuery();
+//	        if (result.next()) {
+//	            String name = result.getString("name");
+//	            String phone = result.getString("phone");
+//	            String gender = result.getString("gender");
+//	            appointment_name.setText(name);
+//	            appointment_mobileNumber.setText(phone);
+//	            appointment_gender.setValue(gender);
+//	        }
+//	    } catch (SQLException e) {
+//	        e.printStackTrace();
+//	    }
+//	}
 }
