@@ -25,7 +25,9 @@ public class Database {
         try {
          //cuong url	
             Class.forName("com.mysql.cj.jdbc.Driver");
-            String url = "jdbc:mysql://localhost:3060/clinic?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh";
+//            String url = "jdbc:mysql://localhost:3306/clinic?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh";
+            String url = "jdbc:mysql://localhost:3306/clinic?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh";
+
             // dùng cái này nếu không cài env
 ////            String user = "root";
 ////            String password = "";

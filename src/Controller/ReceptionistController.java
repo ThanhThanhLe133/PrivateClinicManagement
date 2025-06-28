@@ -2120,6 +2120,63 @@ public class ReceptionistController implements Initializable {
 
 	        // Hiển thị thông báo thành công
 	        alert.successMessage("✔ Appointment(s) created successfully!");
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	        
+	     // Gửi email xác nhận cho bệnh nhân
+	        String patientEmail = selectedPatient.getEmail(); // Cần có phương thức getEmail()
+	        
+	        String subject = "Xác nhận lịch hẹn tại Phòng khám ABC";
+	        StringBuilder content = new StringBuilder();
+	        content.append("Chào ").append(selectedPatient.getName()).append(",\n\n");
+	        content.append("Bạn đã đặt lịch khám tại phòng khám ABC với các thông tin sau:\n");
+
+	        for (int i = 0; i < selectedDoctorInfos.size(); i++) {
+	            String doctorName = selectedDoctorInfos.get(i).get("name");
+	            LocalDate date = selectTimes.get(i);
+	            LocalTime time = slotTimes.get(i);
+	            content.append("- Bác sĩ: ").append(doctorName)
+	                   .append(", Thời gian: ").append(time).append(" ngày ").append(date).append("\n");
+	        }
+
+	        content.append("\nDịch vụ:\n");
+	        for (ServiceData service : selectedServices) {
+	            content.append("- ").append(service.getName())
+	                   .append(" (").append(service.getPrice().toPlainString()).append(" VND)\n");
+	        }
+
+	        content.append("\nCảm ơn bạn đã sử dụng dịch vụ!\nPhòng khám ABC");
+
+	        EmailSender.sendEmail(patientEmail, subject, content.toString());
+
+	        
+	        
+	        
+	        
+	        
+	        
 
 	        // Xóa các danh sách tạm
 	        selectedServiceNames.clear();
