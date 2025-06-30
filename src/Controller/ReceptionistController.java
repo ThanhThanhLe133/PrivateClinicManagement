@@ -13,6 +13,11 @@ import org.apache.poi.xwpf.usermodel.*;
 import Model.AppointmentData;
 import Model.PatientData;
 
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -46,6 +51,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -509,25 +515,27 @@ public class ReceptionistController implements Initializable {
 		for (DrugData drug : drugMasterList) {
 			boolean matchesKeyword = true;
 
-			switch (searchBy) {
-				case "Name":
-					matchesKeyword = drug.getName().toLowerCase().contains(keyword);
-					break;
-				case "Manufacturer":
-					matchesKeyword = drug.getManufacturer().toLowerCase().contains(keyword);
-					break;
-				case "Unit":
-					matchesKeyword = drug.getUnit().toLowerCase().contains(keyword);
-					break;
+			if (searchBy != null) {
+				switch (searchBy) {
+					case "Name":
+						matchesKeyword = drug.getName().toLowerCase().contains(keyword);
+						break;
+					case "Manufacturer":
+						matchesKeyword = drug.getManufacturer().toLowerCase().contains(keyword);
+						break;
+					case "Unit":
+						matchesKeyword = drug.getUnit().toLowerCase().contains(keyword);
+						break;
+				}
 			}
 
 			// Lọc theo ngày hết hạn
-			boolean matchesExpiry = expiryFilter.equals("All")
+			boolean matchesExpiry = expiryFilter == null || expiryFilter.equals("All")
 					|| (expiryFilter.equals("Valid") && drug.getExpiryDate().isAfter(LocalDate.now()))
 					|| (expiryFilter.equals("Expired") && !drug.getExpiryDate().isAfter(LocalDate.now()));
 
 			// Lọc theo tồn kho
-			boolean matchesStock = stockFilter.equals("All") || (stockFilter.equals("In Stock") && drug.getStock() > 0)
+			boolean matchesStock = stockFilter == null || stockFilter.equals("All") || (stockFilter.equals("In Stock") && drug.getStock() > 0)
 					|| (stockFilter.equals("Out of Stock") && drug.getStock() <= 0);
 
 			if (matchesKeyword && matchesExpiry && matchesStock) {
@@ -536,9 +544,9 @@ public class ReceptionistController implements Initializable {
 		}
 
 		// Sắp xếp theo giá
-		if (priceSort.equals("Low to High")) {
+		if (priceSort != null && priceSort.equals("Low to High")) {
 			FXCollections.sort(filtered, Comparator.comparing(DrugData::getPrice));
-		} else if (priceSort.equals("High to Low")) {
+		} else if (priceSort != null && priceSort.equals("High to Low")) {
 			FXCollections.sort(filtered, Comparator.comparing(DrugData::getPrice).reversed());
 		}
 
@@ -654,6 +662,7 @@ public class ReceptionistController implements Initializable {
 	        }
 	    }
 	}
+	
 	// Mở form chỉnh sửa thuốc
 	private void openEditDrugForm(DrugData drug) {
 		try {
@@ -695,6 +704,100 @@ public class ReceptionistController implements Initializable {
 
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	@FXML
+	private void importDrugs() {
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Import Drugs");
+		fileChooser.getExtensionFilters().add(new ExtensionFilter("Excel Files", "*.xlsx", "*.xls"));
+
+		File selectedFile = fileChooser.showOpenDialog(main_form.getScene().getWindow());
+		if (selectedFile != null) {
+			try {
+				System.out.println("Importing drugs from file: " + selectedFile.getAbsolutePath());
+
+				Workbook workbook = null;
+				if (selectedFile.getName().endsWith(".xlsx")) {
+					workbook = new XSSFWorkbook(new FileInputStream(selectedFile));
+				} else if (selectedFile.getName().endsWith(".xls")) {
+					workbook = new HSSFWorkbook(new FileInputStream(selectedFile));
+				} else {
+					throw new IllegalArgumentException("Unsupported file format: " + selectedFile.getName());
+				}
+
+				List<DrugData> drugsToImport = new ArrayList<>();
+
+				Sheet sheet = workbook.getSheetAt(0);
+				for (Row row : sheet) {
+					if (row.getRowNum() == 0) {
+						continue;
+					}
+					
+					String name = row.getCell(0).getStringCellValue();
+					String manufacturer = row.getCell(1).getStringCellValue();
+					String unit = row.getCell(2).getStringCellValue();
+					int stock = (int) row.getCell(3).getNumericCellValue();
+					double price = row.getCell(4).getNumericCellValue();
+					LocalDate expiryDate = row.getCell(5).getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+					if (name.isEmpty() || manufacturer.isEmpty() || unit.isEmpty() || price < 0 || stock < 0) {
+						throw new IllegalArgumentException("Invalid data in row " + (row.getRowNum() + 1));
+					}
+
+					System.out.println("Importing drug: " + name + ", Manufacturer: " + manufacturer + ", Unit: " + unit
+							+ ", Stock: " + stock + ", Price: " + price + ", Expiry Date: " + expiryDate.toString());
+
+					drugsToImport.add(new DrugData(null, name, manufacturer, unit, BigDecimal.valueOf(price), stock, expiryDate, null, null));
+				}
+
+				workbook.close();
+
+				if (drugsToImport.isEmpty()) {
+					Alert alert = new Alert(Alert.AlertType.INFORMATION);
+					alert.setContentText("No valid drugs found in the file.");
+					alert.showAndWait();
+					return;
+				}
+
+				Connection conn = Database.connectDB();
+				conn.setAutoCommit(false);
+
+				String insertSQL = "INSERT INTO DRUG (Id, Name, Manufacturer, Unit, Price, Stock, Expiry_date) VALUES (UUID(), ?, ?, ?, ?, ?, ?)";
+
+				PreparedStatement psInsert = conn.prepareStatement(insertSQL);
+				for (DrugData drug : drugsToImport) {
+					psInsert.setString(1, drug.getName());
+					psInsert.setString(2, drug.getManufacturer());
+					psInsert.setString(3, drug.getUnit());
+					psInsert.setDouble(4, drug.getPrice().doubleValue());
+					psInsert.setInt(5, drug.getStock());
+					psInsert.setDate(6, java.sql.Date.valueOf(drug.getExpiryDate()));
+					psInsert.addBatch();
+				}
+				
+				int[] results = psInsert.executeBatch();
+
+				psInsert.close();
+				conn.commit();
+				conn.close();
+
+				loadDrugTable();
+
+				Alert alert = new Alert(Alert.AlertType.INFORMATION);
+				alert.setTitle("Import Successful");
+				alert.setHeaderText(null);
+				alert.setContentText("Successfully imported " + results.length + " drugs.");
+				alert.showAndWait();
+			} catch (Exception e) {
+				e.printStackTrace();
+				Alert alert = new Alert(Alert.AlertType.ERROR);
+				alert.setTitle("Import Error");
+				alert.setHeaderText(null);
+				alert.setContentText("Error importing drugs: " + e.getMessage());
+				alert.showAndWait();
+			}
 		}
 	}
 
@@ -1010,6 +1113,105 @@ public class ReceptionistController implements Initializable {
 
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	@FXML
+	private void importPatients() {
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Import Patients");
+		fileChooser.getExtensionFilters().add(new ExtensionFilter("Excel Files", "*.xlsx", "*.xls"));
+		File selectedFile = fileChooser.showOpenDialog(main_form.getScene().getWindow());
+		if (selectedFile != null) {
+			try {
+				System.out.println("Importing patients from file: " + selectedFile.getAbsolutePath());
+
+				Workbook workbook = null;
+				if (selectedFile.getName().endsWith(".xlsx")) {
+					workbook = new XSSFWorkbook(new FileInputStream(selectedFile));
+				} else if (selectedFile.getName().endsWith(".xls")) {
+					workbook = new HSSFWorkbook(new FileInputStream(selectedFile));
+				} else {
+					throw new IllegalArgumentException("Unsupported file format: " + selectedFile.getName());
+				}
+
+				List<PatientData> patientsToImport = new ArrayList<>();
+
+				Sheet sheet = workbook.getSheetAt(0);
+				for (Row row : sheet) {
+					if (row.getRowNum() == 0) {
+						continue;
+					}
+
+					String name = row.getCell(0).getStringCellValue();
+					String email = row.getCell(1).getStringCellValue();
+					String gender = row.getCell(2).getStringCellValue();
+					String phone = row.getCell(3).getStringCellValue();
+					LocalDate dateOfBirth = row.getCell(4).getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+					String address = row.getCell(5).getStringCellValue();
+					String diagnosis = row.getCell(6).getStringCellValue();
+					BigDecimal height = row.getCell(7).getNumericCellValue() > 0 ? BigDecimal.valueOf(row.getCell(7).getNumericCellValue()) : null;
+					BigDecimal weight = row.getCell(8).getNumericCellValue() > 0 ? BigDecimal.valueOf(row.getCell(8).getNumericCellValue()) : null;
+
+					if (name.isEmpty() || email.isEmpty() || phone.isEmpty() || address.isEmpty() || diagnosis.isEmpty() || height == null || weight == null) {
+						throw new IllegalArgumentException("Invalid data in row " + (row.getRowNum() + 1));
+					}
+
+					System.out.println("Importing patient: " + name + ", Email: " + email + ", Gender: " + gender
+							+ ", Phone: " + phone + ", Date of Birth: " + dateOfBirth + ", Address: " + address
+							+ ", Diagnosis: " + diagnosis + ", Height: " + height + ", Weight: " + weight);
+
+					patientsToImport.add(new PatientData(null, name, email, gender, phone, address, diagnosis, height, weight, dateOfBirth));
+				}
+				workbook.close();
+
+				if (patientsToImport.isEmpty()) {
+					Alert alert = new Alert(Alert.AlertType.INFORMATION);
+					alert.setContentText("No valid patients found in the file.");
+					alert.showAndWait();
+					return;
+				}
+
+				Connection conn = Database.connectDB();
+				conn.setAutoCommit(false);
+
+				String insertSQL = "INSERT INTO PATIENT (Patient_id, Name, Email, Gender, Phone, Date_of_birth, Address, Diagnosis, Height, Weight) "
+						+ "VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+				PreparedStatement psInsert = conn.prepareStatement(insertSQL);
+				for (PatientData patient : patientsToImport) {
+					psInsert.setString(1, patient.getName());
+					psInsert.setString(2, patient.getEmail());
+					psInsert.setString(3, patient.getGender());
+					psInsert.setString(4, patient.getPhone());
+					psInsert.setDate(5, java.sql.Date.valueOf(patient.getBirthDate()));
+					psInsert.setString(6, patient.getAddress());
+					psInsert.setString(7, patient.getDiagnosis());
+					psInsert.setBigDecimal(8, patient.getHeight());
+					psInsert.setBigDecimal(9, patient.getWeight());
+					psInsert.addBatch();
+				}
+				int[] results = psInsert.executeBatch();
+
+				psInsert.close();
+				conn.commit();
+				conn.close();
+
+				loadPatientTable();
+
+				Alert alert = new Alert(Alert.AlertType.INFORMATION);
+				alert.setTitle("Import Successful");
+				alert.setHeaderText(null);
+				alert.setContentText("Successfully imported " + results.length + " patients.");
+				alert.showAndWait();
+			} catch (Exception e) {
+				e.printStackTrace();
+				Alert alert = new Alert(Alert.AlertType.ERROR);
+				alert.setTitle("Import Error");
+				alert.setHeaderText(null);
+				alert.setContentText("Error importing patients: " + e.getMessage());
+				alert.showAndWait();
+			}
 		}
 	}
 
